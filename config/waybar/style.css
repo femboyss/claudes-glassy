@@ -1,0 +1,118 @@
+/* Catppuccin Glass - Waybar
+   Transparente "Inseln" ueber dem Hyprland-Blur (Layer-Regel waybar-glass). */
+
+@define-color base     #1e1e2e;
+@define-color mantle   #181825;
+@define-color crust    #11111b;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color overlay0 #6c7086;
+@define-color text     #cdd6f4;
+@define-color subtext  #a6adc8;
+@define-color mauve    #cba6f7;
+@define-color blue     #89b4fa;
+@define-color pink     #f5c2e7;
+@define-color teal     #94e2d5;
+@define-color green    #a6e3a1;
+@define-color yellow   #f9e2af;
+@define-color peach    #fab387;
+@define-color red      #f38ba8;
+
+* {
+    font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background: transparent;
+    color: @text;
+}
+
+tooltip {
+    background: alpha(@base, 0.85);
+    border: 1px solid alpha(@mauve, 0.4);
+    border-radius: 12px;
+}
+tooltip label { color: @text; }
+
+/* Gemeinsamer Glas-Look fuer jede Insel */
+#custom-logo,
+#workspaces,
+#window,
+#clock,
+#mpris,
+#tray,
+#pulseaudio,
+#network,
+#cpu,
+#memory,
+#custom-notify,
+#custom-power {
+    background: alpha(@base, 0.45);
+    border: 1px solid alpha(@text, 0.08);
+    border-radius: 14px;
+    padding: 0 14px;
+    margin: 2px 0;
+    box-shadow: inset 0 1px alpha(@text, 0.06);
+    transition: all 0.25s ease;
+}
+
+#custom-logo {
+    color: @mauve;
+    font-size: 17px;
+    padding: 0 16px 0 13px;
+}
+#custom-logo:hover { background: alpha(@mauve, 0.18); }
+
+#workspaces { padding: 0 6px; }
+#workspaces button {
+    color: @overlay0;
+    padding: 0 6px;
+    background: transparent;
+    transition: all 0.3s cubic-bezier(.55, -0.68, .48, 1.68);
+}
+#workspaces button.active {
+    color: @mauve;
+    padding: 0 12px;
+}
+#workspaces button.urgent { color: @red; }
+#workspaces button:hover {
+    color: @pink;
+    background: transparent;
+    box-shadow: none;
+}
+
+#window { color: @subtext; }
+window#waybar.empty #window { background: transparent; border-color: transparent; box-shadow: none; }
+
+#clock {
+    color: @text;
+    background: alpha(@mauve, 0.18);
+    border-color: alpha(@mauve, 0.35);
+    font-size: 14px;
+}
+
+#mpris       { color: @green; }
+#mpris.paused{ color: @overlay0; }
+#pulseaudio  { color: @blue; }
+#pulseaudio.muted { color: @overlay0; }
+#network     { color: @teal; }
+#network.disconnected { color: @red; }
+#cpu         { color: @peach; }
+#memory      { color: @yellow; }
+#custom-notify { color: @pink; }
+
+#custom-power {
+    color: @red;
+    padding: 0 15px 0 13px;
+}
+#custom-power:hover { background: alpha(@red, 0.2); }
+
+#pulseaudio:hover,
+#network:hover,
+#mpris:hover,
+#custom-notify:hover { background: alpha(@surface1, 0.55); }

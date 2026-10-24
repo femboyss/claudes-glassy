@@ -1,0 +1,112 @@
+// Catppuccin Glass - Waybar
+// Doku: https://github.com/Alexays/Waybar/wiki
+// Icons sind als \uXXXX-Escapes drin (Nerd Font), damit nichts beim Kopieren kaputt geht.
+{
+    "layer": "top",
+    "position": "top",
+    "output": ["DP-3"],          // nur Hauptmonitor; Zeile loeschen = Bar auf allen Monitoren
+    "height": 38,
+    "margin-top": 8,
+    "margin-left": 14,
+    "margin-right": 14,
+    "spacing": 6,
+    "exclusive": true,
+    "reload_style_on_change": true,
+
+    "modules-left":   ["custom/logo", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock"],
+    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "cpu", "memory", "custom/notify", "custom/power"],
+
+    "custom/logo": {
+        "format": "",
+        "tooltip": false,
+        "on-click": "rofi -show drun"
+    },
+
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active":  "",
+            "default": "",
+            "empty":   ""
+        },
+        "persistent-workspaces": { "*": 5 }
+    },
+
+    "hyprland/window": {
+        "format": "{class}",
+        "max-length": 30,
+        "separate-outputs": true,
+        "rewrite": { "": "Desktop" }
+    },
+
+    "clock": {
+        "format": "  {:%H:%M}",
+        "format-alt": "  {:%A, %d. %B %Y}",
+        "locale": "de_AT.UTF-8",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "weeks-pos": "left",
+            "format": {
+                "months":   "<span color='#cba6f7'><b>{}</b></span>",
+                "days":     "<span color='#cdd6f4'>{}</span>",
+                "weeks":    "<span color='#94e2d5'>KW{}</span>",
+                "weekdays": "<span color='#f9e2af'><b>{}</b></span>",
+                "today":    "<span color='#f38ba8'><b><u>{}</u></b></span>"
+            }
+        }
+    },
+
+    "mpris": {
+        "format": "{player_icon}  {title}",
+        "format-paused": "{status_icon}  <i>{title}</i>",
+        "max-length": 32,
+        "player-icons":  { "default": "", "spotify": "", "firefox": "" },
+        "status-icons":  { "paused": "" }
+    },
+
+    "tray": { "icon-size": 16, "spacing": 8 },
+
+    "pulseaudio": {
+        "format": "{icon}  {volume}%",
+        "format-muted": "  aus",
+        "format-icons": { "default": ["", "", ""], "headphone": "" },
+        "scroll-step": 5,
+        "on-click": "pavucontrol",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+    },
+
+    "network": {
+        "format-wifi": "  {essid}",
+        "format-ethernet": "",
+        "format-disconnected": "",
+        "tooltip-format": "{ifname}  {ipaddr}\n {bandwidthDownBytes}   {bandwidthUpBytes}",
+        "on-click": "nm-connection-editor"
+    },
+
+    "cpu":    { "format": "  {usage}%", "interval": 3 },
+    "memory": { "format": "  {percentage}%", "interval": 5, "tooltip-format": "{used:0.1f} / {total:0.1f} GiB" },
+
+    "custom/notify": {
+        "tooltip": false,
+        "format": "{icon}",
+        "format-icons": {
+            "notification":     "<span foreground='#f38ba8'><sup></sup></span>",
+            "none":             "",
+            "dnd-notification": "<span foreground='#f38ba8'><sup></sup></span>",
+            "dnd-none":         ""
+        },
+        "return-type": "json",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    },
+
+    "custom/power": {
+        "format": "",
+        "tooltip": false,
+        "on-click": "~/.config/hypr/scripts/powermenu.sh"
+    }
+}

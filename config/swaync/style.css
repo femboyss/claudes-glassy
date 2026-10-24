@@ -1,0 +1,106 @@
+/* Catppuccin Glass - SwayNC */
+
+@define-color base     rgba(30, 30, 46, 0.55);
+@define-color card     rgba(49, 50, 68, 0.55);
+@define-color cardhov  rgba(69, 71, 90, 0.65);
+@define-color edge     rgba(205, 214, 244, 0.08);
+@define-color text     #cdd6f4;
+@define-color subtext  #a6adc8;
+@define-color mauve    #cba6f7;
+@define-color pink     #f5c2e7;
+@define-color red      #f38ba8;
+
+* {
+    font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif;
+    font-size: 13px;
+    color: @text;
+}
+
+/* ---------- Popup-Benachrichtigungen ---------- */
+.notification-row { outline: none; background: transparent; }
+
+.notification {
+    background: @base;
+    border: 1px solid @edge;
+    border-radius: 18px;
+    margin: 6px 12px;
+    padding: 0;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.notification-content { padding: 12px; }
+.notification.critical { border-color: @red; }
+
+.summary { font-weight: 700; font-size: 14px; }
+.time    { color: @subtext; font-size: 11px; margin-right: 22px; }
+.body    { color: @subtext; }
+
+.close-button {
+    background: @card;
+    color: @text;
+    border-radius: 99px;
+    margin: 8px;
+    min-width: 22px;
+    min-height: 22px;
+}
+.close-button:hover { background: @red; color: #1e1e2e; }
+
+.notification-default-action,
+.notification-action {
+    background: transparent;
+    border: none;
+    border-radius: 18px;
+}
+.notification-default-action:hover,
+.notification-action:hover { background: @cardhov; }
+
+/* ---------- Kontrollzentrum ---------- */
+.control-center {
+    background: @base;
+    border: 1px solid @edge;
+    border-radius: 22px;
+    padding: 6px;
+}
+
+.control-center-list { background: transparent; }
+
+.widget-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin: 10px 14px 4px 14px;
+}
+.widget-title > button {
+    background: @card;
+    border: 1px solid @edge;
+    border-radius: 12px;
+    padding: 4px 12px;
+}
+.widget-title > button:hover { background: @mauve; color: #1e1e2e; }
+
+.widget-dnd {
+    margin: 6px 14px;
+}
+.widget-dnd > switch {
+    background: @card;
+    border-radius: 99px;
+}
+.widget-dnd > switch:checked { background: @mauve; }
+.widget-dnd > switch slider { background: @text; border-radius: 99px; }
+
+.widget-mpris { margin: 6px 12px; }
+.widget-mpris-player {
+    background: @card;
+    border-radius: 16px;
+    padding: 10px;
+}
+.widget-mpris-title { font-weight: 700; }
+.widget-mpris-subtitle { color: @subtext; }
+
+.widget-volume {
+    background: @card;
+    border-radius: 16px;
+    margin: 6px 12px;
+    padding: 8px 12px;
+}
+.widget-volume trough { background: rgba(17, 17, 27, 0.6); border-radius: 99px; min-height: 6px; }
+.widget-volume highlight { background: @mauve; border-radius: 99px; }

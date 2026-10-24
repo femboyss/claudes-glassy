@@ -1,0 +1,122 @@
+/* Catppuccin Glass - Rofi (rofi 2.x, Wayland)
+   Doku: https://github.com/davatorium/rofi/blob/next/doc/rofi-theme.5.markdown */
+
+configuration {
+    modi:                "drun,run,window,filebrowser";
+    show-icons:          true;
+    icon-theme:          "Papirus-Dark";
+    display-drun:        "Apps";
+    display-run:         "Befehl";
+    display-window:      "Fenster";
+    display-filebrowser: "Dateien";
+    drun-display-format: "{name}";
+    matching:            "fuzzy";
+    sort:                true;
+    sorting-method:      "fzf";
+}
+
+* {
+    base:      rgba(30, 30, 46, 55%);
+    surface:   rgba(49, 50, 68, 55%);
+    text:      #cdd6f4;
+    subtext:   #a6adc8;
+    mauve:     #cba6f7;
+    pink:      #f5c2e7;
+    border-c:  rgba(205, 214, 244, 10%);
+
+    font:             "Inter SemiBold 12";
+    background-color: transparent;
+    text-color:       @text;
+    margin:  0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    location:         center;
+    width:            640px;
+    border:           1px solid;
+    border-color:     @border-c;
+    border-radius:    22px;
+    background-color: @base;
+}
+
+mainbox {
+    padding:  18px;
+    spacing:  14px;
+    children: [ "inputbar", "mode-switcher", "listview" ];
+}
+
+inputbar {
+    padding:          12px 16px;
+    spacing:          12px;
+    border-radius:    14px;
+    background-color: @surface;
+    children:         [ "prompt", "entry" ];
+}
+
+prompt {
+    text-color: @mauve;
+}
+
+entry {
+    placeholder:       "Suchen ...";
+    placeholder-color: @subtext;
+    cursor:            text;
+}
+
+mode-switcher {
+    spacing: 8px;
+}
+
+button {
+    padding:          8px;
+    border-radius:    10px;
+    text-color:       @subtext;
+    background-color: @surface;
+}
+
+button selected {
+    text-color:       #1e1e2e;
+    background-color: @mauve;
+}
+
+listview {
+    lines:        8;
+    columns:      1;
+    spacing:      6px;
+    fixed-height: true;
+    scrollbar:    false;
+}
+
+element {
+    padding:       10px 14px;
+    spacing:       14px;
+    border-radius: 12px;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+}
+
+element selected.normal {
+    background-color: rgba(203, 166, 247, 22%);
+    text-color:       @pink;
+}
+
+element-icon {
+    size: 28px;
+    vertical-align: 0.5;
+}
+
+element-text {
+    vertical-align: 0.5;
+    text-color:     inherit;
+}
+
+message {
+    padding:          10px;
+    border-radius:    12px;
+    background-color: @surface;
+}
