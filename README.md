@@ -29,8 +29,15 @@ Oder manuell:
     cd claudes-glassy
     bash install.sh
 
-Sichert vorher alles nach ~/.config-backup-catppuccin-glass-<datum>.
-Zurueck: `bash restore.sh <backup-ordner>`
+Der Installer zeigt ein Menue (Installieren / Backup wiederherstellen / Abbrechen)
+und fragt vor der Installation, ob ein Backup angelegt werden soll (Standard: ja).
+Backups landen in ~/.config-backup-catppuccin-glass-<datum>.
+
+Zurueck zum alten Setup:
+
+    bash ~/.local/share/claudes-glassy/install.sh --restore
+
+Listet alle Backups, du waehlst eins aus.
 
 Update: denselben Ein-Befehl nochmal ausfuehren.
 
