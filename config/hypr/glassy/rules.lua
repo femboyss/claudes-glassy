@@ -62,6 +62,17 @@ rule("layer", {
     ignore_alpha = 0.1,
     animation = "slide right",
 })
+-- Startmenue (GTK4, Layer-Shell): Blur nur hinter dem Panel, nicht hinter der transparenten Flaeche
+rule("layer", { name = "startmenu-glass", match = { namespace = "^glassy-startmenu$" }, blur = true, ignore_alpha = 0.35, animation = "fade" })
+-- Fallback ohne gtk4-layer-shell: normales Fenster oben links
+rule("window", {
+    name = "startmenu-window",
+    match = { class = "^glassy.startmenu$" },
+    float = true,
+    pin = true,
+    border_size = 0,
+    move = { "14", "54" },
+})
 rule("layer", { name = "no-anim-selection", match = { namespace = "^(selection|hyprpicker)$" }, no_anim = true })
 
 if #errors > 0 then

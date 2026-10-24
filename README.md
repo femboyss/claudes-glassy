@@ -90,7 +90,14 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
   (keybinds, monitors, env, look, animations, rules, autostart) einzeln und abgesichert.
   Ein Fehler in einem Modul stoppt die anderen nicht und erscheint als Benachrichtigung.
 - Wallpaper: `~/Pictures/Wallpapers` (mitgeliefert: Unterordner `claudes-glassy`).
-- Startmenue: angeheftete Apps in `~/.config/hypr/pinned-apps` (eine .desktop-ID pro Zeile).
+- Startmenue: eigene GTK4-App im Tokyo-Night-Look (`~/.config/hypr/startmenu/startmenu.py`),
+  Aufbau nach Linux Mint + KDE Kickoff: Suche oben, System-Knoepfe links, Kategorien,
+  Favoriten-Raster, Zuletzt verwendet, Orte unten. Favoriten per Rechtsklick oder in
+  `~/.config/hypr/pinned-apps`. Faellt auf ein Rofi-Menue zurueck, wenn GTK4 fehlt.
+  Fehler-Log: `~/.cache/claudes-glassy/startmenu.log`
+
+![Startmenue](assets/startmenu-preview.png)
+
 - Bar: Start-Knopf + Suchleiste links, laeuft auf allen Monitoren; Menues oeffnen sich auf dem Monitor, auf dem du klickst.
 - Sperrbildschirm-Avatar: `~/.face` (sonst Standardbild).
 

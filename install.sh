@@ -34,6 +34,7 @@ PKGS=(
     waybar rofi swaync kitty
     grim slurp wl-clipboard cliphist jq libnotify playerctl
     pavucontrol network-manager-applet btop xdg-utils
+    python-gobject gtk4 gtk4-layer-shell
     ttf-jetbrains-mono-nerd inter-font papirus-icon-theme
     swaybg
 )
