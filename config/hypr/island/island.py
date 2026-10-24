@@ -37,6 +37,7 @@ ART_CACHE = os.path.join(CACHE, "covers")
 SEP = "␟"   # Trennzeichen fuer playerctl-Ausgabe
 
 MARGIN_TOP = 8           # gleiche Hoehe wie die Waybar-Inseln
+SHADOW_PAD = 28          # unsichtbarer Rand ums Fenster, damit der Schatten nicht eckig abgeschnitten wird
 COMPACT_H = 38
 AUTO_EXPAND_SECS = 4     # bei Songwechsel so lange aufgeklappt
 
@@ -54,14 +55,14 @@ CSS = r"""
 @define-color tn_red     #f7768e;
 @define-color tn_hl      #292e42;
 
-window, window.background { background: transparent; }
+window, window.background, .frame { background: transparent; background-color: transparent; box-shadow: none; border: none; }
 * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
 
 .island {
     background-color: alpha(#06060a, 0.92);
     border: 1px solid alpha(@tn_blue, 0.16);
     border-radius: 19px;
-    box-shadow: 0 6px 20px alpha(black, 0.45);
+    box-shadow: 0 4px 14px alpha(black, 0.40);
     color: @tn_fg;
     padding: 0 14px;
     min-height: 36px;
@@ -71,7 +72,7 @@ window, window.background { background: transparent; }
     border-radius: 26px;
     padding: 0 16px;
     border-color: alpha(@tn_purple, 0.30);
-    box-shadow: 0 10px 34px alpha(black, 0.55), 0 0 22px alpha(@tn_purple, 0.10);
+    box-shadow: 0 6px 18px alpha(black, 0.50), 0 0 14px alpha(@tn_purple, 0.10);
 }
 
 .clock    { font-size: 13px; font-weight: 800; color: @tn_fg; }
@@ -244,7 +245,7 @@ class IslandWindow(Gtk.ApplicationWindow):
             LS.set_namespace(self, "glassy-island")
             LS.set_layer(self, LS.Layer.TOP)
             LS.set_anchor(self, LS.Edge.TOP, True)
-            LS.set_margin(self, LS.Edge.TOP, MARGIN_TOP)
+            LS.set_margin(self, LS.Edge.TOP, 0)
             LS.set_exclusive_zone(self, -1)
             LS.set_keyboard_mode(self, LS.KeyboardMode.NONE)
             if monitor is not None:
@@ -254,7 +255,15 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.pill.add_css_class("island")
         self.pill.set_halign(Gtk.Align.CENTER)
         self.pill.set_valign(Gtk.Align.START)
-        self.set_child(self.pill)
+        # Pille mit Abstand in einen durchsichtigen Rahmen setzen: Platz fuer Schatten + runde Ecken
+        self.pill.set_margin_top(MARGIN_TOP)
+        self.pill.set_margin_start(SHADOW_PAD)
+        self.pill.set_margin_end(SHADOW_PAD)
+        self.pill.set_margin_bottom(SHADOW_PAD)
+        frame = Gtk.Box()
+        frame.add_css_class("frame")
+        frame.append(self.pill)
+        self.set_child(frame)
 
         # ---- kompakte Zeile ----
         self.compact = Gtk.Stack()
