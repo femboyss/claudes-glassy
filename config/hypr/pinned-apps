@@ -1,0 +1,18 @@
+# claudes-glassy: Angeheftete Apps im Startmenue
+# Eine Zeile pro App = Name der .desktop-Datei ohne Endung.
+# Alternativen mit | trennen: die erste, die installiert ist, wird angezeigt.
+# Nicht installierte Apps werden einfach uebersprungen.
+# Desktop-Dateien finden:  ls /usr/share/applications ~/.local/share/applications
+#
+# Platz fuer 10 Apps (2 Reihen), die 3. Reihe sind die System-Kacheln.
+
+firefox|librewolf|chromium
+kitty
+org.kde.dolphin|org.gnome.Nautilus|thunar
+vesktop|discord|com.discordapp.Discord
+spotify|com.spotify.Client
+steam|com.valvesoftware.Steam
+code-oss|code|visual-studio-code|codium
+obsidian|md.obsidian.Obsidian
+org.prismlauncher.PrismLauncher|minecraft-launcher
+pavucontrol|org.pulseaudio.pavucontrol

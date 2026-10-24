@@ -16,8 +16,9 @@ GLASSY = {
     terminal    = "kitty",
     fileManager = "dolphin",
     browser     = "firefox",
-    menu        = "pkill -x rofi || rofi -show drun",
     scripts     = HOME .. "/.config/hypr/scripts",
+    startmenu   = HOME .. "/.config/hypr/scripts/startmenu.sh",
+    search      = HOME .. "/.config/hypr/scripts/search.sh",
     mainMod     = "SUPER",
     mainMonitor = "DP-3",
 }

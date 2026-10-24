@@ -40,7 +40,8 @@ tooltip {
 tooltip label { color: @text; }
 
 /* Gemeinsamer Glas-Look fuer jede Insel */
-#custom-logo,
+#custom-start,
+#custom-search,
 #workspaces,
 #window,
 #clock,
@@ -61,12 +62,30 @@ tooltip label { color: @text; }
     transition: all 0.25s ease;
 }
 
-#custom-logo {
+/* Start-Knopf */
+#custom-start {
     color: @mauve;
-    font-size: 17px;
-    padding: 0 16px 0 13px;
+    font-size: 18px;
+    padding: 0 17px 0 14px;
+    background: alpha(@mauve, 0.14);
+    border-color: alpha(@mauve, 0.30);
 }
-#custom-logo:hover { background: alpha(@mauve, 0.18); }
+#custom-start:hover {
+    background: alpha(@mauve, 0.30);
+    color: @pink;
+}
+
+/* Suchleiste */
+#custom-search {
+    color: @overlay0;
+    font-weight: 500;
+    padding: 0 90px 0 16px;      /* breit wie ein Suchfeld */
+}
+#custom-search:hover {
+    color: @subtext;
+    background: alpha(@surface1, 0.55);
+    border-color: alpha(@mauve, 0.35);
+}
 
 #workspaces { padding: 0 6px; }
 #workspaces button {

@@ -9,6 +9,7 @@
 # Backend: awww (mit Uebergaengen) -> swww -> swaybg (ohne Uebergaenge)
 # Der Sperrbildschirm nutzt automatisch das aktuelle Wallpaper.
 
+source "$HOME/.config/hypr/scripts/lib.sh" 2>/dev/null
 WALLDIR="${WALLDIR:-$HOME/Pictures/Wallpapers}"
 CACHE="$HOME/.cache/claudes-glassy"
 STATE="$CACHE/wallpaper-path"
@@ -77,7 +78,7 @@ pick_wall() {
     [ -z "$walls" ] && { notify "Keine Bilder" "Leg Bilder nach $WALLDIR"; exit 1; }
     sel="$(while IFS= read -r f; do
               printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$f"
-           done <<< "$walls" | rofi -dmenu -i -p "Wallpaper" -show-icons -format i \
+           done <<< "$walls" | glassy_rofi -dmenu -i -p "Wallpaper" -show-icons -format i \
               -theme-str '
                 window   { width: 1100px; }
                 listview { columns: 4; lines: 2; spacing: 14px; flow: horizontal; }

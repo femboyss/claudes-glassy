@@ -4,7 +4,7 @@
 {
     "layer": "top",
     "position": "top",
-    "output": ["DP-3"],          // nur Hauptmonitor; Zeile loeschen = Bar auf allen Monitoren
+    // Bar auf allen Monitoren. Nur Hauptmonitor:  "output": ["DP-3"],
     "height": 38,
     "margin-top": 8,
     "margin-left": 14,
@@ -13,14 +13,24 @@
     "exclusive": true,
     "reload_style_on_change": true,
 
-    "modules-left":   ["custom/logo", "hyprland/workspaces", "hyprland/window"],
+    "modules-left":   ["custom/start", "custom/search", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["clock"],
     "modules-right":  ["mpris", "tray", "pulseaudio", "network", "cpu", "memory", "custom/notify", "custom/power"],
 
-    "custom/logo": {
+    // Start-Knopf: Startmenue (oeffnet sich auf diesem Monitor)
+    "custom/start": {
         "format": "",
+        "tooltip": true,
+        "tooltip-format": "Start",
+        "on-click": "~/.config/hypr/scripts/startmenu.sh",
+        "on-click-right": "~/.config/hypr/scripts/sessionscreen.sh"
+    },
+
+    // Suchleiste neben dem Start-Knopf
+    "custom/search": {
+        "format": "   Suchen",
         "tooltip": false,
-        "on-click": "rofi -show drun"
+        "on-click": "~/.config/hypr/scripts/search.sh"
     },
 
     "hyprland/workspaces": {

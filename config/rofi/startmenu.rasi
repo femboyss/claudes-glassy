@@ -1,0 +1,63 @@
+/* claudes-glassy: Startmenue
+   Glas-Panel oben links unter der Bar, Raster mit angehefteten Apps. */
+
+@import "config.rasi"
+
+window {
+    location:      north west;
+    anchor:        north west;
+    x-offset:      14px;
+    y-offset:      54px;
+    width:         600px;
+    border-radius: 24px;
+}
+
+mainbox {
+    padding:  20px;
+    spacing:  16px;
+    children: [ "message", "inputbar", "listview" ];
+}
+
+message {
+    padding:          4px 6px 2px 6px;
+    background-color: transparent;
+}
+textbox {
+    markup:     true;
+    text-color: @text;
+}
+
+inputbar {
+    padding:  9px 14px;
+    children: [ "entry" ];
+}
+entry {
+    placeholder: "Tippen zum Filtern ...";
+}
+
+listview {
+    columns:       5;
+    lines:         3;
+    spacing:       10px;
+    flow:          horizontal;
+    fixed-columns: true;
+    fixed-height:  true;
+    dynamic:       false;
+}
+
+element {
+    orientation:   vertical;
+    padding:       14px 6px 10px 6px;
+    spacing:       8px;
+    border-radius: 16px;
+}
+
+element-icon {
+    size:              46px;
+    horizontal-align:  0.5;
+}
+
+element-text {
+    horizontal-align: 0.5;
+    font:             "Inter Medium 10";
+}

@@ -2,6 +2,8 @@
 # claudes-glassy: Strg+Alt+Entf-Bildschirm
 # Vollbild-Menue mit allen Sitzungs-Optionen (Rofi, Theme sessionscreen.rasi)
 
+source "$HOME/.config/hypr/scripts/lib.sh"
+
 THEME="$HOME/.config/rofi/sessionscreen.rasi"
 SCRIPTS="$HOME/.config/hypr/scripts"
 
@@ -33,7 +35,7 @@ up="$(uptime -p 2>/dev/null | sed 's/^up //; s/hours\?/Std/; s/minutes\?/Min/; s
 mesg="<span font_desc='Inter Bold 34'>$greet, ${USER^}</span>
 <span alpha='70%'>$(date '+%A, %d. %B  -  %H:%M')    -    an seit $up</span>"
 
-sel="$(printf '%s' "$entries" | rofi -dmenu \
+sel="$(printf '%s' "$entries" | glassy_rofi -dmenu \
     -theme "$THEME" \
     -p "" -mesg "$mesg" \
     -sep '|' -eh 2 -markup-rows \
@@ -46,7 +48,7 @@ confirm() {
     local yes=$'  Ja'
     local no=$'  Nein'
     local ans
-    ans="$(printf '%s\n%s' "$no" "$yes" | rofi -dmenu -p "$q" -no-custom \
+    ans="$(printf '%s\n%s' "$no" "$yes" | glassy_rofi -dmenu -p "$q" -no-custom \
         -theme-str 'window { width: 420px; } listview { lines: 2; } inputbar { children: [prompt]; } prompt { text-color: #f38ba8; }')"
     [ "$ans" = "$yes" ]
 }

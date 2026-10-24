@@ -72,11 +72,11 @@ try("window switcher", function()
 end)
 
 -------------------------------------------------
--- Super alleine antippen = Launcher (wie bei end-4)
+-- Super alleine antippen = Startmenue (wie Windows)
 -- Feuert nur, wenn Super ohne andere Taste losgelassen wird.
 -------------------------------------------------
 try("super tap", function()
-    hl.bind(M .. " + SUPER_L", sh(G.menu), { release = true })
+    hl.bind(M .. " + SUPER_L", sh(G.startmenu), { release = true })
 end)
 
 -------------------------------------------------
@@ -84,8 +84,9 @@ end)
 -------------------------------------------------
 try("apps", function()
     hl.bind(M .. " + Return", sh(G.terminal))
-    hl.bind(M .. " + Space",  sh(G.menu))
-    hl.bind(M .. " + R",      sh(G.menu))
+    hl.bind(M .. " + Space",  sh(G.search))       -- Suche
+    hl.bind(M .. " + R",      sh(G.search))
+    hl.bind(M .. " + A",      sh(G.startmenu))    -- Startmenue (falls Super-Tap mal nicht will)
     hl.bind(M .. " + E",      sh(G.fileManager))
     hl.bind(M .. " + B",      sh(G.browser))
 end)

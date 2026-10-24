@@ -45,8 +45,8 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 
 | Kuerzel                    | Aktion                                  |
 |----------------------------|-----------------------------------------|
-| SUPER antippen             | App-Launcher                            |
-| SUPER + Space / R          | App-Launcher                            |
+| SUPER antippen / SUPER + A | Startmenue                              |
+| SUPER + Space / R          | Suche (Apps, Fenster, Befehle)          |
 | CTRL + ALT + Entf          | Sitzungs-Bildschirm (alle Optionen)     |
 | CTRL + SHIFT + Esc         | Task-Manager                            |
 | SUPER + Return             | Kitty                                   |
@@ -90,6 +90,8 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
   (keybinds, monitors, env, look, animations, rules, autostart) einzeln und abgesichert.
   Ein Fehler in einem Modul stoppt die anderen nicht und erscheint als Benachrichtigung.
 - Wallpaper: `~/Pictures/Wallpapers` (mitgeliefert: Unterordner `claudes-glassy`).
+- Startmenue: angeheftete Apps in `~/.config/hypr/pinned-apps` (eine .desktop-ID pro Zeile).
+- Bar: Start-Knopf + Suchleiste links, laeuft auf allen Monitoren; Menues oeffnen sich auf dem Monitor, auf dem du klickst.
 - Sperrbildschirm-Avatar: `~/.face` (sonst Standardbild).
 
 ## Anpassen

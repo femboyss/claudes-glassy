@@ -33,7 +33,7 @@ PKGS=(
     hyprland hyprlock hypridle hyprpicker hyprpolkitagent xdg-desktop-portal-hyprland
     waybar rofi swaync kitty
     grim slurp wl-clipboard cliphist jq libnotify playerctl
-    pavucontrol network-manager-applet btop
+    pavucontrol network-manager-applet btop xdg-utils
     ttf-jetbrains-mono-nerd inter-font papirus-icon-theme
     swaybg
 )
