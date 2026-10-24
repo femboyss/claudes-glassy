@@ -107,6 +107,6 @@
     "custom/power": {
         "format": "",
         "tooltip": false,
-        "on-click": "~/.config/hypr/scripts/powermenu.sh"
+        "on-click": "~/.config/hypr/scripts/sessionscreen.sh"
     }
 }

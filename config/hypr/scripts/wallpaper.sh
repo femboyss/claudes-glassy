@@ -1,70 +1,106 @@
 #!/usr/bin/env bash
-# Wallpaper-Wechsler mit weichen Uebergaengen.
-# Nutzt awww (Nachfolger von swww), sonst swww, sonst swaybg.
-#   wallpaper.sh init   -> letztes Wallpaper wiederherstellen (Autostart)
-#   wallpaper.sh next   -> zufaelliges neues Wallpaper
-#   wallpaper.sh <datei>-> genau dieses Bild setzen
+# claudes-glassy: Wallpaper
+#   wallpaper.sh init    -> letztes Wallpaper wiederherstellen (Autostart)
+#   wallpaper.sh next    -> zufaelliges anderes Wallpaper      (SUPER+SHIFT+W)
+#   wallpaper.sh pick    -> Auswahl mit Vorschaubildern        (SUPER+W)
+#   wallpaper.sh <datei> -> genau dieses Bild setzen
+#
+# Bilder:  ~/Pictures/Wallpapers  (Unterordner gehen auch)
+# Backend: awww (mit Uebergaengen) -> swww -> swaybg (ohne Uebergaenge)
+# Der Sperrbildschirm nutzt automatisch das aktuelle Wallpaper.
 
 WALLDIR="${WALLDIR:-$HOME/Pictures/Wallpapers}"
-STATE="$HOME/.cache/catppuccin-glass-wallpaper"
-mkdir -p "$WALLDIR" "$(dirname "$STATE")"
+CACHE="$HOME/.cache/claudes-glassy"
+STATE="$CACHE/wallpaper-path"
+LINK="$CACHE/wallpaper"          # -> fuer hyprlock
+mkdir -p "$WALLDIR" "$CACHE"
 
-if command -v awww >/dev/null 2>&1; then
-    D=awww; DAEMON="awww-daemon"
-elif command -v swww >/dev/null 2>&1; then
-    D=swww; DAEMON="swww-daemon"
-else
-    D=swaybg; DAEMON=""
-fi
+notify() { command -v notify-send >/dev/null 2>&1 && notify-send -a Wallpaper "$@"; }
 
-start_daemon() {
-    [ -z "$DAEMON" ] && return
-    if ! "$D" query >/dev/null 2>&1; then
-        "$DAEMON" >/dev/null 2>&1 &
-        for _ in $(seq 1 30); do
-            "$D" query >/dev/null 2>&1 && break
-            sleep 0.1
-        done
+list_walls() {
+    find -L "$WALLDIR" -maxdepth 2 -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \) \
+        2>/dev/null | sort
+}
+
+backend() {
+    if command -v awww >/dev/null 2>&1; then echo awww
+    elif command -v swww >/dev/null 2>&1; then echo swww
+    else echo swaybg
     fi
+}
+
+ensure_daemon() {   # $1 = awww|swww
+    local d="$1"
+    "$d" query >/dev/null 2>&1 && return 0
+    setsid -f "${d}-daemon" >/dev/null 2>&1
+    for _ in $(seq 1 50); do
+        "$d" query >/dev/null 2>&1 && return 0
+        sleep 0.1
+    done
+    return 1
 }
 
 set_wall() {
-    local img="$1"
-    [ -f "$img" ] || { notify-send "Wallpaper" "Datei nicht gefunden: $img"; exit 1; }
-    if [ "$D" = "swaybg" ]; then
-        pkill -x swaybg
-        setsid -f swaybg -i "$img" -m fill >/dev/null 2>&1
-    else
-        start_daemon
-        "$D" img "$img" \
+    local img="$1" b
+    [ -f "$img" ] || { notify "Datei nicht gefunden" "$img"; exit 1; }
+    img="$(realpath "$img")"
+    b="$(backend)"
+
+    if [ "$b" != swaybg ] && ensure_daemon "$b"; then
+        pkill -x swaybg 2>/dev/null
+        "$b" img "$img" \
             --transition-type grow \
-            --transition-pos 0.5,0.5 \
-            --transition-duration 1.2 \
-            --transition-fps 144
+            --transition-pos center \
+            --transition-duration 1.4 \
+            --transition-fps 144 \
+            --transition-bezier .43,1.19,1,.4 >/dev/null 2>&1 \
+        || "$b" img "$img" >/dev/null 2>&1
+    else
+        pkill -x swaybg 2>/dev/null
+        setsid -f swaybg -i "$img" -m fill >/dev/null 2>&1
     fi
+
     echo "$img" > "$STATE"
+    ln -sfn "$img" "$LINK"
 }
 
 random_wall() {
-    find "$WALLDIR" -maxdepth 2 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \) \
-        | grep -vxF "$(cat "$STATE" 2>/dev/null)" | shuf -n 1
+    local cur; cur="$(cat "$STATE" 2>/dev/null)"
+    list_walls | grep -vxF "${cur:-/nonexistent}" | shuf -n 1
 }
 
-case "$1" in
+pick_wall() {
+    pkill -x rofi && exit 0
+    local walls sel
+    walls="$(list_walls)"
+    [ -z "$walls" ] && { notify "Keine Bilder" "Leg Bilder nach $WALLDIR"; exit 1; }
+    sel="$(while IFS= read -r f; do
+              printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$f"
+           done <<< "$walls" | rofi -dmenu -i -p "Wallpaper" -show-icons -format i \
+              -theme-str '
+                window   { width: 1100px; }
+                listview { columns: 4; lines: 2; spacing: 14px; flow: horizontal; }
+                element  { orientation: vertical; padding: 10px; spacing: 8px; border-radius: 16px; }
+                element-icon { size: 200px; border-radius: 12px; }
+                element-text { horizontal-align: 0.5; }
+                inputbar { children: [prompt, entry]; }')" || exit 0
+    set_wall "$(sed -n "$((sel + 1))p" <<< "$walls")"
+}
+
+case "${1:-next}" in
     init)
         img="$(cat "$STATE" 2>/dev/null)"
-        [ -f "$img" ] || img="$(random_wall)"
-        [ -n "$img" ] && set_wall "$img"
+        [ -f "$img" ] || img="$(list_walls | head -n 1)"
+        if [ -n "$img" ]; then set_wall "$img"; else notify "Keine Bilder" "Leg Bilder nach $WALLDIR"; fi
         ;;
-    next|"")
+    next)
         img="$(random_wall)"
-        if [ -z "$img" ]; then
-            notify-send "Wallpaper" "Keine Bilder in $WALLDIR"
-            exit 1
-        fi
+        [ -z "$img" ] && img="$(list_walls | head -n 1)"
+        [ -z "$img" ] && { notify "Keine Bilder" "Leg Bilder nach $WALLDIR"; exit 1; }
         set_wall "$img"
+        notify "Wallpaper" "$(basename "$img")"
         ;;
-    *)
-        set_wall "$1"
-        ;;
+    pick) pick_wall ;;
+    *)    set_wall "$1" ;;
 esac

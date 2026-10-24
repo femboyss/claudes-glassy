@@ -1,0 +1,93 @@
+/* claudes-glassy: Strg+Alt+Entf-Bildschirm
+   Vollbild, abgedunkelter Glas-Hintergrund, grosse Kacheln. */
+
+* {
+    text:      #cdd6f4;
+    subtext:   #a6adc8;
+    mauve:     #cba6f7;
+    pink:      #f5c2e7;
+    red:       #f38ba8;
+    tile:      rgba(49, 50, 68, 45%);
+    tileedge:  rgba(205, 214, 244, 10%);
+    font:             "Inter SemiBold 13";
+    background-color: transparent;
+    text-color:       @text;
+    margin: 0; padding: 0; spacing: 0;
+}
+
+window {
+    fullscreen:       true;
+    background-color: rgba(17, 17, 27, 62%);
+    padding:          0;
+}
+
+mainbox {
+    children:  [ "spacer-top", "message", "listview", "textbox-hint", "spacer-bottom" ];
+    spacing:   34px;
+    padding:   0 18%;
+    orientation: vertical;
+}
+
+spacer-top, spacer-bottom { expand: true; }
+
+message {
+    background-color: transparent;
+}
+textbox {
+    horizontal-align: 0.5;
+    markup: true;
+    text-color: @text;
+    font: "Inter Light 15";
+}
+
+listview {
+    columns:  4;
+    lines:    2;
+    spacing:  22px;
+    cycle:    true;
+    dynamic:  false;
+    fixed-height: true;
+    fixed-columns: true;
+    flow:     horizontal;
+    scrollbar: false;
+    expand:   false;
+}
+
+element {
+    padding:          26px 10px;
+    border:           1px solid;
+    border-color:     @tileedge;
+    border-radius:    24px;
+    background-color: @tile;
+    orientation:      vertical;
+    cursor:           pointer;
+}
+
+element selected.normal {
+    background-color: rgba(203, 166, 247, 28%);
+    border-color:     rgba(203, 166, 247, 70%);
+}
+element selected.urgent {
+    background-color: rgba(243, 139, 168, 30%);
+    border-color:     rgba(243, 139, 168, 80%);
+}
+element normal.urgent, element alternate.urgent {
+    background-color: @tile;
+}
+
+element-icon { enabled: false; }
+
+element-text {
+    horizontal-align: 0.5;
+    vertical-align:   0.5;
+    text-color:       inherit;
+    markup:           true;
+}
+
+textbox-hint {
+    expand: false;
+    str: "Pfeiltasten / Maus  -  Enter waehlen  -  Esc abbrechen";
+    horizontal-align: 0.5;
+    text-color: @subtext;
+    font: "Inter 11";
+}

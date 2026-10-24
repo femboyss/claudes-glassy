@@ -43,35 +43,47 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 
 ## Tastenkuerzel
 
-| Kuerzel              | Aktion                          |
-|----------------------|---------------------------------|
-| SUPER + Return       | Kitty                           |
-| SUPER + Space        | App-Launcher                    |
-| SUPER + E / B        | Dateimanager / Firefox          |
-| SUPER + Q            | Fenster schliessen              |
-| SUPER + F            | Vollbild                        |
-| SUPER + SHIFT + F    | Maximieren                      |
-| SUPER + T            | Schwebend an/aus                |
-| SUPER + C            | Fenster zentrieren              |
-| SUPER + SHIFT + P    | Fenster anpinnen                |
-| SUPER + J            | Split drehen                    |
-| SUPER + Pfeile       | Fokus                           |
-| SUPER + SHIFT + Pfeile | Fenster verschieben           |
-| SUPER + CTRL + Pfeile| Groesse aendern                 |
-| SUPER + 1..0         | Workspace                       |
-| SUPER + SHIFT + 1..0 | Fenster auf Workspace (folgen)  |
-| SUPER + ALT + 1..0   | Fenster auf Workspace (bleiben) |
-| SUPER + S            | Scratchpad                      |
-| SUPER + V            | Zwischenablage-Verlauf          |
-| SUPER + N            | Benachrichtigungs-Zentrum       |
-| SUPER + L            | Sperren                         |
-| SUPER + Escape       | Power-Menue                     |
-| SUPER + SHIFT + W    | Naechstes Wallpaper             |
-| SUPER + SHIFT + B    | Bar ein/aus                     |
-| SUPER + SHIFT + R    | Bar neu starten                 |
-| SUPER + SHIFT + C    | Farbpipette                     |
-| Print / SHIFT+Print  | Screenshot Bereich / Monitor    |
-| SUPER + SHIFT + M    | Hyprland beenden                |
+| Kuerzel                    | Aktion                                  |
+|----------------------------|-----------------------------------------|
+| SUPER antippen             | App-Launcher                            |
+| SUPER + Space / R          | App-Launcher                            |
+| CTRL + ALT + Entf          | Sitzungs-Bildschirm (alle Optionen)     |
+| CTRL + SHIFT + Esc         | Task-Manager                            |
+| SUPER + Return             | Kitty                                   |
+| SUPER + E / B              | Dateimanager / Firefox                  |
+| SUPER + Q                  | Fenster schliessen                      |
+| SUPER + F / SHIFT + F      | Vollbild / Maximieren                   |
+| SUPER + T                  | Schwebend an/aus                        |
+| SUPER + C                  | Fenster zentrieren                      |
+| SUPER + SHIFT + P          | Fenster anpinnen                        |
+| SUPER + J                  | Split drehen                            |
+| SUPER + Pfeile             | Fokus                                   |
+| SUPER + SHIFT + Pfeile     | Fenster verschieben                     |
+| SUPER + ALT + Pfeile       | Groesse aendern                         |
+| SUPER + 1..0               | Workspace                               |
+| CTRL + SUPER + links/rechts| Vorheriger / naechster Workspace        |
+| CTRL + SUPER + SHIFT + l/r | Fenster mitnehmen                       |
+| SUPER + Tab                | Letzter Workspace                       |
+| SUPER + SHIFT + 1..0       | Fenster auf Workspace (folgen)          |
+| SUPER + ALT + 1..0         | Fenster auf Workspace (bleiben)         |
+| SUPER + S                  | Scratchpad                              |
+| SUPER + W                  | Wallpaper-Auswahl mit Vorschau          |
+| SUPER + SHIFT + W          | Zufaelliges Wallpaper                   |
+| SUPER + V                  | Zwischenablage-Verlauf                  |
+| SUPER + N                  | Benachrichtigungs-Zentrum               |
+| SUPER + L                  | Sperren                                 |
+| SUPER + Escape             | Kleines Power-Menue                     |
+| SUPER + SHIFT + B / R      | Bar ein/aus / neu starten               |
+| SUPER + SHIFT + C          | Farbpipette                             |
+| Print / SHIFT + Print      | Screenshot Bereich / Monitor            |
+
+## Aufbau
+
+- `~/.config/hypr/hyprland.lua` laedt die Module aus `~/.config/hypr/glassy/`
+  (keybinds, monitors, env, look, animations, rules, autostart) einzeln und abgesichert.
+  Ein Fehler in einem Modul stoppt die anderen nicht und erscheint als Benachrichtigung.
+- Wallpaper: `~/Pictures/Wallpapers` (mitgeliefert: Unterordner `claudes-glassy`).
+- Sperrbildschirm-Avatar: `~/.face` (sonst Standardbild).
 
 ## Anpassen
 

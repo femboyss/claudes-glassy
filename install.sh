@@ -33,7 +33,7 @@ PKGS=(
     hyprland hyprlock hypridle hyprpicker hyprpolkitagent xdg-desktop-portal-hyprland
     waybar rofi swaync kitty
     grim slurp wl-clipboard cliphist jq libnotify playerctl
-    pavucontrol network-manager-applet
+    pavucontrol network-manager-applet btop
     ttf-jetbrains-mono-nerd inter-font papirus-icon-theme
     swaybg
 )
@@ -81,8 +81,14 @@ do_install() {
             elif sudo pacman -S --needed --noconfirm swww 2>/dev/null; then
                 c_ok "swww installiert"
             else
-                c_warn "awww/swww nicht in den Repos - nutze swaybg (ohne Uebergaenge)."
-                c_warn "Optional spaeter:  yay -S awww"
+                local aur=""
+                command -v paru >/dev/null 2>&1 && aur=paru
+                command -v yay  >/dev/null 2>&1 && aur=yay
+                if [ -n "$aur" ] && ask "awww (Wallpaper mit Uebergaengen) aus dem AUR mit $aur installieren?" j; then
+                    "$aur" -S --needed awww || c_warn "awww-Installation fehlgeschlagen - nutze swaybg."
+                else
+                    c_warn "Kein awww/swww - nutze swaybg (ohne Uebergaenge). Spaeter:  yay -S awww"
+                fi
             fi
         fi
     }
@@ -114,6 +120,26 @@ do_install() {
     chmod +x "$HOME/.config/hypr/scripts/"*.sh
     mkdir -p "$HOME/Pictures/Wallpapers" "$HOME/Pictures/Screenshots"
 
+    # Mitgelieferte Wallpaper (eigener Unterordner, ueberschreibt nichts von dir)
+    mkdir -p "$HOME/Pictures/Wallpapers/claudes-glassy"
+    cp -n "$HERE/wallpapers/"*.jpg "$HOME/Pictures/Wallpapers/claudes-glassy/" 2>/dev/null || true
+    c_ok "Wallpaper: ~/Pictures/Wallpapers/claudes-glassy"
+
+    # Avatar fuer den Sperrbildschirm: ~/.face wenn vorhanden, sonst Standardbild
+    if [ -f "$HOME/.face" ]; then
+        ln -sfn "$HOME/.face" "$HOME/.config/hypr/avatar.png"
+        c_ok "Avatar: ~/.face"
+    else
+        cp "$HERE/assets/avatar.png" "$HOME/.config/hypr/avatar.png"
+        c_info "Avatar: Standardbild (eigenes Bild als ~/.face ablegen und Installer erneut starten)"
+    fi
+
+    # Erstes Wallpaper setzen, damit auch der Sperrbildschirm eins hat
+    mkdir -p "$HOME/.cache/claudes-glassy"
+    [ -f "$HOME/.cache/claudes-glassy/wallpaper-path" ] || \
+        echo "$HOME/Pictures/Wallpapers/claudes-glassy/01-aurora.jpg" > "$HOME/.cache/claudes-glassy/wallpaper-path" 2>/dev/null || true
+    ln -sfn "$(cat "$HOME/.cache/claudes-glassy/wallpaper-path")" "$HOME/.cache/claudes-glassy/wallpaper" 2>/dev/null || true
+
     [ -f "$HOME/.config/hypr/custom.lua" ] || cat > "$HOME/.config/hypr/custom.lua" <<'EOF'
 -- Eigene Ergaenzungen. Diese Datei wird am Ende von hyprland.lua geladen.
 -- Beispiel:
@@ -124,7 +150,8 @@ EOF
 
     echo
     c_ok "Fertig."
-    echo "  - Wallpaper in ~/Pictures/Wallpapers legen, dann SUPER+SHIFT+W"
+    echo "  - Wallpaper: SUPER+W (Auswahl), SUPER+SHIFT+W (zufaellig). Eigene Bilder nach ~/Pictures/Wallpapers"
+    echo "  - Strg+Alt+Entf: Sitzungs-Bildschirm  |  Super antippen: Launcher  |  Strg+Super+Pfeile: Workspace"
     echo "  - Monitore pruefen:  hyprctl monitors   (Abschnitt MONITORE in ~/.config/hypr/hyprland.lua)"
     if [ "$make_backup" = 1 ]; then
         echo "  - Zurueck zum alten Setup:  bash $HERE/install.sh --restore"
