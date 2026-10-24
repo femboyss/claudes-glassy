@@ -37,7 +37,7 @@ end)
 
 try("scratchpad", function()
     hl.bind(M .. " + S",          hl.dsp.workspace.toggle_special("magic"))
-    hl.bind(M .. " + SHIFT + S",  hl.dsp.window.move({ workspace = "special:magic" }))
+    hl.bind(M .. " + CTRL + S",   hl.dsp.window.move({ workspace = "special:magic" }))
 end)
 
 -------------------------------------------------
@@ -143,6 +143,7 @@ try("tools", function()
     hl.bind(M .. " + SHIFT + C",  sh("hyprpicker -a"))
     hl.bind("Print",              sh(S .. "/screenshot.sh area"))
     hl.bind("SHIFT + Print",      sh(S .. "/screenshot.sh full"))
+    hl.bind(M .. " + SHIFT + S",  sh(S .. "/screenshot.sh area"))     -- wie bei Windows
     hl.bind(M .. " + SHIFT + M",  sh("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 end)
 

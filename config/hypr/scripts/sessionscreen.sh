@@ -12,11 +12,11 @@ pkill -x rofi && exit 0
 
 icon() { printf '<span font_desc="JetBrainsMono Nerd Font 38">%s</span>' "$1"; }
 
-# Reihenfolge = Kachel-Reihenfolge (4 pro Zeile)
-labels=( "Sperren" "Abmelden" "Energiesparen" "Ruhezustand"
-         "Task-Manager" "Neustart" "UEFI / BIOS" "Herunterfahren" )
-icons=(  $'' $'' $'' $''
-         $'' $'' $'' $'' )
+# Reihenfolge = Kachel-Reihenfolge (5 pro Zeile)
+labels=( "Sperren" "Abmelden" "Energiesparen" "Ruhezustand" "Screenshot"
+         "Task-Manager" "Neustart" "UEFI / BIOS" "Herunterfahren" "Screenshot in 5 s" )
+icons=(  $'\uf023' $'\uf08b' $'\uf186' $'\uf2dc' $'\uf030'
+         $'\uf0e4' $'\uf021' $'\uf2db' $'\uf011' $'\uf017' )
 
 entries=""
 for i in "${!labels[@]}"; do
@@ -39,7 +39,7 @@ sel="$(printf '%s' "$entries" | glassy_rofi -dmenu \
     -theme "$THEME" \
     -p "" -mesg "$mesg" \
     -sep '|' -eh 2 -markup-rows \
-    -u 7 -a 0 \
+    -u 8 -a 0 \
     -selected-row 0 -format i \
     -no-custom)" || exit 0
 
@@ -66,8 +66,10 @@ case "$sel" in
     1) confirm "Wirklich abmelden?"        && logout_cmd ;;
     2) systemctl suspend ;;
     3) systemctl hibernate || notify-send "Ruhezustand" "Nicht verfuegbar (braucht genug Swap + resume-Hook)." ;;
-    4) "$SCRIPTS/taskmanager.sh" ;;
-    5) confirm "Wirklich neu starten?"     && systemctl reboot ;;
-    6) confirm "Neustart ins UEFI/BIOS?"   && systemctl reboot --firmware-setup ;;
-    7) confirm "Wirklich herunterfahren?"  && systemctl poweroff ;;
+    4) "$SCRIPTS/screenshot.sh" area ;;
+    5) "$SCRIPTS/taskmanager.sh" ;;
+    6) confirm "Wirklich neu starten?"     && systemctl reboot ;;
+    7) confirm "Neustart ins UEFI/BIOS?"   && systemctl reboot --firmware-setup ;;
+    8) confirm "Wirklich herunterfahren?"  && systemctl poweroff ;;
+    9) "$SCRIPTS/screenshot.sh" delay 5 ;;
 esac

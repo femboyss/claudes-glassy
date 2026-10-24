@@ -47,7 +47,7 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 |----------------------------|-----------------------------------------|
 | SUPER antippen / SUPER + A | Startmenue                              |
 | SUPER + Space / R          | Suche (Apps, Fenster, Befehle)          |
-| CTRL + ALT + Entf          | Sitzungs-Bildschirm (alle Optionen)     |
+| CTRL + ALT + Entf          | Sitzungs-Bildschirm (inkl. Screenshot)  |
 | CTRL + SHIFT + Esc         | Task-Manager                            |
 | SUPER + Return             | Kitty                                   |
 | SUPER + E / B              | Dateimanager / Firefox                  |
@@ -67,7 +67,7 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 | SUPER + SHIFT + 1..0       | Fenster auf Workspace (folgen)          |
 | SUPER + ALT + 1..0         | Fenster auf Workspace (bleiben)         |
 | SUPER + S                  | Scratchpad anzeigen                     |
-| SUPER + SHIFT + S          | Fenster in den Scratchpad parken        |
+| SUPER + CTRL + S           | Fenster in den Scratchpad parken        |
 | SUPER + F1 / F2 / F3       | Zu Monitor DP-3 / HDMI-A-1 / DP-1       |
 | SUPER + SHIFT + F1..F3     | Fenster auf diesen Monitor schieben     |
 | SUPER + . / ,              | Naechster / vorheriger Monitor          |
@@ -82,7 +82,8 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 | SUPER + Escape             | Kleines Power-Menue                     |
 | SUPER + SHIFT + B / R      | Bar ein/aus / neu starten               |
 | SUPER + SHIFT + C          | Farbpipette                             |
-| Print / SHIFT + Print      | Screenshot Bereich / Monitor            |
+| Print / SUPER + SHIFT + S  | Screenshot Bereich                      |
+| SHIFT + Print              | Screenshot Monitor                      |
 
 ## Aufbau
 

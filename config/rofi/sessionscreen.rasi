@@ -24,7 +24,7 @@ window {
 mainbox {
     children:  [ "spacer-top", "message", "listview", "textbox-hint", "spacer-bottom" ];
     spacing:   34px;
-    padding:   0 18%;
+    padding:   0 12%;
     orientation: vertical;
 }
 
@@ -41,7 +41,7 @@ textbox {
 }
 
 listview {
-    columns:  4;
+    columns:  5;
     lines:    2;
     spacing:  22px;
     cycle:    true;
