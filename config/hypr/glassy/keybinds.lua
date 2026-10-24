@@ -144,6 +144,7 @@ try("tools", function()
     hl.bind("Print",              sh(S .. "/screenshot.sh area"))
     hl.bind("SHIFT + Print",      sh(S .. "/screenshot.sh full"))
     hl.bind(M .. " + SHIFT + S",  sh(S .. "/screenshot.sh area"))     -- wie bei Windows
+    hl.bind(M .. " + ALT + R",    sh(S .. "/record.sh"))               -- Bildschirmaufnahme an/aus (wie Windows)
     hl.bind(M .. " + SHIFT + M",  sh("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 end)
 

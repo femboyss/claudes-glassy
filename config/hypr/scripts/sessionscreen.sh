@@ -13,9 +13,9 @@ pkill -x rofi && exit 0
 icon() { printf '<span font_desc="JetBrainsMono Nerd Font 28">%s</span>' "$1"; }
 
 # Reihenfolge = Kachel-Reihenfolge (5 pro Zeile)
-labels=( "Sperren" "Abmelden" "Energiesparen" "Ruhezustand" "Screenshot"
+labels=( "Sperren" "Abmelden" "Energiesparen" "Aufnahme" "Screenshot"
          "Task-Manager" "Neustart" "UEFI / BIOS" "Herunterfahren" "Screenshot in 5 s" )
-icons=(  $'\uf023' $'\uf08b' $'\uf186' $'\uf2dc' $'\uf030'
+icons=(  $'\uf023' $'\uf08b' $'\uf186' $'\uf03d' $'\uf030'
          $'\uf0e4' $'\uf021' $'\uf2db' $'\uf011' $'\uf017' )
 
 entries=""
@@ -65,7 +65,7 @@ case "$sel" in
     0) pidof hyprlock || hyprlock ;;
     1) confirm "Wirklich abmelden?"        && logout_cmd ;;
     2) systemctl suspend ;;
-    3) systemctl hibernate || notify-send "Ruhezustand" "Nicht verfuegbar (braucht genug Swap + resume-Hook)." ;;
+    3) "$SCRIPTS/record.sh" ;;
     4) "$SCRIPTS/screenshot.sh" area ;;
     5) "$SCRIPTS/taskmanager.sh" ;;
     6) confirm "Wirklich neu starten?"     && systemctl reboot ;;

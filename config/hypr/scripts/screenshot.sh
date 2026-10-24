@@ -56,8 +56,19 @@ case "${1:-area}" in
         ;;
     area|*)
         command -v slurp >/dev/null 2>&1 || fail "slurp fehlt - installieren:  sudo pacman -S slurp"
+        # Bildschirm einfrieren, solange du auswaehlst (Videos/Spiele laufen nicht weiter)
+        FREEZE_PID=""
+        if command -v hyprpicker >/dev/null 2>&1; then
+            hyprpicker -r -z >/dev/null 2>&1 &
+            FREEZE_PID=$!
+            sleep 0.2
+        fi
+        unfreeze() { [ -n "$FREEZE_PID" ] && kill "$FREEZE_PID" 2>/dev/null; }
+        trap unfreeze EXIT
         GEOM="$(slurp -b 1a1b2688 -c 7aa2f7ff -s 7aa2f722 -w 2 -d 2>>"$LOG")" || exit 0   # Esc = abbrechen
+        sleep 0.05
         grim -g "$GEOM" "$FILE" 2>>"$LOG" || fail "grim konnte den Bereich nicht aufnehmen (siehe $LOG)"
+        unfreeze
         ;;
 esac
 

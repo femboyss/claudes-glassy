@@ -80,6 +80,8 @@ rule("window", {
     border_size = 0,
     move = { "14", "54" },
 })
+-- Zwischenablage (GTK4, Layer-Shell)
+rule("layer", { name = "clipboard-glass", match = { namespace = "^glassy-clipboard$" }, blur = true, ignore_alpha = 0.35, animation = "popin 94%" })
 -- Dynamic Island
 rule("layer", { name = "island", match = { namespace = "^glassy-island$" }, blur = true, ignore_alpha = 0.6, animation = "slide top" })  -- 0.6: Schatten nicht mitblurren
 rule("layer", { name = "no-anim-selection", match = { namespace = "^(selection|hyprpicker)$" }, no_anim = true })

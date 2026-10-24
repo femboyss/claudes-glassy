@@ -76,7 +76,8 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 | SUPER + O                  | Liste aller offenen Fenster             |
 | SUPER + W                  | Wallpaper-Auswahl mit Vorschau          |
 | SUPER + SHIFT + W          | Zufaelliges Wallpaper                   |
-| SUPER + V                  | Zwischenablage-Verlauf                  |
+| SUPER + V                  | Zwischenablage (Suche, Loeschen je Eintrag, Alles loeschen) |
+| SUPER + ALT + R            | Bildschirmaufnahme starten / stoppen    |
 | SUPER + N                  | Benachrichtigungs-Zentrum               |
 | SUPER + L                  | Sperren                                 |
 | SUPER + Escape             | Kleines Power-Menue                     |
@@ -106,7 +107,12 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 - Startmenue-Einstellungen: Regler-Symbol oben rechts im Menue (Profilbild, Uhr,
   Zuletzt verwendet, Beschreibungen, Kategorie-Hover). Die Suche kann auch rechnen
   (`12*7+3`) und im Web suchen.
-- Zwischenablage (SUPER+V): Entf loescht einen Eintrag, Shift+Entf alles.
+- Zwischenablage (SUPER+V): eigene GTK4-App mit Suche, Bild-Vorschau, Muelleimer pro Eintrag
+  und "Alles loeschen" (zweimal klicken). Tasten: Enter einfuegen, Entf loeschen, Shift+Entf alles.
+- Screenshot: Der Bildschirm friert ein, solange du den Bereich auswaehlst (hyprpicker).
+- Bildschirmaufnahme (SUPER+ALT+R oder Strg+Alt+Entf -> Aufnahme): Bereich oder Monitor,
+  mit oder ohne Ton, NVENC wenn moeglich. Die Island zeigt REC + Zeit, Klick darauf stoppt.
+  Videos: ~/Videos/Aufnahmen
 
 - Bar: Start-Knopf + Suchleiste links, laeuft auf allen Monitoren; Menues oeffnen sich auf dem Monitor, auf dem du klickst.
 - Sperrbildschirm-Avatar: `~/.face` (sonst Standardbild).

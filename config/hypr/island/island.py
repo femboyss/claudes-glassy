@@ -124,6 +124,14 @@ button.ctl.main  { min-width: 36px; min-height: 36px; font-size: 15px;
                    background-color: alpha(@tn_fg, 0.92); color: #06060a; }
 button.ctl.main:hover { background-color: @tn_cyan; color: #06060a; }
 
+/* Aufnahme */
+.recdot  { background-color: #f7768e; border-radius: 99px; min-width: 9px; min-height: 9px;
+           animation: recpulse 1.2s ease-in-out infinite; }
+@keyframes recpulse { 0% { opacity: 1; } 50% { opacity: 0.25; } 100% { opacity: 1; } }
+.rectext { font-size: 11.5px; font-weight: 800; color: #f7768e; letter-spacing: 1px; }
+.rectime { font-size: 12px; font-weight: 700; color: @tn_fg; font-feature-settings: "tnum"; }
+.rechint { font-size: 9.5px; color: @tn_comment; }
+
 /* Lautstaerke */
 .volglyph { font-family: "JetBrainsMono Nerd Font"; font-size: 13px; color: @tn_blue; }
 .volpct   { font-size: 11.5px; font-weight: 800; color: @tn_fg; min-width: 34px; }
@@ -226,6 +234,7 @@ class State:
         self.art_pixbuf = None
         self.volume = None
         self.muted = False
+        self.rec_start = 0
 
     @property
     def has_media(self):
@@ -307,6 +316,23 @@ class IslandWindow(Gtk.ApplicationWindow):
         self.vpct.add_css_class("volpct")
         vrow.append(self.vpct)
         self.compact.add_named(vrow, "volume")
+
+        rrow = Gtk.Box(spacing=8)
+        rrow.set_valign(Gtk.Align.CENTER)
+        dot = Gtk.Box()
+        dot.add_css_class("recdot")
+        dot.set_valign(Gtk.Align.CENTER)
+        rrow.append(dot)
+        rt = Gtk.Label(label="REC")
+        rt.add_css_class("rectext")
+        rrow.append(rt)
+        self.rectime = Gtk.Label(label="0:00")
+        self.rectime.add_css_class("rectime")
+        rrow.append(self.rectime)
+        rh = Gtk.Label(label="Klick = Stopp")
+        rh.add_css_class("rechint")
+        rrow.append(rh)
+        self.compact.add_named(rrow, "rec")
 
         self.pill.append(self.compact)
 
@@ -446,11 +472,14 @@ class IslandWindow(Gtk.ApplicationWindow):
                 self.updating = False
             self.tpos.set_label(fmt_time(st.position))
             self.tlen.set_label(fmt_time(st.length))
+        if st.rec_start:
+            secs = max(0, int(time.time() - st.rec_start))
+            self.rectime.set_label(f"{secs // 60}:{secs % 60:02d}" if secs < 3600 else f"{secs // 3600}:{secs % 3600 // 60:02d}:{secs % 60:02d}")
         if st.volume is not None:
             self.vbar.set_fraction(min(1.0, st.volume))
             self.vpct.set_label("aus" if st.muted else f"{int(round(st.volume * 100))}%")
             self.vglyph.set_label(G["mute"] if st.muted else G["vol"])
-        want = expanded and st.has_media and mode != "volume"
+        want = expanded and st.has_media and mode not in ("volume", "rec")
         top = "clock" if want else mode          # aufgeklappt: oben nur die Uhr
         if self.compact.get_visible_child_name() != top:
             self.compact.set_visible_child_name(top)
@@ -540,6 +569,8 @@ class IslandApp(Gtk.Application):
     # ---- Anzeige ----
     def mode(self):
         now = time.monotonic()
+        if self.state.rec_start:
+            return "rec"
         if now < self.volume_until and self.state.volume is not None:
             return "volume"
         if self.state.has_media:
@@ -559,8 +590,6 @@ class IslandApp(Gtk.Application):
         if self.collapse_id:
             GLib.source_remove(self.collapse_id)
             self.collapse_id = 0
-        self.seek_hold_until = 0.0
-        self.seek_id = 0
         if inside:
             self.collapse_id = GLib.timeout_add(220, self._apply_hover)
         else:
@@ -568,8 +597,6 @@ class IslandApp(Gtk.Application):
 
     def _apply_hover(self):
         self.collapse_id = 0
-        self.seek_hold_until = 0.0
-        self.seek_id = 0
         if self.hovering and self.state.has_media:
             self._poll_position()
         self.refresh()
@@ -583,12 +610,29 @@ class IslandApp(Gtk.Application):
             self.refresh()
 
     def click(self):
+        if self.state.rec_start:            # Aufnahme laeuft -> Klick stoppt sie
+            run_async([os.path.join(HOME, ".config", "hypr", "scripts", "record.sh"), "stop"])
+            self.state.rec_start = 0
+            self.refresh()
+            return
         if self.state.has_media:
             self.pinned = not self.pinned
             self.refresh()
 
+    def _check_recording(self):
+        st = self.state
+        try:
+            with open(os.path.join(CACHE, "recording.pid")) as f:
+                pid = int(f.read().strip())
+            os.kill(pid, 0)
+            with open(os.path.join(CACHE, "recording.start")) as f:
+                st.rec_start = int(f.read().strip())
+        except (OSError, ValueError):
+            st.rec_start = 0
+
     def _tick(self):
         st = self.state
+        self._check_recording()
         if st.status == "Playing" and st.length:
             st.position = min(st.length, st.position + 1_000_000)
             if int(time.time()) % 5 == 0:
