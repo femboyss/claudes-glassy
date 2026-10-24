@@ -54,7 +54,9 @@ CSS = r"""
 @define-color tn_green   #9ece6a;
 @define-color tn_red     #f7768e;
 
-window, window.background { background: transparent; }
+window, window.background, window.background:backdrop, window > *, .frame {
+    background: none; background-color: transparent; background-image: none;
+    box-shadow: none; border: none; }
 * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
 
 .panel {
@@ -500,11 +502,12 @@ class ClipWindow(Gtk.ApplicationWindow):
                 return m
         return None
 
-    def open_on(self, monitor_name=None):
+    def open_on(self, monitor_name=None, x=None, y=None):
         if self.layer:
             mon = self._find_monitor(monitor_name)
             if mon is not None:
                 LS.set_monitor(self, mon)
+            self._place(mon, x, y)
         self.search.set_text("")
         self.reload()
         self._set_hint()
@@ -514,11 +517,29 @@ class ClipWindow(Gtk.ApplicationWindow):
         self.present()
         GLib.idle_add(lambda: (self.rev.set_reveal_child(True), self.search.grab_focus(), False)[2])
 
-    def toggle(self, monitor_name=None):
+    def toggle(self, monitor_name=None, x=None, y=None):
         if self.get_visible():
             self.close_menu()
         else:
-            self.open_on(monitor_name)
+            self.open_on(monitor_name, x, y)
+
+    def _place(self, mon, x, y):
+        """Panel an die Maus setzen (wie Windows Win+V), am Bildschirmrand begrenzt.
+        Ohne Mausposition: Mitte des Monitors."""
+        if x is None or y is None or mon is None:
+            self.rev.set_halign(Gtk.Align.CENTER)
+            self.rev.set_valign(Gtk.Align.CENTER)
+            self.rev.set_margin_start(0)
+            self.rev.set_margin_top(0)
+            return
+        geo = mon.get_geometry()
+        pad = 12
+        left = int(min(max(pad, x - PANEL_W // 2), geo.width - PANEL_W - pad))
+        top = int(min(max(pad + 46, y - 20), geo.height - PANEL_H - pad))   # nicht ueber die Bar
+        self.rev.set_halign(Gtk.Align.START)
+        self.rev.set_valign(Gtk.Align.START)
+        self.rev.set_margin_start(max(0, left))
+        self.rev.set_margin_top(max(0, top))
 
     def close_menu(self):
         if self.screenshot:
@@ -593,7 +614,7 @@ class App(Gtk.Application):
         else:
             prov.load_from_data(CSS.encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
-                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)   # ueber ~/.config/gtk-4.0/gtk.css
 
     def do_activate(self):
         if self.win is not None:
@@ -605,7 +626,14 @@ class App(Gtk.Application):
             self.hold()
             self._listen_fifo()
             if self.args.show:
-                self.win.open_on(self.args.monitor)
+                at = (self.args.at or "").split()
+                if len(at) >= 3:
+                    try:
+                        self.win.open_on(at[0], int(at[1]), int(at[2]))
+                    except ValueError:
+                        self.win.open_on(at[0])
+                else:
+                    self.win.open_on(self.args.monitor)
             return
         self.win.reload()
         self.win.present()
@@ -638,10 +666,16 @@ class App(Gtk.Application):
             if not parts:
                 continue
             cmd, mon = parts[0], (parts[1] if len(parts) > 1 else None)
+            x = y = None
+            if len(parts) >= 4:
+                try:
+                    x, y = int(parts[2]), int(parts[3])
+                except ValueError:
+                    x = y = None
             if cmd == "toggle":
-                self.win.toggle(mon)
+                self.win.toggle(mon, x, y)
             elif cmd == "show":
-                self.win.open_on(mon)
+                self.win.open_on(mon, x, y)
             elif cmd == "hide":
                 self.win.close_menu()
             elif cmd == "quit":
@@ -666,6 +700,7 @@ def main():
     p.add_argument("--daemon", action="store_true")
     p.add_argument("--show", action="store_true")
     p.add_argument("--monitor", default=None)
+    p.add_argument("--at", default=None, help='"MONITOR X Y" - an dieser Mausposition oeffnen')
     p.add_argument("--screenshot", default=None, help=argparse.SUPPRESS)
     args = p.parse_args()
     os.environ.pop("LD_PRELOAD", None)

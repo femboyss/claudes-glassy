@@ -76,6 +76,9 @@ for d in hypr/glassy hypr/scripts hypr/startmenu hypr/island hypr/clipboard wayb
         [ -e "$REPO_CFG/$rel" ] || extra+=("$rel")
     done < <(find "$HOME/.config/$d" -type f -not -name '*.pyc' -not -path '*__pycache__*' -print0)
 done
+if [ -f "$HOME/.config/gtk-4.0/gtk.css" ] && grep -qiE '(^|[ ,])window' "$HOME/.config/gtk-4.0/gtk.css"; then
+    warn "~/.config/gtk-4.0/gtk.css setzt Fenster-Hintergruende (kann Island/Startmenue dunkel machen; glassy ueberschreibt das jetzt)"
+fi
 [ -f "$HOME/.config/hypr/hyprland.conf" ] && warn "hypr/hyprland.conf existiert (alte hyprlang-Config). Hyprland nimmt hyprland.lua, solange die da ist."
 
 if [ ${#changed[@]} -eq 0 ] && [ ${#absent[@]} -eq 0 ]; then ok "alle Dateien wie im Repo"; fi

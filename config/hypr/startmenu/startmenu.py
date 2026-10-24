@@ -106,7 +106,9 @@ CSS = r"""
 @define-color tn_red       #f7768e;
 @define-color tn_teal      #1abc9c;
 
-window, window.background { background: transparent; }
+window, window.background, window.background:backdrop, window > *, .frame {
+    background: none; background-color: transparent; background-image: none;
+    box-shadow: none; border: none; }
 * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
 
 .panel {
@@ -1276,7 +1278,7 @@ class App(Gtk.Application):
         else:
             prov.load_from_data(CSS.encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
-                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)   # ueber ~/.config/gtk-4.0/gtk.css
         settings = Gtk.Settings.get_default()
         if settings is not None:
             settings.set_property("gtk-application-prefer-dark-theme", True)

@@ -28,14 +28,15 @@ if [ "$1" = "--start-daemon" ]; then
 fi
 
 pkill -x rofi 2>/dev/null
-mon="$(glassy_cursor_monitor)"
+loc="$(glassy_cursor_local)"          # "DP-3 812 440"  -> Fenster oeffnet an der Maus
+mon="${loc%% *}"
 
 if running && [ -p "$FIFO" ]; then
-    timeout 0.5 bash -c 'printf "toggle %s\n" "$1" > "$2"' _ "$mon" "$FIFO" && exit 0
+    timeout 0.5 bash -c 'printf "toggle %s\n" "$1" > "$2"' _ "$loc" "$FIFO" && exit 0
 fi
 
 pkill -f "clipman.py --daemon" 2>/dev/null
-LD_PRELOAD="$(layer_lib)" setsid -f python3 "$PY" --daemon --show ${mon:+--monitor "$mon"} >"$LOG" 2>&1
+LD_PRELOAD="$(layer_lib)" setsid -f python3 "$PY" --daemon --show ${loc:+--at "$loc"} >"$LOG" 2>&1
 sleep 1.5
 if ! running; then
     notify-send -a Zwischenablage "Zwischenablage konnte nicht starten" "Details: $LOG  -  nutze Rofi-Version" 2>/dev/null

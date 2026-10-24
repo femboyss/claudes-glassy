@@ -55,7 +55,9 @@ CSS = r"""
 @define-color tn_red     #f7768e;
 @define-color tn_hl      #292e42;
 
-window, window.background, .frame { background: transparent; background-color: transparent; box-shadow: none; border: none; }
+window, window.background, window.background:backdrop, window > *, .frame {
+    background: none; background-color: transparent; background-image: none;
+    box-shadow: none; border: none; }
 * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
 
 .island {
@@ -512,7 +514,7 @@ class IslandApp(Gtk.Application):
         else:
             prov.load_from_data(CSS.encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
-                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)   # ueber ~/.config/gtk-4.0/gtk.css
         os.makedirs(ART_CACHE, exist_ok=True)
 
     def do_activate(self):
@@ -615,9 +617,7 @@ class IslandApp(Gtk.Application):
             self.state.rec_start = 0
             self.refresh()
             return
-        if self.state.has_media:
-            self.pinned = not self.pinned
-            self.refresh()
+        # sonst nichts: aufgeklappt wird nur, solange die Maus drueber ist
 
     def _check_recording(self):
         st = self.state
@@ -724,7 +724,7 @@ class IslandApp(Gtk.Application):
             st.position = 0
             self._poll_position()
             if status == "Playing" and title:
-                self.auto_until = time.monotonic() + AUTO_EXPAND_SECS
+                pass   # kein Auto-Aufklappen mehr - nur bei Hover
                 GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
         if art != st.art_url:
             st.art_url = art

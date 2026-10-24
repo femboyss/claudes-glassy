@@ -15,6 +15,19 @@ glassy_cursor_monitor() {
         | .name' | head -n 1
 }
 
+# "MONITOR X Y": Monitor unter der Maus + Mausposition relativ zu diesem Monitor (logische Pixel)
+glassy_cursor_local() {
+    local pos cx cy
+    pos="$(hyprctl -j cursorpos 2>/dev/null)" || return 1
+    cx="$(jq -r '.x' <<< "$pos")"; cy="$(jq -r '.y' <<< "$pos")"
+    hyprctl -j monitors 2>/dev/null | jq -r --argjson cx "$cx" --argjson cy "$cy" '
+        .[] | ( if (.transform % 2) == 1
+                then {w: (.height / .scale), h: (.width / .scale)}
+                else {w: (.width / .scale),  h: (.height / .scale)} end ) as $s
+        | select($cx >= .x and $cx < (.x + $s.w) and $cy >= .y and $cy < (.y + $s.h))
+        | "\(.name) \(($cx - .x) | floor) \(($cy - .y) | floor)"' | head -n 1
+}
+
 # rofi auf dem Monitor unter der Maus starten (Fallback: fokussierter Monitor)
 glassy_rofi() {
     local mon
