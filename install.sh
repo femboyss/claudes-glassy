@@ -34,7 +34,7 @@ PKGS=(
     waybar rofi swaync kitty
     grim slurp wl-clipboard cliphist jq libnotify playerctl
     pavucontrol network-manager-applet btop xdg-utils
-    python-gobject gtk4 gtk4-layer-shell
+    python-gobject gtk4 gtk4-layer-shell libpulse
     ttf-jetbrains-mono-nerd inter-font papirus-icon-theme
     swaybg
 )
@@ -54,6 +54,8 @@ restart_session() {
     setsid -f bash -c 'wl-paste --type text  --watch cliphist store' >/dev/null 2>&1
     setsid -f bash -c 'wl-paste --type image --watch cliphist store' >/dev/null 2>&1
     "$HOME/.config/hypr/scripts/wallpaper.sh" init || true
+    "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon || true
+    "$HOME/.config/hypr/scripts/island.sh" restart || true
 }
 
 # ------------------------------------------------------------------

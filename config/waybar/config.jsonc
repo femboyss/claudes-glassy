@@ -14,8 +14,8 @@
     "reload_style_on_change": true,
 
     "modules-left":   ["custom/start", "custom/search", "hyprland/workspaces", "hyprland/window"],
-    "modules-center": ["clock"],
-    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "cpu", "memory", "custom/notify", "custom/power"],
+    "modules-center": [],          // Mitte frei: dort sitzt die Dynamic Island (Uhr + Musik)
+    "modules-right":  ["tray", "pulseaudio", "network", "cpu", "memory", "custom/notify", "custom/power"],
 
     // Start-Knopf: Startmenue (oeffnet sich auf diesem Monitor)
     "custom/start": {

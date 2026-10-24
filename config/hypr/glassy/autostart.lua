@@ -9,4 +9,5 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
     hl.exec_cmd("nm-applet --indicator")
     hl.exec_cmd(GLASSY.scripts .. "/startmenu.sh --start-daemon")   -- Startmenue vorladen = sofort offen
+    hl.exec_cmd(GLASSY.scripts .. "/island.sh")                     -- Dynamic Island oben in der Mitte
 end)

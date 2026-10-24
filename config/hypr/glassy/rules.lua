@@ -73,6 +73,8 @@ rule("window", {
     border_size = 0,
     move = { "14", "54" },
 })
+-- Dynamic Island
+rule("layer", { name = "island", match = { namespace = "^glassy-island$" }, blur = true, ignore_alpha = 0.4, animation = "slide top" })
 rule("layer", { name = "no-anim-selection", match = { namespace = "^(selection|hyprpicker)$" }, no_anim = true })
 
 if #errors > 0 then

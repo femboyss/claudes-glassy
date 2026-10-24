@@ -97,7 +97,16 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
   `~/.config/hypr/pinned-apps`. Faellt auf ein Rofi-Menue zurueck, wenn GTK4 fehlt.
   Fehler-Log: `~/.cache/claudes-glassy/startmenu.log`
 
-![Startmenue](assets/startmenu-preview.png)
+![Startmenue und Dynamic Island](assets/preview-v3.png)
+
+- Dynamic Island (`~/.config/hypr/island/island.py`): schwarze Pille oben in der Mitte.
+  Zeigt die Uhr, bei Musik Cover + Titel + Balken; klappt bei Songwechsel, Maus drueber
+  oder Klick auf (Cover, Fortschritt, Zurueck/Pause/Weiter). Lautstaerke-Aenderungen
+  erscheinen kurz als Balken. Neu starten: `~/.config/hypr/scripts/island.sh restart`
+- Startmenue-Einstellungen: Regler-Symbol oben rechts im Menue (Profilbild, Uhr,
+  Zuletzt verwendet, Beschreibungen, Kategorie-Hover). Die Suche kann auch rechnen
+  (`12*7+3`) und im Web suchen.
+- Zwischenablage (SUPER+V): Entf loescht einen Eintrag, Shift+Entf alles.
 
 - Bar: Start-Knopf + Suchleiste links, laeuft auf allen Monitoren; Menues oeffnen sich auf dem Monitor, auf dem du klickst.
 - Sperrbildschirm-Avatar: `~/.face` (sonst Standardbild).
