@@ -1,30 +1,46 @@
 #!/usr/bin/env bash
-# claudes-glassy: Startmenue starten (Super antippen / Start-Knopf in der Bar)
-# GTK4-Startmenue im Tokyo-Night-Look; nochmal aufrufen = schliessen.
-# Faellt auf das Rofi-Menue zurueck, wenn GTK4/PyGObject fehlen.
+# claudes-glassy: Startmenue auf-/zuklappen (Super antippen / Start-Knopf in der Bar)
+# Das Menue laeuft als Hintergrund-Dienst (startet mit Hyprland), dadurch oeffnet
+# es sofort. Dieses Script schickt nur "toggle <Monitor>" an den Dienst.
+# Laeuft der Dienst nicht, wird er gestartet; geht GTK gar nicht -> Rofi-Menue.
 
 source "$HOME/.config/hypr/scripts/lib.sh"
 PY="$HOME/.config/hypr/startmenu/startmenu.py"
-LOG="$HOME/.cache/claudes-glassy/startmenu.log"
-mkdir -p "$(dirname "$LOG")"
+CACHE="$HOME/.cache/claudes-glassy"
+FIFO="$CACHE/startmenu.fifo"
+LOG="$CACHE/startmenu.log"
+mkdir -p "$CACHE"
 
-# Rofi-Menues schliessen, falls offen
-pkill -x rofi 2>/dev/null
+running() { pgrep -f "startmenu.py --daemon" >/dev/null 2>&1; }
 
-if ! python3 -c 'import gi; gi.require_version("Gtk", "4.0")' 2>/dev/null; then
-    exec "$HOME/.config/hypr/scripts/startmenu-rofi.sh"
+layer_lib() {
+    for lib in /usr/lib/libgtk4-layer-shell.so /usr/lib/libgtk4-layer-shell.so.0 /usr/lib64/libgtk4-layer-shell.so; do
+        [ -f "$lib" ] && { echo "$lib"; return; }
+    done
+}
+
+# Autostart: Dienst nur im Hintergrund starten (versteckt)
+if [ "$1" = "--start-daemon" ]; then
+    running && exit 0
+    LD_PRELOAD="$(layer_lib)" setsid -f python3 "$PY" --daemon >"$LOG" 2>&1
+    exit 0
 fi
 
+pkill -x rofi 2>/dev/null
 mon="$(glassy_cursor_monitor)"
 
-# gtk4-layer-shell muss vor libwayland geladen werden (nur fuer das Menue selbst)
-pre=""
-for lib in /usr/lib/libgtk4-layer-shell.so /usr/lib/libgtk4-layer-shell.so.0 /usr/lib64/libgtk4-layer-shell.so; do
-    [ -f "$lib" ] && { pre="$lib"; break; }
-done
+# Schneller Weg: Dienst laeuft schon
+if running && [ -p "$FIFO" ]; then
+    timeout 0.5 bash -c 'printf "toggle %s\n" "$1" > "$2"' _ "$mon" "$FIFO" && exit 0
+fi
 
-if [ -n "$pre" ]; then
-    LD_PRELOAD="$pre" setsid -f python3 "$PY" ${mon:+--monitor "$mon"} >"$LOG" 2>&1
-else
-    setsid -f python3 "$PY" ${mon:+--monitor "$mon"} >"$LOG" 2>&1
+# Dienst (neu) starten und direkt anzeigen
+pkill -f "startmenu.py --daemon" 2>/dev/null
+LD_PRELOAD="$(layer_lib)" setsid -f python3 "$PY" --daemon --show ${mon:+--monitor "$mon"} >"$LOG" 2>&1
+
+# Faellt der Dienst sofort um (kein GTK4/PyGObject), Rofi-Menue nehmen
+sleep 1.5
+if ! running; then
+    notify-send -a Startmenue "Startmenue konnte nicht starten" "Details: $LOG  -  nutze Rofi-Menue" 2>/dev/null
+    exec "$HOME/.config/hypr/scripts/startmenu-rofi.sh"
 fi

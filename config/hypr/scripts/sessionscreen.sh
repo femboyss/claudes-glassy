@@ -10,7 +10,7 @@ SCRIPTS="$HOME/.config/hypr/scripts"
 # Schon offen? Dann schliessen (Toggle)
 pkill -x rofi && exit 0
 
-icon() { printf '<span font_desc="JetBrainsMono Nerd Font 38">%s</span>' "$1"; }
+icon() { printf '<span font_desc="JetBrainsMono Nerd Font 28">%s</span>' "$1"; }
 
 # Reihenfolge = Kachel-Reihenfolge (5 pro Zeile)
 labels=( "Sperren" "Abmelden" "Energiesparen" "Ruhezustand" "Screenshot"
@@ -38,7 +38,7 @@ mesg="<span font_desc='Inter Bold 34'>$greet, ${USER^}</span>
 sel="$(printf '%s' "$entries" | glassy_rofi -dmenu \
     -theme "$THEME" \
     -p "" -mesg "$mesg" \
-    -sep '|' -eh 2 -markup-rows \
+    -sep '|' -eh 3 -markup-rows \
     -u 8 -a 0 \
     -selected-row 0 -format i \
     -no-custom)" || exit 0

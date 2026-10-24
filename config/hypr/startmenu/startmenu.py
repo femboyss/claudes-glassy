@@ -23,7 +23,8 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
-from gi.repository import Gdk, Gio, GLib, Gtk, Pango  # noqa: E402
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango  # noqa: E402
 
 LS = None
 try:
@@ -40,6 +41,7 @@ CACHE = os.path.join(HOME, ".cache", "claudes-glassy")
 RECENT_FILE = os.path.join(CACHE, "recent.json")
 SCRIPTS = os.path.join(HYPR, "scripts")
 APP_ID = "glassy.startmenu"
+FIFO = os.path.join(CACHE, "startmenu.fifo")
 
 PANEL_W, PANEL_H = 580, 460
 MARGIN_TOP, MARGIN_LEFT = 54, 14
@@ -394,10 +396,12 @@ def glyph(text, extra=None):
 
 # ------------------------------------------------------------------ UI
 class StartMenu(Gtk.ApplicationWindow):
-    def __init__(self, app, monitor_name=None, screenshot=None):
+    def __init__(self, app, monitor_name=None, screenshot=None, daemon=False):
         super().__init__(application=app, title="Startmenue")
         self.app = app
+        self.daemon = daemon
         self.screenshot = screenshot
+        self.apps_dirty = False
         self.apps = load_apps()
         self.by_key = {a["key"]: a for a in self.apps}
         self.confirm_pending = None
@@ -421,6 +425,8 @@ class StartMenu(Gtk.ApplicationWindow):
         else:
             self.set_default_size(PANEL_W, PANEL_H)
 
+        print(f"[startmenu] layer-shell: {'an' if self.layer else 'AUS (normales Fenster)'}"
+              f"  (typelib: {'ja' if LS is not None else 'nein'})", file=sys.stderr, flush=True)
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.set_child(root)
         self.panel = self._build_panel()
@@ -439,12 +445,54 @@ class StartMenu(Gtk.ApplicationWindow):
         keys.connect("key-pressed", self._on_key)
         self.add_controller(keys)
 
-        if not self.layer:
-            self.connect("notify::is-active", self._on_active_changed)
+        # Fokus weg (anderes Fenster / anderer Monitor angeklickt) -> schliessen
+        self.connect("notify::is-active", self._on_active_changed)
 
-        self._show_category("fav")
+        # neue/entfernte Apps merken, beim naechsten Oeffnen neu laden
+        self.appmon = Gio.AppInfoMonitor.get()
+        self.appmon.connect("changed", lambda *_: setattr(self, "apps_dirty", True))
+
+        self.reset_view()
+
+    # ---------- Oeffnen / Schliessen ----------
+    def _update_header(self):
+        user = os.environ.get("USER") or os.path.basename(HOME)
+        self.hello_lbl.set_label(f"{greeting()}, {user[:1].upper() + user[1:]}")
+        self.sub_lbl.set_label(f"{user}@{socket.gethostname()}   \u00b7   {uptime_text()}")
+
+    def reset_view(self):
+        self.confirm_pending = None
+        for b in getattr(self, "power_btns", {}).values():
+            b.remove_css_class("confirm")
+        self.hint.set_label("Rechtsklick: Favorit")
+        self.hint.remove_css_class("warn")
+        self.search.set_text("")
+        self._update_header()
         self.cat_list.select_row(self.cat_list.get_row_at_index(0))
+        self._show_category("fav")
         GLib.idle_add(self.search.grab_focus)
+
+    def _reload_apps(self):
+        self.apps = load_apps()
+        self.by_key = {a["key"]: a for a in self.apps}
+        self.apps_dirty = False
+
+    def open_on(self, monitor_name=None):
+        if self.apps_dirty:
+            self._reload_apps()
+        if self.layer:
+            mon = self._find_monitor(monitor_name)
+            if mon is not None:
+                LS.set_monitor(self, mon)
+        self.reset_view()
+        self.opened_at = time.monotonic()
+        self.present()
+
+    def toggle(self, monitor_name=None):
+        if self.get_visible():
+            self.close_menu()
+        else:
+            self.open_on(monitor_name)
 
     # ---------- Aufbau ----------
     def _find_monitor(self, name):
@@ -483,25 +531,37 @@ class StartMenu(Gtk.ApplicationWindow):
         av.add_css_class("avatar")
         av.set_overflow(Gtk.Overflow.HIDDEN)
         av.set_valign(Gtk.Align.CENTER)
+        pic = None
         if os.path.exists(AVATAR):
-            pic = Gtk.Picture.new_for_filename(AVATAR)
-            pic.set_content_fit(Gtk.ContentFit.COVER)
-        else:
+            try:
+                pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(AVATAR, 64, 64, False)
+                pic = Gtk.Image.new_from_paintable(Gdk.Texture.new_for_pixbuf(pb))
+            except GLib.Error:
+                pic = None
+        if pic is None:
             pic = Gtk.Image.new_from_icon_name("avatar-default")
-            pic.set_pixel_size(32)
+        pic.set_pixel_size(32)
         pic.set_size_request(32, 32)
+        pic.set_halign(Gtk.Align.CENTER)
+        pic.set_valign(Gtk.Align.CENTER)
+        av.set_size_request(32, 32)
+        av.set_hexpand(False)
+        av.set_vexpand(False)
         av.append(pic)
         box.append(av)
 
         user = os.environ.get("USER") or os.path.basename(HOME)
         texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         texts.set_valign(Gtk.Align.CENTER)
-        hello = Gtk.Label(label=f"{greeting()}, {user[:1].upper() + user[1:]}", xalign=0)
+        hello = Gtk.Label(label="", xalign=0)
+        self.hello_lbl = hello
         hello.add_css_class("hello")
-        sub = Gtk.Label(label=f"{user}@{socket.gethostname()}   ·   {uptime_text()}", xalign=0)
+        sub = Gtk.Label(label="", xalign=0)
+        self.sub_lbl = sub
         sub.add_css_class("sub")
         texts.append(hello)
         texts.append(sub)
+        self._update_header()
         texts.set_hexpand(True)
         box.append(texts)
 
@@ -884,8 +944,12 @@ class StartMenu(Gtk.ApplicationWindow):
             self.close_menu()
 
     def _on_active_changed(self, *_):
-        if not self.is_active() and not self.screenshot:
-            GLib.timeout_add(150, lambda: (self.close_menu() if not self.is_active() else None, False)[1])
+        if self.screenshot or not self.get_visible():
+            return
+        if time.monotonic() - getattr(self, "opened_at", 0) < 0.4:
+            return
+        if not self.is_active():
+            GLib.timeout_add(120, lambda: (self.close_menu() if self.get_visible() and not self.is_active() else None, False)[1])
 
     def _on_power(self, btn):
         action = btn._action
@@ -939,7 +1003,10 @@ class StartMenu(Gtk.ApplicationWindow):
     def close_menu(self):
         if self.screenshot:
             return
-        self.app.quit()
+        if self.daemon:
+            self.set_visible(False)
+        else:
+            self.app.quit()
 
 
 class App(Gtk.Application):
@@ -959,16 +1026,58 @@ class App(Gtk.Application):
             settings.set_property("gtk-application-prefer-dark-theme", True)
 
     def do_activate(self):
-        # Zweiter Aufruf, waehrend offen -> schliessen (Toggle)
         if self.win is not None:
-            self.quit()
+            self.win.toggle(self.args.monitor)
             return
-        self.win = StartMenu(self, self.args.monitor, self.args.screenshot)
+        self.win = StartMenu(self, self.args.monitor, self.args.screenshot, daemon=self.args.daemon)
+        if self.args.daemon:
+            self.hold()                      # weiterlaufen, auch wenn versteckt
+            self._listen_fifo()
+            if self.args.show:
+                self.win.open_on(self.args.monitor)
+            return
         self.win.present()
         if self.args.screenshot:
             if self.args.query:
                 GLib.timeout_add(300, lambda: (self.win.search.set_text(self.args.query), False)[1])
             GLib.timeout_add(1200, self._snap)
+
+    def _listen_fifo(self):
+        """Befehle von startmenu.sh: 'toggle [MONITOR]', 'show [MONITOR]', 'hide', 'quit'."""
+        os.makedirs(CACHE, exist_ok=True)
+        try:
+            if os.path.exists(FIFO) and not stat_is_fifo(FIFO):
+                os.remove(FIFO)
+            if not os.path.exists(FIFO):
+                os.mkfifo(FIFO, 0o600)
+        except OSError as e:
+            print("FIFO-Fehler:", e, file=sys.stderr)
+            return
+        # O_RDWR: kein EOF, wenn der Schreiber wieder zumacht
+        self.fifo_fd = os.open(FIFO, os.O_RDWR | os.O_NONBLOCK)
+        self.fifo_buf = b""
+        GLib.unix_fd_add_full(GLib.PRIORITY_DEFAULT, self.fifo_fd, GLib.IOCondition.IN, self._on_fifo)
+
+    def _on_fifo(self, fd, cond):
+        try:
+            self.fifo_buf += os.read(fd, 4096)
+        except BlockingIOError:
+            return True
+        while b"\n" in self.fifo_buf:
+            line, self.fifo_buf = self.fifo_buf.split(b"\n", 1)
+            parts = line.decode(errors="ignore").split()
+            if not parts:
+                continue
+            cmd, mon = parts[0], (parts[1] if len(parts) > 1 else None)
+            if cmd == "toggle":
+                self.win.toggle(mon)
+            elif cmd == "show":
+                self.win.open_on(mon)
+            elif cmd == "hide":
+                self.win.close_menu()
+            elif cmd == "quit":
+                self.quit()
+        return True
 
     def _snap(self):
         w = self.win.panel
@@ -984,9 +1093,19 @@ class App(Gtk.Application):
         return False
 
 
+def stat_is_fifo(path):
+    import stat
+    try:
+        return stat.S_ISFIFO(os.stat(path).st_mode)
+    except OSError:
+        return False
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--monitor", default=None, help="Monitor-Name (z. B. DP-3)")
+    p.add_argument("--daemon", action="store_true", help="im Hintergrund laufen, per FIFO auf-/zuklappen")
+    p.add_argument("--show", action="store_true", help="mit --daemon: direkt anzeigen")
     p.add_argument("--screenshot", default=None, help=argparse.SUPPRESS)
     p.add_argument("--query", default=None, help=argparse.SUPPRESS)
     args = p.parse_args()

@@ -54,7 +54,7 @@ listview {
 }
 
 element {
-    padding:          26px 10px;
+    padding:          18px 10px 22px 10px;
     border:           1px solid;
     border-color:     @tileedge;
     border-radius:    24px;
