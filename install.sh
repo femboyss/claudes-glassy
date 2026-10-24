@@ -54,6 +54,7 @@ restart_session() {
     setsid -f bash -c 'wl-paste --type text  --watch cliphist store' >/dev/null 2>&1
     setsid -f bash -c 'wl-paste --type image --watch cliphist store' >/dev/null 2>&1
     "$HOME/.config/hypr/scripts/wallpaper.sh" init || true
+    pkill -f "startmenu.py --daemon" 2>/dev/null; sleep 0.3      # alte Version beenden
     "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon || true
     "$HOME/.config/hypr/scripts/island.sh" restart || true
     pkill -f "clipman.py --daemon" 2>/dev/null; "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon || true

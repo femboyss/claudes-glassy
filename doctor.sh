@@ -26,6 +26,25 @@ echo "claudes-glassy Doktor  -  $(date)"
 echo "Repo: $HERE ($(git -C "$HERE" rev-parse --short HEAD 2>/dev/null || echo '?'))"
 echo
 
+echo "== Repo-Kopie =="
+if [ -d "$HERE/.git" ]; then
+    if [ -n "$(git -C "$HERE" status --porcelain 2>/dev/null)" ]; then
+        bad "In der Repo-Kopie ($HERE) wurde rumgeschrieben -> Updates bleiben haengen."
+        echo "   Fix:  bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)\""
+    fi
+    if timeout 8 git -C "$HERE" fetch -q --depth 1 origin main 2>/dev/null; then
+        if [ "$(git -C "$HERE" rev-parse HEAD)" != "$(git -C "$HERE" rev-parse origin/main)" ]; then
+            bad "Repo-Kopie ist NICHT aktuell (lokal $(git -C "$HERE" rev-parse --short HEAD), GitHub $(git -C "$HERE" rev-parse --short origin/main))"
+            echo "   Fix:  bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)\""
+        else
+            ok "Repo-Kopie ist aktuell"
+        fi
+    else
+        warn "GitHub nicht erreichbar - Aktualitaet nicht geprueft"
+    fi
+fi
+echo
+
 echo "== Hyprland =="
 if command -v hyprctl >/dev/null; then
     hyprctl version 2>/dev/null | head -n 2
@@ -45,6 +64,19 @@ pgrep -f "island/island.py" >/dev/null && ok "Dynamic Island laeuft" || bad "Dyn
 pgrep -f "clipman.py --daemon" >/dev/null && ok "Zwischenablage-Dienst laeuft" || warn "Zwischenablage-Dienst laeuft nicht (startet beim naechsten SUPER+V)"
 [ -f "$HOME/.cache/claudes-glassy/recording.pid" ] && kill -0 "$(cat "$HOME/.cache/claudes-glassy/recording.pid")" 2>/dev/null && warn "Bildschirmaufnahme laeuft gerade"
 pgrep -x qs >/dev/null || pgrep -x quickshell >/dev/null && warn "Quickshell (end-4) laeuft noch parallel"
+echo
+
+# Laeuft noch eine alte Version im Hintergrund? (Prozess aelter als die Datei)
+stale() {   # $1 = pgrep-Muster  $2 = Datei
+    local pid et mt
+    pid="$(pgrep -f "$1" | head -n 1)"; [ -z "$pid" ] && return 1
+    et="$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')"; [ -z "$et" ] && return 1
+    mt="$(stat -c %Y "$2" 2>/dev/null)"; [ -z "$mt" ] && return 1
+    [ "$mt" -gt "$(( $(date +%s) - et ))" ]
+}
+stale "startmenu.py --daemon" "$HOME/.config/hypr/startmenu/startmenu.py" && bad "Startmenue laeuft noch in ALTER Version  ->  pkill -f startmenu.py"
+stale "island/island.py"      "$HOME/.config/hypr/island/island.py"       && bad "Island laeuft noch in ALTER Version  ->  ~/.config/hypr/scripts/island.sh restart"
+stale "clipman.py --daemon"   "$HOME/.config/hypr/clipboard/clipman.py"   && bad "Zwischenablage laeuft noch in ALTER Version  ->  pkill -f clipman.py"
 echo
 
 echo "== Pakete =="
