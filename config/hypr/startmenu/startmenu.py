@@ -41,7 +41,7 @@ RECENT_FILE = os.path.join(CACHE, "recent.json")
 SCRIPTS = os.path.join(HYPR, "scripts")
 APP_ID = "glassy.startmenu"
 
-PANEL_W, PANEL_H = 820, 640
+PANEL_W, PANEL_H = 580, 460
 MARGIN_TOP, MARGIN_LEFT = 54, 14
 
 # Nerd-Font-Glyphen (JetBrainsMono Nerd Font)
@@ -98,23 +98,24 @@ window, window.background { background: transparent; }
 .panel {
     background-color: alpha(@tn_bg, 0.80);
     border: 1px solid alpha(@tn_blue, 0.22);
-    border-radius: 24px;
-    box-shadow: 0 18px 50px alpha(black, 0.45);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px alpha(black, 0.40);
     color: @tn_fg;
 }
 
 /* Header */
-.header { padding: 18px 20px 12px 20px; }
+.header { padding: 12px 14px 8px 14px; }
 .avatar { border-radius: 999px; border: 2px solid alpha(@tn_purple, 0.8); }
-.hello  { font-size: 17px; font-weight: 800; color: @tn_fg; }
-.sub    { font-size: 11px; color: @tn_comment; }
+.hello  { font-size: 13px; font-weight: 800; color: @tn_fg; }
+.sub    { font-size: 10px; color: @tn_comment; }
 .glyph  { font-family: "JetBrainsMono Nerd Font"; }
 
 entry.search {
-    min-height: 40px;
-    min-width: 330px;
-    padding: 0 14px;
-    border-radius: 14px;
+    min-height: 32px;
+    min-width: 210px;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 12px;
     background-color: alpha(@tn_bg_dark, 0.85);
     border: 1px solid alpha(@tn_blue, 0.28);
     color: @tn_fg;
@@ -130,21 +131,21 @@ entry.search image { color: @tn_blue; }
 
 /* Seitenleiste (Mint) */
 .sidebar {
-    padding: 10px 8px;
-    margin: 0 0 0 12px;
-    border-radius: 18px;
+    padding: 6px 4px;
+    margin: 0 0 0 10px;
+    border-radius: 12px;
     background-color: alpha(@tn_bg_dark, 0.55);
 }
 .sidebtn {
-    min-width: 40px; min-height: 40px;
+    min-width: 30px; min-height: 30px;
     padding: 0;
-    border-radius: 12px;
+    border-radius: 8px;
     background: transparent;
     border: none;
     box-shadow: none;
     color: @tn_fg_dark;
     font-family: "JetBrainsMono Nerd Font";
-    font-size: 16px;
+    font-size: 13px;
 }
 .sidebtn:hover          { background-color: alpha(@tn_bg_hl, 0.9); color: @tn_cyan; }
 .sidebtn.lock:hover     { color: @tn_purple; }
@@ -157,12 +158,12 @@ entry.search image { color: @tn_blue; }
 .sidebtn.confirm.logout { background-color: @tn_yellow; }
 
 /* Kategorien */
-.cats { background: transparent; margin: 0 6px 0 10px; }
+.cats { background: transparent; margin: 0 4px 0 8px; }
 .cats row {
-    min-height: 34px;
-    padding: 0 12px;
+    min-height: 26px;
+    padding: 0 9px;
     margin: 1px 0;
-    border-radius: 11px;
+    border-radius: 8px;
     color: @tn_fg_dark;
     background: transparent;
 }
@@ -172,32 +173,32 @@ entry.search image { color: @tn_blue; }
     color: @tn_blue;
     box-shadow: inset 3px 0 0 @tn_blue;
 }
-.cats .catglyph { font-family: "JetBrainsMono Nerd Font"; min-width: 22px; }
-.cats .catname  { font-size: 13px; font-weight: 600; }
+.cats .catglyph { font-family: "JetBrainsMono Nerd Font"; min-width: 16px; font-size: 11px; }
+.cats .catname  { font-size: 12px; font-weight: 600; }
 .cats row.seprow, .cats row.seprow:hover { min-height: 0; padding: 0; margin: 4px 0; background: none; box-shadow: none; }
 .sep { background-color: alpha(@tn_comment, 0.25); min-height: 1px; margin: 4px 10px; }
 
 /* Inhalt */
-.content { margin: 0 14px 0 4px; }
-.section { font-size: 11px; font-weight: 800; color: @tn_comment; letter-spacing: 1px; margin: 6px 8px 6px 8px; }
+.content { margin: 0 10px 0 2px; }
+.section { font-size: 9.5px; font-weight: 800; color: @tn_comment; letter-spacing: 1px; margin: 2px 6px 4px 6px; }
 
 .apps { background: transparent; }
 .apps row {
-    padding: 7px 10px;
+    padding: 4px 8px;
     margin: 1px 0;
-    border-radius: 12px;
+    border-radius: 8px;
     background: transparent;
 }
 .apps row:hover, .apps row:selected { background-color: alpha(@tn_bg_hl, 0.85); }
 .apps row:selected .appname { color: @tn_cyan; }
-.appname { font-size: 13.5px; font-weight: 600; color: @tn_fg; }
-.appdesc { font-size: 11px; color: @tn_comment; }
+.appname { font-size: 12px; font-weight: 600; color: @tn_fg; }
+.appdesc { font-size: 10px; color: @tn_comment; }
 
 flowbox.favs { background: transparent; }
 flowbox.favs flowboxchild {
-    padding: 12px 4px 10px 4px;
-    margin: 3px;
-    border-radius: 16px;
+    padding: 8px 2px 6px 2px;
+    margin: 2px;
+    border-radius: 10px;
     background-color: alpha(@tn_bg_hl, 0.30);
     border: 1px solid transparent;
 }
@@ -206,24 +207,26 @@ flowbox.favs flowboxchild:selected {
     background-color: alpha(@tn_bg_hl, 0.9);
     border-color: alpha(@tn_purple, 0.45);
 }
-.favname { font-size: 11.5px; font-weight: 600; color: @tn_fg_dark; }
+.favname { font-size: 10px; font-weight: 600; color: @tn_fg_dark; }
 
 .empty { color: @tn_comment; font-size: 13px; margin: 40px; }
 
 /* Fusszeile (Kickoff-Orte) */
-.footer { padding: 10px 18px 14px 18px; }
+.footer { padding: 6px 12px 8px 12px; }
 .place {
-    padding: 4px 12px;
-    min-height: 30px;
-    border-radius: 10px;
+    padding: 2px 8px;
+    min-height: 24px;
+    border-radius: 7px;
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 12px;
     background: transparent;
     border: none;
     box-shadow: none;
     color: @tn_fg_dark;
 }
 .place:hover { background-color: alpha(@tn_bg_hl, 0.8); color: @tn_green; }
-.place .glyph { color: @tn_teal; margin-right: 6px; }
-.hint { font-size: 11px; color: @tn_comment; }
+.place { color: @tn_teal; }
+.hint { font-size: 10px; color: @tn_comment; }
 .hint.warn { color: @tn_red; font-weight: 700; }
 
 scrollbar { background: transparent; }
@@ -473,7 +476,7 @@ class StartMenu(Gtk.ApplicationWindow):
         return panel
 
     def _build_header(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         box.add_css_class("header")
 
         av = Gtk.Box()
@@ -485,8 +488,8 @@ class StartMenu(Gtk.ApplicationWindow):
             pic.set_content_fit(Gtk.ContentFit.COVER)
         else:
             pic = Gtk.Image.new_from_icon_name("avatar-default")
-            pic.set_pixel_size(44)
-        pic.set_size_request(46, 46)
+            pic.set_pixel_size(32)
+        pic.set_size_request(32, 32)
         av.append(pic)
         box.append(av)
 
@@ -504,7 +507,7 @@ class StartMenu(Gtk.ApplicationWindow):
 
         self.search = Gtk.SearchEntry()
         self.search.add_css_class("search")
-        self.search.set_placeholder_text("Apps durchsuchen ...")
+        self.search.set_placeholder_text("Suchen ...")
         self.search.set_valign(Gtk.Align.CENTER)
         self.search.connect("search-changed", self._on_search)
         self.search.connect("activate", self._on_search_activate)
@@ -522,7 +525,7 @@ class StartMenu(Gtk.ApplicationWindow):
         return b
 
     def _build_sidebar(self):
-        bar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        bar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         bar.add_css_class("sidebar")
         bar.append(self._sidebtn("files", "Dateien", lambda *_: self._run("xdg-open " + GLib.shell_quote(HOME))))
         bar.append(self._sidebtn("term", "Terminal", lambda *_: self._run("kitty")))
@@ -543,7 +546,7 @@ class StartMenu(Gtk.ApplicationWindow):
     def _cat_row(self, key, label, glyph_key):
         row = Gtk.ListBoxRow()
         row._cat = key
-        box = Gtk.Box(spacing=10)
+        box = Gtk.Box(spacing=8)
         g = Gtk.Label(label=G.get(glyph_key, G["Sonstiges"]))
         g.add_css_class("catglyph")
         n = Gtk.Label(label=label, xalign=0)
@@ -560,7 +563,7 @@ class StartMenu(Gtk.ApplicationWindow):
         self.cat_list = Gtk.ListBox()
         self.cat_list.add_css_class("cats")
         self.cat_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self.cat_list.set_size_request(190, -1)
+        self.cat_list.set_size_request(140, -1)
         self.cat_list.append(self._cat_row("fav", "Favoriten", "fav"))
         self.cat_list.append(self._cat_row("all", "Alle Apps", "all"))
         self.cat_list.append(self._cat_row("recent", "Zuletzt", "recent"))
@@ -581,7 +584,7 @@ class StartMenu(Gtk.ApplicationWindow):
         sw = Gtk.ScrolledWindow()
         sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         sw.set_child(self.cat_list)
-        sw.set_size_request(206, -1)
+        sw.set_size_request(150, -1)
         return sw
 
     def _build_content(self):
@@ -598,8 +601,8 @@ class StartMenu(Gtk.ApplicationWindow):
         fav_page.append(t1)
         self.favbox = Gtk.FlowBox()
         self.favbox.add_css_class("favs")
-        self.favbox.set_max_children_per_line(5)
-        self.favbox.set_min_children_per_line(5)
+        self.favbox.set_max_children_per_line(4)
+        self.favbox.set_min_children_per_line(4)
         self.favbox.set_homogeneous(True)
         self.favbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
         self.favbox.set_activate_on_single_click(True)
@@ -607,7 +610,7 @@ class StartMenu(Gtk.ApplicationWindow):
         fav_page.append(self.favbox)
         t2 = Gtk.Label(label="ZULETZT VERWENDET", xalign=0)
         t2.add_css_class("section")
-        t2.set_margin_top(10)
+        t2.set_margin_top(6)
         fav_page.append(t2)
         self.recent_list = self._new_app_list()
         fav_page.append(self.recent_list)
@@ -657,15 +660,14 @@ class StartMenu(Gtk.ApplicationWindow):
             b.set_focusable(False)
             inner = Gtk.Box()
             inner.append(glyph(G[key]))
-            inner.append(Gtk.Label(label=name.replace("oe", "ö")))
             b.set_child(inner)
-            b.set_tooltip_text(path)
+            b.set_tooltip_text(name.replace("oe", "ö") + "  -  " + path)
             b.connect("clicked", lambda _b, p=path: self._run("xdg-open " + GLib.shell_quote(p)))
             box.append(b)
         sp = Gtk.Box()
         sp.set_hexpand(True)
         box.append(sp)
-        self.hint = Gtk.Label(label="Rechtsklick: Favorit   ·   Esc: schliessen")
+        self.hint = Gtk.Label(label="Rechtsklick: Favorit")
         self.hint.add_css_class("hint")
         box.append(self.hint)
         return box
@@ -674,9 +676,9 @@ class StartMenu(Gtk.ApplicationWindow):
     def _app_row(self, app):
         row = Gtk.ListBoxRow()
         row._app = app
-        box = Gtk.Box(spacing=12)
+        box = Gtk.Box(spacing=9)
         img = Gtk.Image.new_from_gicon(app["icon"]) if app["icon"] else Gtk.Image.new_from_icon_name("application-x-executable")
-        img.set_pixel_size(32)
+        img.set_pixel_size(22)
         box.append(img)
         tb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         tb.set_valign(Gtk.Align.CENTER)
@@ -688,7 +690,7 @@ class StartMenu(Gtk.ApplicationWindow):
             d = Gtk.Label(label=app["desc"], xalign=0)
             d.add_css_class("appdesc")
             d.set_ellipsize(Pango.EllipsizeMode.END)
-            d.set_max_width_chars(48)
+            d.set_max_width_chars(34)
             tb.append(d)
         box.append(tb)
         row.set_child(box)
@@ -698,14 +700,14 @@ class StartMenu(Gtk.ApplicationWindow):
     def _fav_tile(self, app):
         ch = Gtk.FlowBoxChild()
         ch._app = app
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         img = Gtk.Image.new_from_gicon(app["icon"]) if app["icon"] else Gtk.Image.new_from_icon_name("application-x-executable")
-        img.set_pixel_size(44)
+        img.set_pixel_size(30)
         box.append(img)
         n = Gtk.Label(label=app["name"])
         n.add_css_class("favname")
         n.set_ellipsize(Pango.EllipsizeMode.END)
-        n.set_max_width_chars(11)
+        n.set_max_width_chars(10)
         box.append(n)
         ch.set_child(box)
         ch.set_tooltip_text(app["desc"] or app["name"])
@@ -757,7 +759,7 @@ class StartMenu(Gtk.ApplicationWindow):
             self.favbox.remove(c)
         for k in self._fav_keys():
             self.favbox.append(self._fav_tile(self.by_key[k]))
-        self._fill_list(self.recent_list, self._recent_apps(6))
+        self._fill_list(self.recent_list, self._recent_apps(3))
 
     def _recent_apps(self, n):
         data = read_recent()
@@ -914,7 +916,7 @@ class StartMenu(Gtk.ApplicationWindow):
             if self.confirm_pending == action:
                 self.confirm_pending = None
                 btn.remove_css_class("confirm")
-                self.hint.set_label("Rechtsklick: Favorit   ·   Esc: schliessen")
+                self.hint.set_label("Rechtsklick: Favorit")
                 self.hint.remove_css_class("warn")
             return False
         GLib.timeout_add(3500, reset)

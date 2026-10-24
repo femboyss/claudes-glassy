@@ -64,22 +64,22 @@ tooltip label { color: @text; }
 
 /* Start-Knopf */
 #custom-start {
-    color: @mauve;
-    font-size: 18px;
-    padding: 0 17px 0 14px;
-    background: alpha(@mauve, 0.14);
-    border-color: alpha(@mauve, 0.30);
+    color: @blue;
+    font-size: 14px;
+    padding: 0 13px 0 12px;
+    background: alpha(@blue, 0.12);
+    border-color: alpha(@blue, 0.28);
 }
 #custom-start:hover {
-    background: alpha(@mauve, 0.30);
-    color: @pink;
+    background: alpha(@blue, 0.25);
+    color: @text;
 }
 
 /* Suchleiste */
 #custom-search {
     color: @overlay0;
     font-weight: 500;
-    padding: 0 90px 0 16px;      /* breit wie ein Suchfeld */
+    padding: 0 60px 0 14px;      /* breit wie ein Suchfeld */
 }
 #custom-search:hover {
     color: @subtext;

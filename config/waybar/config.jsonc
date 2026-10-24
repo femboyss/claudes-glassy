@@ -19,7 +19,7 @@
 
     // Start-Knopf: Startmenue (oeffnet sich auf diesem Monitor)
     "custom/start": {
-        "format": "",
+        "format": "",
         "tooltip": true,
         "tooltip-format": "Start",
         "on-click": "~/.config/hypr/scripts/startmenu.sh",
