@@ -55,7 +55,7 @@ DEFAULT_SETTINGS = {
     "show_clock": True,         # Uhr + Datum oben rechts
     "show_recent": True,        # "Zuletzt verwendet" unter den Favoriten
     "show_desc": True,          # Beschreibung unter App-Namen
-    "hover_categories": True,   # Kategorie wechselt beim Drueberfahren (wie Mint)
+    "hover_categories": False,  # True = Kategorie wechselt schon beim Drueberfahren (wie Mint); Standard: erst bei Klick
 }
 
 # Nerd-Font-Glyphen (JetBrainsMono Nerd Font)
