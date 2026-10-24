@@ -41,6 +41,37 @@ try("scratchpad", function()
 end)
 
 -------------------------------------------------
+-- Monitore
+-- SUPER + F1/F2/F3          = zu Monitor springen
+-- SUPER + SHIFT + F1/F2/F3  = Fenster auf Monitor schieben (und mitgehen)
+-- SUPER + . / ,             = naechster / vorheriger Monitor
+-- SUPER + SHIFT + . / ,     = Fenster auf naechsten / vorherigen Monitor
+-------------------------------------------------
+local monitors = { "DP-3", "HDMI-A-1", "DP-1" }   -- F1 = Hauptmonitor
+try("monitor by key", function()
+    for i, mon in ipairs(monitors) do
+        hl.bind(M .. " + F" .. i,           hl.dsp.focus({ monitor = mon }))
+        hl.bind(M .. " + SHIFT + F" .. i,   hl.dsp.window.move({ monitor = mon, follow = true }))
+    end
+end)
+try("monitor next/prev", function()
+    hl.bind(M .. " + period",          hl.dsp.focus({ monitor = "+1" }))
+    hl.bind(M .. " + comma",           hl.dsp.focus({ monitor = "-1" }))
+    hl.bind(M .. " + SHIFT + period",  hl.dsp.window.move({ monitor = "+1", follow = true }))
+    hl.bind(M .. " + SHIFT + comma",   hl.dsp.window.move({ monitor = "-1", follow = true }))
+end)
+
+-------------------------------------------------
+-- Fenster-Umschalter
+-- ALT + Tab        = zum naechsten Fenster
+-- SUPER + O      = Liste aller offenen Fenster (alle Workspaces/Monitore)
+-------------------------------------------------
+try("window switcher", function()
+    hl.bind("ALT + Tab",   hl.dsp.window.cycle_next({ next = true }))
+    hl.bind(M .. " + O",   sh("pkill -x rofi || rofi -show window"))
+end)
+
+-------------------------------------------------
 -- Super alleine antippen = Launcher (wie bei end-4)
 -- Feuert nur, wenn Super ohne andere Taste losgelassen wird.
 -------------------------------------------------

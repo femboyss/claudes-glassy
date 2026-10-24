@@ -66,7 +66,14 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 | SUPER + Tab                | Letzter Workspace                       |
 | SUPER + SHIFT + 1..0       | Fenster auf Workspace (folgen)          |
 | SUPER + ALT + 1..0         | Fenster auf Workspace (bleiben)         |
-| SUPER + S                  | Scratchpad                              |
+| SUPER + S                  | Scratchpad anzeigen                     |
+| SUPER + SHIFT + S          | Fenster in den Scratchpad parken        |
+| SUPER + F1 / F2 / F3       | Zu Monitor DP-3 / HDMI-A-1 / DP-1       |
+| SUPER + SHIFT + F1..F3     | Fenster auf diesen Monitor schieben     |
+| SUPER + . / ,              | Naechster / vorheriger Monitor          |
+| SUPER + SHIFT + . / ,      | Fenster auf naechsten / vorherigen Mon. |
+| ALT + Tab                  | Naechstes Fenster                       |
+| SUPER + O                  | Liste aller offenen Fenster             |
 | SUPER + W                  | Wallpaper-Auswahl mit Vorschau          |
 | SUPER + SHIFT + W          | Zufaelliges Wallpaper                   |
 | SUPER + V                  | Zwischenablage-Verlauf                  |
