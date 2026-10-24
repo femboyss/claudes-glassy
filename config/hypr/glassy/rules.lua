@@ -52,6 +52,13 @@ rule("window", {
     move = { "monitor_w * 0.70", "monitor_h * 0.68" },
 })
 
+-- Anima Engine (Desktop-Pets/Sticker ueber Proton): ohne Rahmen, Ecken, Schatten, Blur
+-- Fuer echte Transparenz braucht es GE-Proton + Startoption WINE_LAYERED_OVERLAY_SHAPE=1 (siehe README)
+local anima = { class = "^(steam_app_3474900|anima ?engine.*|AnimaEngine.*)$" }
+rule("window", { name = "anima-core", match = anima, float = true, pin = true, border_size = 0, rounding = 0 })
+rule("window", { name = "anima-clean", match = anima, no_shadow = true, no_blur = true, no_dim = true })
+rule("window", { name = "anima-title", match = { title = "^(Anima Engine)$" }, float = true, pin = true, border_size = 0, rounding = 0 })
+
 ---------------- Layer (Glas-Blur) ----------------
 rule("layer", { name = "waybar-glass", match = { namespace = "^waybar$" }, blur = true, ignore_alpha = 0.1 })
 rule("layer", { name = "rofi-glass",   match = { namespace = "^rofi$" },   blur = true, ignore_alpha = 0.05, animation = "popin 92%" })

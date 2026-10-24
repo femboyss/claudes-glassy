@@ -116,6 +116,7 @@ do_install() {
     fi
 
     # Neue Configs
+    mkdir -p "$HOME/.config"
     for d in "${DIRS[@]}"; do
         cp -a "$HERE/config/$d" "$HOME/.config/$d"
         c_ok "installiert: ~/.config/$d"

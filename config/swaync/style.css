@@ -17,9 +17,42 @@
 }
 
 /* ---------- Popup-Benachrichtigungen ---------- */
-.notification-row { outline: none; background: transparent; }
+/* Alle inneren Ebenen durchsichtig machen. Discord & Co. schicken Bilder,
+   Aktionen und "Antworten"-Felder mit; das Standard-Theme gibt diesen
+   Ebenen sonst einen grauen, undurchsichtigen Hintergrund. */
+.notification-row,
+.notification-row:focus,
+.notification-row:hover,
+.notification-group,
+.notification-group-headers,
+.notification-background,
+.notification-content,
+.notification-content > *,
+.notification-default-action > *,
+.notification-alt-actions,
+.notification-actions,
+.text-box,
+.image,
+.app-icon,
+.body-image,
+.inline-reply,
+.inline-reply-entry,
+.floating-notifications,
+.floating-notifications.background,
+.blank-window {
+    background: transparent;
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    outline: none;
+}
 
+.notification-row { outline: none; }
+
+/* Die eigentliche Glas-Karte */
+.notification-background .notification,
 .notification {
+    background-color: @base;
     background: @base;
     border: 1px solid @edge;
     border-radius: 18px;
@@ -29,6 +62,17 @@
 }
 
 .notification-content { padding: 12px; }
+
+/* "Antworten"-Feld (Discord, Telegram ...) */
+.inline-reply { margin: 0 10px 10px 10px; }
+.inline-reply-entry {
+    background-color: rgba(17, 17, 27, 0.55);
+    border: 1px solid @edge;
+    border-radius: 10px;
+    padding: 4px 10px;
+}
+.inline-reply-button { background-color: @card; border-radius: 10px; border: none; margin-left: 6px; }
+.body-image { border-radius: 10px; }
 .notification.critical { border-color: @red; }
 
 .summary { font-weight: 700; font-size: 14px; }

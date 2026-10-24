@@ -127,3 +127,23 @@ Update: denselben Ein-Befehl nochmal ausfuehren.
 - Layer-Regeln: https://wiki.hypr.land/configuring/core/rules/layer-rules/
 - Dispatcher: https://wiki.hypr.land/Configuring/Basics/Dispatchers/
 - Catppuccin Farben: https://catppuccin.com/palette
+
+## Doktor (wenn etwas komisch ist)
+
+    bash ~/.local/share/claudes-glassy/doctor.sh            # pruefen, Bericht in ~/glassy-doctor.txt
+    bash ~/.local/share/claudes-glassy/doctor.sh --repair   # veraenderte/fehlende Dateien aus dem Repo zurueckholen
+
+Prueft Hyprland-Config-Fehler, laufende Dienste, fehlende Pakete und vergleicht jede
+Config-Datei mit dem Repo. `--repair` sichert die alten Versionen vorher und laesst
+`custom.lua`, `pinned-apps`, Avatar und Startmenue-Einstellungen in Ruhe.
+
+## Anima Engine / Desktop-Pets (Windows-Apps ueber Proton)
+
+Schwarzer statt durchsichtiger Hintergrund kommt von Wine/Proton, nicht von Hyprland.
+Abhilfe: GE-Proton (ab GE-Proton11-6) verwenden und in Steam bei den Startoptionen eintragen:
+
+    WINE_LAYERED_OVERLAY_SHAPE=1 %command%
+
+GE-Proton installieren: `yay -S protonplus` (oder ProtonUp-Qt), dann in Steam unter
+Eigenschaften -> Kompatibilitaet auswaehlen. Die Fensterregeln fuer Anima Engine
+(kein Rahmen, keine Ecken, kein Schatten) sind schon in `glassy/rules.lua`.
