@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# ==================================================================
+#  glassy - Verwaltung fuer claudes-glassy
+#
+#    glassy --update      neuesten STABILEN Stand holen (Branch main) und installieren
+#    glassy --debug       TEST-Stand holen (Branch debug) und installieren
+#    glassy --status      welcher Stand ist installiert? Updates da?
+#    glassy --doctor      pruefen      (glassy --repair: kaputte Dateien reparieren)
+#    glassy --restore     altes Backup zurueckspielen
+#    glassy --settings    Einstellungen oeffnen (wie SUPER+I)
+#    glassy --reload      Leiste, Island, Startmenue, Zwischenablage neu starten
+#    glassy --help        diese Hilfe
+#
+#  Ablauf bei Fehlern: Fixes kommen zuerst auf "debug" -> mit "glassy --debug"
+#  testen -> wenn alles passt, landet es auf "main" -> "glassy --update".
+# ==================================================================
+set -uo pipefail
+
+REPO_URL="https://github.com/femboyss/claudes-glassy"
+DEST="$HOME/.local/share/claudes-glassy"
+CHANNEL_FILE="$HOME/.config/hypr/glassy-channel"
+
+c_ok()   { printf '\033[38;2;158;206;106m[ok]\033[0m %s\n' "$*"; }
+c_info() { printf '\033[38;2;122;162;247m[..]\033[0m %s\n' "$*"; }
+c_warn() { printf '\033[38;2;224;175;104m[!!]\033[0m %s\n' "$*"; }
+c_err()  { printf '\033[38;2;247;118;142m[xx]\033[0m %s\n' "$*"; }
+
+channel() { cat "$CHANNEL_FILE" 2>/dev/null || echo main; }
+
+fetch_branch() {   # $1 = main | debug
+    local b="$1"
+    command -v git >/dev/null 2>&1 || sudo pacman -S --needed git
+    if [ ! -d "$DEST/.git" ]; then
+        rm -rf "$DEST"
+        git clone --depth 1 --branch "$b" "$REPO_URL" "$DEST" || { c_err "Klonen fehlgeschlagen"; exit 1; }
+    else
+        if [ -n "$(git -C "$DEST" status --porcelain 2>/dev/null)" ]; then
+            local bak="$HOME/.local/share/claudes-glassy-lokal-$(date +%Y%m%d-%H%M%S).patch"
+            git -C "$DEST" diff > "$bak" 2>/dev/null || true
+            c_warn "Lokale Aenderungen in der Repo-Kopie gesichert: $bak"
+        fi
+        c_info "Hole Branch '$b' von GitHub ..."
+        git -C "$DEST" fetch --depth 1 origin "$b" || { c_err "Branch '$b' nicht gefunden / kein Netz"; exit 1; }
+        git -C "$DEST" checkout -q -B "$b" FETCH_HEAD
+        git -C "$DEST" reset -q --hard FETCH_HEAD
+        git -C "$DEST" clean -fdq
+    fi
+    mkdir -p "$(dirname "$CHANNEL_FILE")"
+    echo "$b" > "$CHANNEL_FILE"
+    c_ok "Stand: $b  $(git -C "$DEST" log -1 --format='%h  %s')"
+}
+
+install_now() {
+    bash "$DEST/install.sh" --auto
+}
+
+status() {
+    local b local_rev remote_rev
+    b="$(channel)"
+    echo "Kanal:      $b   ($( [ "$b" = debug ] && echo 'Test-Stand' || echo 'stabil'))"
+    if [ -d "$DEST/.git" ]; then
+        local_rev="$(git -C "$DEST" rev-parse --short HEAD 2>/dev/null)"
+        echo "Installiert: $local_rev  $(git -C "$DEST" log -1 --format='%s  (%cd)' --date=format:'%d.%m.%Y %H:%M')"
+        for x in main debug; do
+            remote_rev="$(timeout 8 git ls-remote "$REPO_URL" "refs/heads/$x" 2>/dev/null | cut -c1-7)"
+            if [ -z "$remote_rev" ]; then
+                echo "GitHub $x:  (nicht erreichbar)"
+            elif [ "$remote_rev" = "$local_rev" ]; then
+                echo "GitHub $x:  $remote_rev  = installiert"
+            else
+                echo "GitHub $x:  $remote_rev  -> neuer Stand verfuegbar ($( [ "$x" = main ] && echo 'glassy --update' || echo 'glassy --debug'))"
+            fi
+        done
+    else
+        c_warn "Noch nicht installiert:  glassy --update"
+    fi
+}
+
+reload_all() {
+    pkill -x waybar; setsid -f waybar >/dev/null 2>&1
+    pkill -x swaync; setsid -f swaync >/dev/null 2>&1
+    pkill -f "startmenu.py --daemon"; "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon
+    pkill -f "clipman.py --daemon";   "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon
+    "$HOME/.config/hypr/scripts/island.sh" restart
+    hyprctl reload >/dev/null 2>&1
+    c_ok "neu geladen"
+}
+
+case "${1:---help}" in
+    --update|-u|update)   fetch_branch main  && install_now ;;
+    --debug|-d|debug)     fetch_branch debug && install_now ;;
+    --status|-s|status)   status ;;
+    --doctor|doctor)      bash "$DEST/doctor.sh" ;;
+    --repair|repair)      bash "$DEST/doctor.sh" --repair ;;
+    --restore|restore)    bash "$DEST/install.sh" --restore ;;
+    --settings|settings)  "$HOME/.config/hypr/scripts/settings-app.sh" ;;
+    --reload|reload)      reload_all ;;
+    --help|-h|help|*)     sed -n '3,16p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac

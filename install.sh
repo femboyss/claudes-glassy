@@ -21,8 +21,14 @@ c_warn() { printf '\033[38;2;249;226;175m[!!]\033[0m %s\n' "$*"; }
 c_err()  { printf '\033[38;2;243;139;168m[xx]\033[0m %s\n' "$*"; }
 
 # ja/nein-Frage; $2 = Standard (j oder n)
+AUTO=0
 ask() {
     local q="$1" def="${2:-n}" hint ans
+    if [ "$AUTO" = 1 ]; then
+        echo "$q -> $( [ "$def" = j ] && echo ja || echo nein ) (automatisch)"
+        [ "$def" = j ]
+        return
+    fi
     [ "$def" = "j" ] && hint="[J/n]" || hint="[j/N]"
     read -r -p "$q $hint " ans
     ans="${ans:-$def}"
@@ -61,6 +67,19 @@ restart_session() {
 }
 
 # ------------------------------------------------------------------
+# "glassy"-Befehl nach ~/.local/bin und in den PATH (fish + bash)
+install_cli() {
+    mkdir -p "$HOME/.local/bin"
+    install -m 755 "$HERE/bin/glassy" "$HOME/.local/bin/glassy"
+    if command -v fish >/dev/null 2>&1; then
+        fish -c 'contains $HOME/.local/bin $fish_user_paths; or fish_add_path -U $HOME/.local/bin' 2>/dev/null
+    fi
+    if ! grep -qs 'claudes-glassy: ~/.local/bin' "$HOME/.bashrc"; then
+        printf '\n# claudes-glassy: ~/.local/bin in den PATH (fuer den Befehl "glassy")\ncase ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac\n' >> "$HOME/.bashrc"
+    fi
+    c_ok "Befehl installiert:  glassy --help"
+}
+
 do_install() {
     echo
     c_info "claudes-glassy wird installiert."
@@ -78,7 +97,11 @@ do_install() {
 
     ask "Pakete installieren/aktualisieren (sudo pacman)?" j && {
         c_info "Installiere Pakete ..."
-        sudo pacman -S --needed "${PKGS[@]}"
+        if [ "$AUTO" = 1 ]; then
+            sudo pacman -S --needed --noconfirm "${PKGS[@]}"
+        else
+            sudo pacman -S --needed "${PKGS[@]}"
+        fi
 
         if ! command -v awww >/dev/null 2>&1 && ! command -v swww >/dev/null 2>&1; then
             if sudo pacman -S --needed --noconfirm awww 2>/dev/null; then
@@ -89,7 +112,7 @@ do_install() {
                 local aur=""
                 command -v paru >/dev/null 2>&1 && aur=paru
                 command -v yay  >/dev/null 2>&1 && aur=yay
-                if [ -n "$aur" ] && ask "awww (Wallpaper mit Uebergaengen) aus dem AUR mit $aur installieren?" j; then
+                if [ -n "$aur" ] && [ "$AUTO" = 0 ] && ask "awww (Wallpaper mit Uebergaengen) aus dem AUR mit $aur installieren?" j; then
                     "$aur" -S --needed awww || c_warn "awww-Installation fehlgeschlagen - nutze swaybg."
                 else
                     c_warn "Kein awww/swww - nutze swaybg (ohne Uebergaenge). Spaeter:  yay -S awww"
@@ -151,6 +174,8 @@ do_install() {
 -- Beispiel:
 -- hl.bind("SUPER + G", hl.dsp.exec_cmd("steam"))
 EOF
+
+    install_cli
 
     # Eigene Einstellungen (SUPER+I) nach einem Update wieder anwenden
     if [ -f "$HOME/.config/hypr/glassy-settings.json" ]; then
@@ -227,6 +252,7 @@ do_restore() {
 # ------------------------------------------------------------------
 case "${1:-}" in
     --install|-i) do_install ;;
+    --auto)       AUTO=1; do_install ;;     # ohne Fragen (fuer "glassy --update" / "glassy --debug")
     --restore|-r) do_restore ;;
     "")
         echo

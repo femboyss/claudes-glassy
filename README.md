@@ -17,6 +17,21 @@ This clones (or hard-updates) the repo to `~/.local/share/claudes-glassy` and st
 installer. The installer has a menu (install / restore backup / cancel), asks whether to back
 up your current configs (default: yes) and whether to install packages via pacman.
 
+After the first install you have the `glassy` command (in `~/.local/bin`, added to PATH for fish and bash):
+
+| Command | What it does |
+|---------|--------------|
+| `glassy --update` | Get the latest **stable** version (branch `main`) and install it |
+| `glassy --debug` | Get the **test** version (branch `debug`) and install it |
+| `glassy --status` | Installed version, and whether main/debug have something newer |
+| `glassy --doctor` / `--repair` | Check / repair configs, services, packages |
+| `glassy --restore` | Restore a backup from before the install |
+| `glassy --settings` | Open the settings app (same as SUPER+I) |
+| `glassy --reload` | Restart bar, island, start menu, clipboard |
+
+Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work they go to
+`main`, and `glassy --update` brings you back to the stable channel.
+
 - Restore your previous setup: `bash ~/.local/share/claudes-glassy/install.sh --restore`
 - Something broken? `bash ~/.local/share/claudes-glassy/doctor.sh` (add `--repair` to fix)
 - Your own Hyprland additions go to `~/.config/hypr/custom.lua` (never overwritten)
@@ -126,6 +141,21 @@ Bildschirmaufnahme und eine Einstellungs-App. Fuer **Hyprland 0.55+ (Lua-Config)
 Holt (oder aktualisiert hart) das Repo nach `~/.local/share/claudes-glassy` und startet den
 Installer. Der hat ein Menue (Installieren / Backup wiederherstellen / Abbrechen), fragt nach
 einem Backup deiner Configs (Standard: ja) und ob Pakete per pacman installiert werden sollen.
+
+Danach gibt es den Befehl `glassy`:
+
+| Befehl | Was er macht |
+|--------|--------------|
+| `glassy --update` | Neuesten **stabilen** Stand holen (Branch `main`) und installieren |
+| `glassy --debug` | **Test**-Stand holen (Branch `debug`) und installieren |
+| `glassy --status` | Was ist installiert, gibt es auf main/debug etwas Neueres? |
+| `glassy --doctor` / `--repair` | Configs, Dienste, Pakete pruefen / reparieren |
+| `glassy --restore` | Backup von vor der Installation zurueckspielen |
+| `glassy --settings` | Einstellungen oeffnen (wie SUPER+I) |
+| `glassy --reload` | Leiste, Island, Startmenue, Zwischenablage neu starten |
+
+Fixes kommen zuerst auf `debug`. Mit `glassy --debug` testen; wenn alles passt, landen sie
+auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.
 
 - Altes Setup zurueck: `bash ~/.local/share/claudes-glassy/install.sh --restore`
 - Etwas kaputt? `bash ~/.local/share/claudes-glassy/doctor.sh` (mit `--repair` reparieren)
