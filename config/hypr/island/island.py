@@ -96,6 +96,16 @@ window, window.background { background: transparent; }
 .eplayer { font-size: 9.5px; font-weight: 800; color: @tn_comment; letter-spacing: 1px; }
 .etime   { font-size: 9.5px; color: @tn_comment; font-feature-settings: "tnum"; }
 
+/* Song-Schieberegler (klicken/ziehen = spulen) */
+scale.seek { padding: 6px 0; margin: 0; }
+scale.seek trough    { min-height: 4px; border-radius: 99px; background-color: alpha(@tn_hl, 0.9); transition: min-height 120ms ease; }
+scale.seek highlight { min-height: 4px; border-radius: 99px;
+                       background-image: linear-gradient(90deg, @tn_purple, @tn_blue, @tn_cyan); }
+scale.seek slider    { min-width: 0; min-height: 0; margin: -6px; padding: 0;
+                       background-color: @tn_fg; border: none; box-shadow: none; border-radius: 99px;
+                       transition: all 120ms ease; }
+scale.seek:hover trough, scale.seek:hover highlight { min-height: 6px; }
+scale.seek:hover slider { min-width: 12px; min-height: 12px; margin: -4px; box-shadow: 0 0 8px alpha(@tn_cyan, 0.6); }
 progressbar trough   { min-height: 4px; border-radius: 99px; background-color: alpha(@tn_hl, 0.9); }
 progressbar progress { min-height: 4px; border-radius: 99px;
                        background-image: linear-gradient(90deg, @tn_purple, @tn_blue, @tn_cyan); }
@@ -146,6 +156,60 @@ def run_async(argv, cb=None):
 
 def have(cmd):
     return GLib.find_program_in_path(cmd) is not None
+
+
+# ------------------------------------------------------------------ Hyprland-Ereignisse
+class HyprEvents:
+    """Liest Hyprlands Ereignis-Socket (.socket2.sock) und ruft cb(name, data) auf.
+    Damit merken wir Klicks auf andere Monitore/Fenster, auch wenn wir die
+    Tastatur exklusiv halten."""
+
+    def __init__(self, cb):
+        self.cb = cb
+        self.conn = None
+        GLib.idle_add(self._connect)
+
+    def _path(self):
+        sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+        rt = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+        if not sig:
+            return None
+        for p in (os.path.join(rt, "hypr", sig, ".socket2.sock"), os.path.join("/tmp", "hypr", sig, ".socket2.sock")):
+            if os.path.exists(p):
+                return p
+        return None
+
+    def _connect(self):
+        path = self._path()
+        if path is None:
+            return False
+        try:
+            client = Gio.SocketClient.new()
+            self.conn = client.connect(Gio.UnixSocketAddress.new(path), None)
+        except GLib.Error as e:
+            print("[hypr-events] verbinden:", e, file=sys.stderr, flush=True)
+            GLib.timeout_add_seconds(5, self._connect)
+            return False
+        self.stream = Gio.DataInputStream.new(self.conn.get_input_stream())
+        self._read()
+        return False
+
+    def _read(self):
+        def done(s, res):
+            try:
+                line, _ = s.read_line_finish_utf8(res)
+            except GLib.Error:
+                line = None
+            if line is None:
+                GLib.timeout_add_seconds(2, self._connect)     # Hyprland neu geladen o. ae.
+                return
+            name, _, data = line.partition(">>")
+            try:
+                self.cb(name, data)
+            except Exception as e:  # noqa: BLE001
+                print("[hypr-events]", e, file=sys.stderr, flush=True)
+            self._read()
+        self.stream.read_line_async(GLib.PRIORITY_DEFAULT, None, done)
 
 
 # ------------------------------------------------------------------ Zustand
@@ -307,9 +371,15 @@ class IslandWindow(Gtk.ApplicationWindow):
         prog = Gtk.Box(spacing=8)
         self.tpos = Gtk.Label(label="0:00")
         self.tpos.add_css_class("etime")
-        self.pbar = Gtk.ProgressBar()
+        self.pbar = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1, 1)
+        self.pbar.add_css_class("seek")
+        self.pbar.set_draw_value(False)
         self.pbar.set_hexpand(True)
         self.pbar.set_valign(Gtk.Align.CENTER)
+        self.pbar.set_focusable(False)
+        self.pbar.set_tooltip_text("Klicken oder ziehen zum Spulen")
+        self.updating = False
+        self.pbar.connect("change-value", self._on_seek)
         self.tlen = Gtk.Label(label="0:00")
         self.tlen.add_css_class("etime")
         prog.append(self.tpos)
@@ -330,6 +400,12 @@ class IslandWindow(Gtk.ApplicationWindow):
             ctl.append(b)
         outer.append(ctl)
         return outer
+
+    def _on_seek(self, scale, scroll, value):
+        if self.updating:
+            return False
+        self.app.seek_to(value)
+        return False
 
     # ---- Darstellung ----
     def render(self, mode, expanded):
@@ -354,10 +430,11 @@ class IslandWindow(Gtk.ApplicationWindow):
                 self.bcover.set_from_icon_name("audio-x-generic")
             self.ccover.set_pixel_size(22)
             self.bcover.set_pixel_size(58)
-            if st.length > 0:
-                self.pbar.set_fraction(max(0.0, min(1.0, st.position / st.length)))
-            else:
-                self.pbar.set_fraction(0)
+            if time.monotonic() > self.app.seek_hold_until:   # nicht reinfunken, waehrend gezogen wird
+                self.updating = True
+                self.pbar.set_range(0, max(1.0, st.length / 1_000_000))
+                self.pbar.set_value(max(0.0, st.position / 1_000_000))
+                self.updating = False
             self.tpos.set_label(fmt_time(st.position))
             self.tlen.set_label(fmt_time(st.length))
         if st.volume is not None:
@@ -386,6 +463,8 @@ class IslandApp(Gtk.Application):
         self.auto_until = 0.0
         self.volume_until = 0.0
         self.collapse_id = 0
+        self.seek_hold_until = 0.0
+        self.seek_id = 0
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -409,6 +488,7 @@ class IslandApp(Gtk.Application):
         self._sync_monitors()
         self._follow_player()
         self._follow_volume()
+        self.hypr = HyprEvents(self._on_hypr_event)
         GLib.timeout_add(1000, self._tick)
         self.refresh()
         snap = os.environ.get("GLASSY_ISLAND_SNAP")     # nur fuer Tests: Bild der Pille speichern
@@ -470,6 +550,8 @@ class IslandApp(Gtk.Application):
         if self.collapse_id:
             GLib.source_remove(self.collapse_id)
             self.collapse_id = 0
+        self.seek_hold_until = 0.0
+        self.seek_id = 0
         if inside:
             self.collapse_id = GLib.timeout_add(220, self._apply_hover)
         else:
@@ -477,10 +559,19 @@ class IslandApp(Gtk.Application):
 
     def _apply_hover(self):
         self.collapse_id = 0
+        self.seek_hold_until = 0.0
+        self.seek_id = 0
         if self.hovering and self.state.has_media:
             self._poll_position()
         self.refresh()
         return False
+
+    def _on_hypr_event(self, name, data):
+        # woanders hingeklickt / Fenster oder Workspace gewechselt -> aufgeklappte Island zu
+        if name in ("focusedmon", "focusedmonv2", "activewindow", "activewindowv2", "workspace", "workspacev2", "openwindow", "fullscreen", "activespecial") and (self.pinned or self.auto_until > time.monotonic()):
+            self.pinned = False
+            self.auto_until = 0.0
+            self.refresh()
 
     def click(self):
         if self.state.has_media:
@@ -501,11 +592,31 @@ class IslandApp(Gtk.Application):
         run_async(["playerctl", cmd])
         GLib.timeout_add(350, lambda: (self._poll_position(), False)[1])
 
+    def seek_to(self, seconds):
+        """Schieberegler bewegt -> nach kurzer Pause (Ziehen fertig) spulen."""
+        st = self.state
+        seconds = max(0.0, min(seconds, st.length / 1_000_000 if st.length else seconds))
+        st.position = int(seconds * 1_000_000)
+        self.seek_hold_until = time.monotonic() + 0.8
+        for w in self.windows.values():
+            w.tpos.set_label(fmt_time(st.position))
+        if self.seek_id:
+            GLib.source_remove(self.seek_id)
+
+        def go():
+            self.seek_id = 0
+            run_async(["playerctl", "position", f"{seconds:.2f}"])
+            GLib.timeout_add(400, lambda: (self._poll_position(), False)[1])
+            return False
+        self.seek_id = GLib.timeout_add(120, go)
+
     def _poll_position(self):
         if not have("playerctl"):
             return
 
         def got(out):
+            if time.monotonic() < self.seek_hold_until:
+                return
             try:
                 self.state.position = int(float(out.strip()) * 1_000_000)
             except ValueError:

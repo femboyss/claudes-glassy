@@ -486,6 +486,60 @@ def app_image(app, size):
     return img
 
 
+# ------------------------------------------------------------------ Hyprland-Ereignisse
+class HyprEvents:
+    """Liest Hyprlands Ereignis-Socket (.socket2.sock) und ruft cb(name, data) auf.
+    Damit merken wir Klicks auf andere Monitore/Fenster, auch wenn wir die
+    Tastatur exklusiv halten."""
+
+    def __init__(self, cb):
+        self.cb = cb
+        self.conn = None
+        GLib.idle_add(self._connect)
+
+    def _path(self):
+        sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+        rt = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+        if not sig:
+            return None
+        for p in (os.path.join(rt, "hypr", sig, ".socket2.sock"), os.path.join("/tmp", "hypr", sig, ".socket2.sock")):
+            if os.path.exists(p):
+                return p
+        return None
+
+    def _connect(self):
+        path = self._path()
+        if path is None:
+            return False
+        try:
+            client = Gio.SocketClient.new()
+            self.conn = client.connect(Gio.UnixSocketAddress.new(path), None)
+        except GLib.Error as e:
+            print("[hypr-events] verbinden:", e, file=sys.stderr, flush=True)
+            GLib.timeout_add_seconds(5, self._connect)
+            return False
+        self.stream = Gio.DataInputStream.new(self.conn.get_input_stream())
+        self._read()
+        return False
+
+    def _read(self):
+        def done(s, res):
+            try:
+                line, _ = s.read_line_finish_utf8(res)
+            except GLib.Error:
+                line = None
+            if line is None:
+                GLib.timeout_add_seconds(2, self._connect)     # Hyprland neu geladen o. ae.
+                return
+            name, _, data = line.partition(">>")
+            try:
+                self.cb(name, data)
+            except Exception as e:  # noqa: BLE001
+                print("[hypr-events]", e, file=sys.stderr, flush=True)
+            self._read()
+        self.stream.read_line_async(GLib.PRIORITY_DEFAULT, None, done)
+
+
 # ------------------------------------------------------------------ UI
 class StartMenu(Gtk.ApplicationWindow):
     def __init__(self, app, monitor_name=None, screenshot=None, daemon=False):
@@ -534,8 +588,9 @@ class StartMenu(Gtk.ApplicationWindow):
             self.revealer.set_margin_top(MARGIN_TOP)
             self.revealer.set_margin_start(MARGIN_LEFT)
             click = Gtk.GestureClick()
+            click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
             click.connect("pressed", self._on_root_click)
-            root.add_controller(click)
+            self.add_controller(click)
         root.append(self.revealer)
 
         keys = Gtk.EventControllerKey()
@@ -544,6 +599,9 @@ class StartMenu(Gtk.ApplicationWindow):
         self.add_controller(keys)
 
         self.connect("notify::is-active", self._on_active_changed)
+        # Klick auf anderen Monitor / anderes Fenster / Workspace-Wechsel -> zu
+        if daemon:
+            self.hypr = HyprEvents(self._on_hypr_event)
         self.appmon = Gio.AppInfoMonitor.get()
         self.appmon.connect("changed", lambda *_: setattr(self, "apps_dirty", True))
 
@@ -1132,7 +1190,7 @@ class StartMenu(Gtk.ApplicationWindow):
         return False
 
     def _on_root_click(self, gesture, n, x, y):
-        ok, b = self.panel.compute_bounds(self.get_child())
+        ok, b = self.panel.compute_bounds(self)
         if not ok:
             return
         if not (b.get_x() <= x <= b.get_x() + b.get_width() and b.get_y() <= y <= b.get_y() + b.get_height()):
@@ -1150,6 +1208,12 @@ class StartMenu(Gtk.ApplicationWindow):
             return
         if not self.is_active():
             GLib.timeout_add(120, lambda: (self.close_menu() if self.get_visible() and not self.is_active() else None, False)[1])
+
+    def _on_hypr_event(self, name, data):
+        if not self.get_visible() or time.monotonic() - self.opened_at < 0.35:
+            return
+        if name in ("focusedmon", "focusedmonv2", "activewindow", "activewindowv2", "workspace", "workspacev2", "openwindow", "fullscreen", "activespecial"):
+            self.close_menu()
 
     def _on_power(self, btn):
         action = btn._action
