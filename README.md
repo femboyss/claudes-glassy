@@ -7,7 +7,7 @@ screen recording and a settings app. Built for **Hyprland 0.55+ (Lua config)**.
 > The user interface (menus, settings, notifications) is in German.
 > Deutsche Anleitung: [ganz unten](#deutsch).
 
-![Start menu and Dynamic Island](assets/preview-v3.png)
+![Desktop: start menu, Dynamic Island, clipboard](assets/preview-desktop.png)
 
 ## Install / update
 
@@ -49,11 +49,21 @@ Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work
 | **Ctrl+Alt+Del** | Fullscreen glass screen: lock, log out, sleep, recording, screenshot, task manager, reboot, UEFI, shut down. |
 | **Screenshots** | Screen freezes while you select an area. Saved + copied. |
 | **Screen recording** | wf-recorder, area or monitor, with or without desktop audio, NVENC when available. |
-| **Lock screen** | hyprlock: big thin clock, German date, now playing, gradient password pill. No name, no avatar. |
+| **Lock screen** | hyprlock: big clock, German date, now playing, gradient password pill. No name, no avatar. Fully customizable in SUPER+I. |
 | **Wallpapers** | 5 bundled 4K wallpapers, picker with previews, smooth transitions (awww/swww). |
 | **Notifications** | SwayNC in the same glass style (also Discord images/actions). |
 
-![Clipboard](assets/clipboard-preview.png) ![Settings](assets/settings-preview.png)
+### Lock screen
+
+Default (left) and customized in SUPER+I -> Sperrbildschirm (accent pink, huge bold clock, no music):
+
+![Lock screen](assets/lockscreen.png)
+![Lock screen customized](assets/lockscreen-custom.png)
+
+Lock screen options: accent color, clock size and font, brightness, blur, and toggles for lock icon,
+date, greeting, now playing, keyboard layout/uptime, fading password field, clock on other monitors.
+
+![Lock screen settings](assets/settings-lockscreen.png)
 
 ## Keybinds
 
@@ -179,8 +189,9 @@ auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.
   Screenshot, Task-Manager, Neustart, UEFI, Herunterfahren.
 - **Screenshots:** Bildschirm friert beim Auswaehlen ein, wird gespeichert und kopiert.
 - **Bildschirmaufnahme (SUPER+ALT+R):** Bereich oder Monitor, mit/ohne Ton, NVENC wenn moeglich.
-- **Sperrbildschirm:** grosse duenne Uhr, deutsches Datum, laufende Musik, Passwort-Pille.
-  Kein Name, kein Profilbild.
+- **Sperrbildschirm:** grosse Uhr, deutsches Datum, laufende Musik, Passwort-Pille. Kein Name,
+  kein Profilbild. In SUPER+I -> Sperrbildschirm anpassbar: Akzentfarbe, Uhrgroesse und -schrift,
+  Helligkeit, Unschaerfe und welche Elemente angezeigt werden.
 - **Wallpaper:** 5 eigene 4K-Wallpaper, Auswahl mit Vorschau, weiche Uebergaenge.
 - **Benachrichtigungen:** SwayNC im Glas-Look (auch Discord mit Bildern/Aktionen).
 

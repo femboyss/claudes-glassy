@@ -30,6 +30,6 @@ else
     git clone --depth 1 --branch "$BRANCH" "$URL" "$DEST"
 fi
 
-mkdir -p "$HOME/.config/hypr" && echo "$BRANCH" > "$HOME/.config/hypr/glassy-channel"
+mkdir -p "$HOME/.local/state/claudes-glassy" && echo "$BRANCH" > "$HOME/.local/state/claudes-glassy/channel"
 echo "[ok] Stand: $BRANCH  $(git -C "$DEST" log -1 --format='%h  %s' 2>/dev/null)"
 bash "$DEST/install.sh"

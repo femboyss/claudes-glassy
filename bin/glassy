@@ -18,7 +18,7 @@ set -uo pipefail
 
 REPO_URL="https://github.com/femboyss/claudes-glassy"
 DEST="$HOME/.local/share/claudes-glassy"
-CHANNEL_FILE="$HOME/.config/hypr/glassy-channel"
+CHANNEL_FILE="$HOME/.local/state/claudes-glassy/channel"
 
 c_ok()   { printf '\033[38;2;158;206;106m[ok]\033[0m %s\n' "$*"; }
 c_info() { printf '\033[38;2;122;162;247m[..]\033[0m %s\n' "$*"; }

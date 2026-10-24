@@ -18,7 +18,7 @@ REPAIR=0; [ "$1" = "--repair" ] && REPAIR=1
 KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json))$'
 # Von der Einstellungs-App (SUPER+I) erzeugte Dateien nicht als "veraendert" melden
 if [ -f "$HOME/.config/hypr/glassy-settings.json" ]; then
-    KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json)|waybar/config\.jsonc|hypr/hypridle\.conf)$'
+    KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json)|waybar/config\.jsonc|hypr/hypridle\.conf|hypr/hyprlock\.conf)$'
 fi
 
 ok()   { printf '\033[38;2;158;206;106m[ok]\033[0m %s\n' "$*"; }

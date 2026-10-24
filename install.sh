@@ -14,6 +14,16 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 BACKUP_PREFIX="$HOME/.config-backup-catppuccin-glass-"
 BACKUP="${BACKUP_PREFIX}${STAMP}"
 DIRS=(hypr waybar rofi swaync kitty)
+# Dateien, die DIR gehoeren: werden bei Updates nie ueberschrieben
+USER_FILES=(
+    hypr/custom.lua
+    hypr/pinned-apps
+    hypr/avatar.png
+    hypr/glassy-settings.json
+    hypr/glassy-settings.lua
+    hypr/startmenu/settings.json
+    hypr/island/settings.json
+)
 
 c_ok()   { printf '\033[38;2;166;227;161m[ok]\033[0m %s\n' "$*"; }
 c_info() { printf '\033[38;2;203;166;247m[..]\033[0m %s\n' "$*"; }
@@ -121,6 +131,15 @@ do_install() {
         fi
     }
 
+    # Deine eigenen Dateien merken - die bleiben bei jedem Update erhalten
+    KEEP_TMP="$(mktemp -d)"
+    for f in "${USER_FILES[@]}"; do
+        if [ -e "$HOME/.config/$f" ]; then
+            mkdir -p "$KEEP_TMP/$(dirname "$f")"
+            cp -a "$HOME/.config/$f" "$KEEP_TMP/$f"
+        fi
+    done
+
     # Backup oder entfernen
     if [ "$make_backup" = 1 ]; then
         mkdir -p "$BACKUP"
@@ -146,6 +165,17 @@ do_install() {
         cp -a "$HERE/config/$d" "$HOME/.config/$d"
         c_ok "installiert: ~/.config/$d"
     done
+    # eigene Dateien zurueck
+    restored=0
+    for f in "${USER_FILES[@]}"; do
+        if [ -e "$KEEP_TMP/$f" ]; then
+            mkdir -p "$HOME/.config/$(dirname "$f")"
+            cp -a "$KEEP_TMP/$f" "$HOME/.config/$f"
+            restored=$((restored + 1))
+        fi
+    done
+    rm -rf "$KEEP_TMP"
+    [ "$restored" -gt 0 ] && c_ok "deine eigenen Dateien behalten ($restored: Einstellungen, Favoriten, custom.lua ...)"
     chmod +x "$HOME/.config/hypr/scripts/"*.sh
     mkdir -p "$HOME/Pictures/Wallpapers" "$HOME/Pictures/Screenshots"
 
@@ -158,7 +188,7 @@ do_install() {
     if [ -f "$HOME/.face" ]; then
         ln -sfn "$HOME/.face" "$HOME/.config/hypr/avatar.png"
         c_ok "Avatar: ~/.face"
-    else
+    elif [ ! -e "$HOME/.config/hypr/avatar.png" ]; then
         cp "$HERE/assets/avatar.png" "$HOME/.config/hypr/avatar.png"
         c_info "Avatar: Standardbild (eigenes Bild als ~/.face ablegen und Installer erneut starten)"
     fi

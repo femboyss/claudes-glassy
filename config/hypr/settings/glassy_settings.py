@@ -7,6 +7,7 @@
 #  Erzeugt:    ~/.config/hypr/glassy-settings.lua       (Hyprland: Aussehen, Eingabe, Apps)
 #              ~/.config/waybar/config.jsonc            (Bar)
 #              ~/.config/hypr/hypridle.conf             (Sperren & Energie)
+#              ~/.config/hypr/hyprlock.conf             (Sperrbildschirm)
 #              ~/.config/hypr/startmenu/settings.json   (Startmenue)
 #              ~/.config/hypr/island/settings.json      (Dynamic Island)
 #
@@ -26,6 +27,7 @@ STORE = os.path.join(HYPR, "glassy-settings.json")
 LUA_OUT = os.path.join(HYPR, "glassy-settings.lua")
 WAYBAR_OUT = os.path.join(HOME, ".config", "waybar", "config.jsonc")
 IDLE_OUT = os.path.join(HYPR, "hypridle.conf")
+LOCK_OUT = os.path.join(HYPR, "hyprlock.conf")
 STARTMENU_JSON = os.path.join(HYPR, "startmenu", "settings.json")
 ISLAND_JSON = os.path.join(HYPR, "island", "settings.json")
 REPO = os.path.join(HOME, ".local", "share", "claudes-glassy")
@@ -53,7 +55,20 @@ DEFAULTS = {
     "bar_show_stats": True, "bar_show_tray": True, "bar_main_monitor": "DP-3",
     # Sperren & Energie
     "lock_minutes": 10, "screen_off_minutes": 12, "suspend_minutes": 0,
+    # Sperrbildschirm
+    "lock_accent": "blue", "lock_clock_size": "large", "lock_clock_font": "thin",
+    "lock_show_date": True, "lock_show_greeting": True, "lock_show_music": True,
+    "lock_show_info": True, "lock_show_icon": True, "lock_dim": 0.45, "lock_blur": 3,
+    "lock_input_fade": True, "lock_other_monitors": True,
 }
+
+ACCENTS = {   # (Hauptfarbe, Verlauf-Partner) - Tokyo Night
+    "blue": ("7aa2f7", "7dcfff"), "purple": ("bb9af7", "7aa2f7"), "cyan": ("7dcfff", "2ac3de"),
+    "pink": ("ff79c6", "bb9af7"), "green": ("9ece6a", "73daca"), "orange": ("ff9e64", "e0af68"),
+}
+CLOCK_SIZES = {"small": 84, "medium": 104, "large": 124, "huge": 156}
+CLOCK_FONTS = {"thin": "Inter Light", "regular": "Inter Medium", "bold": "Inter ExtraBold",
+               "mono": "JetBrainsMono Nerd Font"}
 
 
 # ------------------------------------------------------------------ Speichern / Laden
@@ -242,10 +257,211 @@ listener {{
     return "".join(parts)
 
 
+def gen_lock(s):
+    a1, a2 = ACCENTS.get(s["lock_accent"], ACCENTS["blue"])
+    size = CLOCK_SIZES.get(s["lock_clock_size"], 124)
+    font = CLOCK_FONTS.get(s["lock_clock_font"], "Inter Light")
+    script = "~/.config/hypr/scripts/lockinfo.sh"
+    mon = s.get("bar_main_monitor", "DP-3")
+    k = size / 124.0                       # Abstaende mit der Uhrgroesse skalieren
+    y_time = 222
+    y_date = int(y_time + 80 * k + 40)
+    y_icon = y_date + 55
+    y_greet = int(y_time - 80 * k - 40)
+    out = [f"""# Automatisch erzeugt von den claudes-glassy Einstellungen (SUPER+I -> Sperrbildschirm).
+# hyprlock nutzt hyprlang-Syntax. Doku: https://wiki.hypr.land/Hypr-Ecosystem/hyprlock/
+
+general {{
+    hide_cursor = true
+    ignore_empty_input = true
+    grace = 2
+    fail_timeout = 1200
+}}
+
+animations {{
+    enabled = true
+    bezier = smooth, 0.25, 1, 0.5, 1
+    animation = fadeIn, 1, 6, smooth
+    animation = fadeOut, 1, 5, smooth
+    animation = inputFieldDots, 1, 2, smooth
+}}
+
+background {{
+    monitor =
+    path = ~/.cache/claudes-glassy/wallpaper
+    color = rgb(1a1b26)
+    blur_passes = {int(s["lock_blur"])}
+    blur_size = 9
+    noise = 0.012
+    contrast = 0.92
+    brightness = {float(s["lock_dim"]):.2f}
+    vibrancy = 0.22
+    vibrancy_darkness = 0.15
+}}
+"""]
+    if s["lock_show_icon"]:
+        out.append(f"""
+label {{
+    monitor = {mon}
+    text = <span foreground="##{a1}">&##xf023;</span>
+    font_size = 16
+    font_family = JetBrainsMono Nerd Font
+    position = 0, {y_icon}
+    halign = center
+    valign = center
+}}
+""")
+    if s["lock_show_date"]:
+        out.append(f"""
+label {{
+    monitor = {mon}
+    text = cmd[update:60000] {script} date
+    color = rgba(a9b1d6cc)
+    font_size = 19
+    font_family = Inter Medium
+    position = 0, {y_date}
+    halign = center
+    valign = center
+}}
+""")
+    out.append(f"""
+label {{
+    monitor = {mon}
+    text = cmd[update:1000] date +"%H:%M"
+    color = rgba(c0caf5ff)
+    font_size = {size}
+    font_family = {font}
+    position = 0, {y_time}
+    halign = center
+    valign = center
+    shadow_passes = 3
+    shadow_size = 10
+    shadow_color = rgba(0,0,0,0.45)
+}}
+""")
+    if s["lock_show_greeting"]:
+        out.append(f"""
+label {{
+    monitor = {mon}
+    text = cmd[update:60000] {script} greet
+    color = rgba(565f89ff)
+    font_size = 15
+    font_family = Inter Medium
+    position = 0, {y_greet}
+    halign = center
+    valign = center
+}}
+""")
+    if s["lock_show_music"]:
+        out.append(f"""
+image {{
+    monitor = {mon}
+    path = ~/.config/hypr/lock/empty.png
+    reload_time = 2
+    reload_cmd = {script} cover
+    size = 88
+    rounding = 18
+    border_size = 0
+    position = 0, -10
+    halign = center
+    valign = center
+}}
+
+label {{
+    monitor = {mon}
+    text = cmd[update:2000] {script} title
+    color = rgba(c0caf5ff)
+    font_size = 15
+    font_family = Inter Bold
+    position = 0, -86
+    halign = center
+    valign = center
+}}
+
+label {{
+    monitor = {mon}
+    text = cmd[update:2000] {script} artist
+    color = rgba(a9b1d6cc)
+    font_size = 12
+    font_family = Inter Medium
+    position = 0, -110
+    halign = center
+    valign = center
+}}
+""")
+    out.append(f"""
+input-field {{
+    monitor = {mon}
+    size = 290, 46
+    outline_thickness = 2
+    dots_size = 0.22
+    dots_spacing = 0.45
+    dots_center = true
+    dots_rounding = -1
+    outer_color = rgba({a2}aa) rgba({a1}aa) 45deg
+    inner_color = rgba(16161ecc)
+    font_color = rgba(c0caf5ff)
+    font_family = Inter Medium
+    check_color = rgba({a1}ee) rgba({a2}ee) 45deg
+    fail_color = rgba(f7768eee) rgba(ff9e64ee) 45deg
+    capslock_color = rgba(e0af68ee)
+    placeholder_text = <span foreground="##565f89">Passwort</span>
+    fail_text = <span foreground="##f7768e">Falsch  ($ATTEMPTS)</span>
+    fade_on_empty = {"true" if s["lock_input_fade"] else "false"}
+    fade_timeout = 4000
+    rounding = -1
+    position = 0, 120
+    halign = center
+    valign = bottom
+}}
+""")
+    if s["lock_show_info"]:
+        out.append(f"""
+label {{
+    monitor = {mon}
+    text = <span foreground="##{a1}">&##xf11c;</span>   $LAYOUT
+    color = rgba(565f89ff)
+    font_size = 11
+    font_family = JetBrainsMono Nerd Font
+    position = 36, 28
+    halign = left
+    valign = bottom
+}}
+
+label {{
+    monitor = {mon}
+    text = cmd[update:60000] {script} uptime
+    color = rgba(565f89ff)
+    font_size = 11
+    font_family = Inter Medium
+    position = -36, 28
+    halign = right
+    valign = bottom
+}}
+""")
+    if s["lock_other_monitors"]:
+        for m in monitor_names():
+            if m == mon:
+                continue
+            out.append(f"""
+label {{
+    monitor = {m}
+    text = cmd[update:1000] date +"%H:%M"
+    color = rgba(c0caf5dd)
+    font_size = 84
+    font_family = {font}
+    position = 0, 20
+    halign = center
+    valign = center
+}}
+""")
+    return "".join(out)
+
+
 def apply_all(s, what=None, quiet=False):
     """Schreibt die Dateien und laedt die betroffenen Teile neu.
     what = None -> alles, sonst Menge aus {'hypr','bar','idle','startmenu','island'}"""
-    what = what or {"hypr", "bar", "idle", "startmenu", "island"}
+    what = what or {"hypr", "bar", "idle", "startmenu", "island", "lock"}
     with open(STORE + ".tmp", "w", encoding="utf-8") as f:
         json.dump(s, f, indent=2, ensure_ascii=False)
     os.replace(STORE + ".tmp", STORE)
@@ -264,6 +480,8 @@ def apply_all(s, what=None, quiet=False):
         write(IDLE_OUT, gen_idle(s))
         if not quiet:
             sh("pkill -x hypridle; sleep 0.2; setsid -f hypridle")
+    if "lock" in what:
+        write(LOCK_OUT, gen_lock(s))
     if "startmenu" in what:
         write(STARTMENU_JSON, json.dumps({
             "show_avatar": s["sm_show_avatar"], "show_clock": s["sm_show_clock"],
@@ -389,6 +607,7 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
                 ("island", "", "Dynamic Island", self.page_island),
                 ("bar", "", "Leiste", self.page_bar),
                 ("input", "", "Eingabe", self.page_input),
+                ("lock", "\uf023", "Sperrbildschirm", self.page_lock),
                 ("power", "", "Sperren & Energie", self.page_power),
                 ("apps", "", "Standard-Apps", self.page_apps),
                 ("wall", "", "Hintergrund", self.page_wall),
@@ -596,6 +815,31 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             self.sw(c, "accel_flat", "Ohne Mausbeschleunigung", "Empfohlen für Spiele", {"hypr"})
             self.sw(c, "natural_scroll", "Natürliches Scrollen", "Wie am Handy", {"hypr"})
             self.sw(c, "follow_mouse", "Fokus folgt der Maus", "Aus = erst Klick fokussiert", {"hypr"})
+            return p
+
+        def page_lock(self):
+            p = self.page("Sperrbildschirm", "Wie der Sperrbildschirm (SUPER+L) aussieht. Kein Name, kein Profilbild.")
+            c = self.group(p, "Farbe & Uhr")
+            self.choice(c, "lock_accent", "Akzentfarbe", "Schloss, Passwort-Rahmen, Tastatur-Symbol",
+                        [("blue", "Blau"), ("purple", "Lila"), ("cyan", "Cyan"), ("pink", "Pink"),
+                         ("green", "Gr\u00fcn"), ("orange", "Orange")], {"lock"})
+            self.choice(c, "lock_clock_size", "Uhrgr\u00f6\u00dfe", None,
+                        [("small", "Klein"), ("medium", "Mittel"), ("large", "Gro\u00df"), ("huge", "Riesig")], {"lock"})
+            self.choice(c, "lock_clock_font", "Uhr-Schrift", None,
+                        [("thin", "D\u00fcnn"), ("regular", "Normal"), ("bold", "Fett"), ("mono", "Monospace")], {"lock"})
+            c = self.group(p, "Hintergrund")
+            self.slider(c, "lock_dim", "Helligkeit", "Niedriger = dunkler", 0.15, 1.0, 0.05, {"lock"})
+            self.spin(c, "lock_blur", "Unsch\u00e4rfe", "0 = scharfes Wallpaper", 0, 5, 1, {"lock"})
+            c = self.group(p, "Elemente")
+            self.sw(c, "lock_show_icon", "Schloss-Symbol", None, {"lock"})
+            self.sw(c, "lock_show_date", "Datum", None, {"lock"})
+            self.sw(c, "lock_show_greeting", "Begr\u00fc\u00dfung", "\u201eGuten Abend\u201c, ohne Namen", {"lock"})
+            self.sw(c, "lock_show_music", "Laufende Musik", "Cover, Titel, K\u00fcnstler", {"lock"})
+            self.sw(c, "lock_show_info", "Tastaturlayout und Laufzeit", "Unten links und rechts", {"lock"})
+            self.sw(c, "lock_input_fade", "Passwortfeld ausblenden, wenn leer", None, {"lock"})
+            self.sw(c, "lock_other_monitors", "Uhr auf den anderen Monitoren", None, {"lock"})
+            c = self.group(p, "Test")
+            self.button(c, "Jetzt sperren", "Zum Ansehen (SUPER+L)", "Sperren", "pidof hyprlock || hyprlock")
             return p
 
         def page_power(self):
