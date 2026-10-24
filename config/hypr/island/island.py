@@ -41,6 +41,24 @@ SHADOW_PAD = 28          # unsichtbarer Rand ums Fenster, damit der Schatten nic
 COMPACT_H = 38
 AUTO_EXPAND_SECS = 4     # bei Songwechsel so lange aufgeklappt
 
+SETTINGS_FILE = os.path.join(HOME, ".config", "hypr", "island", "settings.json")
+DEFAULT_SETTINGS = {"enabled": True, "all_monitors": True, "auto_expand": False,
+                    "show_volume": True, "clock_seconds": False, "main_monitor": "DP-3"}
+
+
+def load_settings():
+    import json
+    s = dict(DEFAULT_SETTINGS)
+    try:
+        with open(SETTINGS_FILE, encoding="utf-8") as f:
+            s.update(json.load(f))
+    except (OSError, ValueError):
+        pass
+    return s
+
+
+SET = load_settings()
+
 G = {"prev": "", "play": "", "pause": "", "next": "",
      "vol": "", "mute": "", "music": ""}
 
@@ -447,7 +465,7 @@ class IslandWindow(Gtk.ApplicationWindow):
     # ---- Darstellung ----
     def render(self, mode, expanded):
         st = self.st
-        self.clock.set_label(time.strftime("%H:%M"))
+        self.clock.set_label(time.strftime("%H:%M:%S" if SET["clock_seconds"] else "%H:%M"))
         playing = st.status == "Playing"
         for bx in (self.bars, self.ebars):
             (bx.remove_css_class if playing else bx.add_css_class)("paused")
@@ -557,6 +575,9 @@ class IslandApp(Gtk.Application):
     def _sync_monitors(self):
         mons = Gdk.Display.get_default().get_monitors()
         current = [mons.get_item(i) for i in range(mons.get_n_items())]
+        if not SET["all_monitors"]:
+            main = [m for m in current if m.get_connector() == SET["main_monitor"]]
+            current = main or current[:1]
         for m in list(self.windows):
             if m not in current:
                 self.windows.pop(m).destroy()
@@ -724,7 +745,9 @@ class IslandApp(Gtk.Application):
             st.position = 0
             self._poll_position()
             if status == "Playing" and title:
-                pass   # kein Auto-Aufklappen mehr - nur bei Hover
+                if SET["auto_expand"]:      # Einstellung (SUPER+I): bei neuem Song kurz aufklappen
+                    self.auto_until = time.monotonic() + AUTO_EXPAND_SECS
+                    GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
                 GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
         if art != st.art_url:
             st.art_url = art
@@ -810,7 +833,7 @@ class IslandApp(Gtk.Application):
             st = self.state
             changed = st.volume is None or abs(vol - st.volume) > 0.001 or muted != st.muted
             st.volume, st.muted = vol, muted
-            if show and changed:
+            if show and changed and SET["show_volume"]:
                 self.volume_until = time.monotonic() + 1.6
                 GLib.timeout_add(1650, lambda: (self.refresh(), False)[1])
             self.refresh()
@@ -819,6 +842,9 @@ class IslandApp(Gtk.Application):
 
 def main():
     os.environ.pop("LD_PRELOAD", None)
+    if not SET["enabled"]:
+        print("[island] in den Einstellungen ausgeschaltet", file=sys.stderr)
+        return 0
     return IslandApp().run([sys.argv[0]])
 
 

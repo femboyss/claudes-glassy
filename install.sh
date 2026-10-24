@@ -152,6 +152,12 @@ do_install() {
 -- hl.bind("SUPER + G", hl.dsp.exec_cmd("steam"))
 EOF
 
+    # Eigene Einstellungen (SUPER+I) nach einem Update wieder anwenden
+    if [ -f "$HOME/.config/hypr/glassy-settings.json" ]; then
+        python3 "$HOME/.config/hypr/settings/glassy_settings.py" --apply --quiet >/dev/null 2>&1 \
+            && c_ok "deine Einstellungen (SUPER+I) wieder angewendet"
+    fi
+
     restart_session
 
     echo

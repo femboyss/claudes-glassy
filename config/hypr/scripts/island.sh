@@ -8,6 +8,11 @@ mkdir -p "$(dirname "$LOG")"
 
 running() { pgrep -f "island/island.py" >/dev/null 2>&1; }
 
+# In den Einstellungen (SUPER+I) ausgeschaltet?
+if [ -f "$HOME/.config/hypr/island/settings.json" ] && grep -q '"enabled": false' "$HOME/.config/hypr/island/settings.json"; then
+    pkill -f "island/island.py"; exit 0
+fi
+
 if [ "$1" = "restart" ]; then
     pkill -f "island/island.py"
     sleep 0.3

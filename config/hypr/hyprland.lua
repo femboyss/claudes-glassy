@@ -23,6 +23,14 @@ GLASSY = {
     mainMonitor = "DP-3",
 }
 
+-- Werte aus der Einstellungs-App (SUPER+I), falls vorhanden
+local SETTINGS = {}
+do
+    local ok, res = pcall(dofile, HOME .. "/.config/hypr/glassy-settings.lua")
+    if ok and type(res) == "table" then SETTINGS = res end
+end
+for k, v in pairs(SETTINGS.apps or {}) do GLASSY[k] = v end
+
 local function load_module(name)
     local path = HOME .. "/.config/hypr/glassy/" .. name .. ".lua"
     local ok, err = pcall(dofile, path)
@@ -43,6 +51,17 @@ load_module("look")
 load_module("animations")
 load_module("rules")
 load_module("autostart")
+
+-- Einstellungen aus der App zuletzt anwenden (ueberschreiben die Standardwerte)
+if SETTINGS.config then
+    local ok, err = pcall(hl.config, SETTINGS.config)
+    if not ok then
+        pcall(function() hl.notification.create({ text = "glassy-settings.lua: " .. tostring(err), timeout = 15000 }) end)
+    end
+end
+if SETTINGS.border_anim == false then
+    pcall(hl.animation, { leaf = "borderangle", enabled = false })
+end
 
 -- Eigene Ergaenzungen (wird bei Updates nicht ueberschrieben)
 local custom = HOME .. "/.config/hypr/custom.lua"

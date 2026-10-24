@@ -80,6 +80,11 @@ rule("window", {
     border_size = 0,
     move = { "14", "54" },
 })
+-- Einstellungs-App (SUPER+I): schwebend, mittig
+rule("window", { name = "settings-app", match = { class = "^glassy.settings$" }, float = true, center = true,
+                 size = { "monitor_w * 0.5", "monitor_h * 0.66" } })
+rule("window", { name = "settings-app-glass", match = { class = "^glassy.settings$" }, opacity = "0.97 0.92 1.0" })
+
 -- Zwischenablage (GTK4, Layer-Shell)
 rule("layer", { name = "clipboard-glass", match = { namespace = "^glassy-clipboard$" }, blur = true, ignore_alpha = 0.35, animation = "popin 94%" })
 -- Dynamic Island

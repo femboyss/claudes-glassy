@@ -1,155 +1,164 @@
-# claudes-glassy (Catppuccin Glass)
+# claudes-glassy
 
-Catppuccin Mocha + Glas-Look (Transparenz, starker Blur, runde Ecken,
-rotierender Mauve/Blau/Pink-Rahmen, federnde Animationen).
-Gebaut fuer Hyprland 0.55+ mit Lua-Config.
+A glassy Hyprland rice for Arch Linux: Catppuccin Mocha + Tokyo Night, lots of blur,
+rounded corners, a Windows/macOS-style start menu, a Dynamic Island, a clipboard manager,
+screen recording and a settings app. Built for **Hyprland 0.55+ (Lua config)**.
 
-## Bestandteile
+> The user interface (menus, settings, notifications) is in German.
+> Deutsche Anleitung: [ganz unten](#deutsch).
 
-| Teil            | Programm  | Datei                                   |
-|-----------------|-----------|-----------------------------------------|
-| Compositor      | Hyprland  | ~/.config/hypr/hyprland.lua             |
-| Bar             | Waybar    | ~/.config/waybar/config.jsonc, style.css|
-| Launcher/Menues | Rofi 2.x  | ~/.config/rofi/config.rasi              |
-| Benachrichtig.  | SwayNC    | ~/.config/swaync/config.json, style.css |
-| Sperrbildschirm | Hyprlock  | ~/.config/hypr/hyprlock.conf            |
-| Idle            | Hypridle  | ~/.config/hypr/hypridle.conf            |
-| Terminal        | Kitty     | ~/.config/kitty/kitty.conf              |
-| Wallpaper       | awww/swww/swaybg | ~/.config/hypr/scripts/wallpaper.sh |
+![Start menu and Dynamic Island](assets/preview-v3.png)
 
-## Installation
-
-Ein Befehl (klont nach ~/.local/share/claudes-glassy und startet den Installer):
+## Install / update
 
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)"
 
-Oder manuell:
+This clones (or hard-updates) the repo to `~/.local/share/claudes-glassy` and starts the
+installer. The installer has a menu (install / restore backup / cancel), asks whether to back
+up your current configs (default: yes) and whether to install packages via pacman.
 
-    git clone https://github.com/femboyss/claudes-glassy
-    cd claudes-glassy
-    bash install.sh
+- Restore your previous setup: `bash ~/.local/share/claudes-glassy/install.sh --restore`
+- Something broken? `bash ~/.local/share/claudes-glassy/doctor.sh` (add `--repair` to fix)
+- Your own Hyprland additions go to `~/.config/hypr/custom.lua` (never overwritten)
 
-Der Installer zeigt ein Menue (Installieren / Backup wiederherstellen / Abbrechen)
-und fragt vor der Installation, ob ein Backup angelegt werden soll (Standard: ja).
-Backups landen in ~/.config-backup-catppuccin-glass-<datum>.
+## Features
 
-Zurueck zum alten Setup:
+| Part | What it does |
+|------|--------------|
+| **Hyprland** | Lua config split into isolated modules (`~/.config/hypr/glassy/`). An error in one module shows a notification instead of killing your keybinds. |
+| **Bar** (Waybar) | Glass "islands", start button, search pill, workspaces, on every monitor. |
+| **Start menu** | GTK4 + layer-shell, Tokyo Night. Search (also calculator `12*7+3` and web search), categories (switch on click), favorites, recently used, places, power buttons with confirm. Runs as a background service, opens instantly on the monitor under your mouse. |
+| **Dynamic Island** | Black pill at the top: clock, now playing with cover art, expands on hover with seek slider and controls, volume OSD, recording indicator (click = stop). |
+| **Settings** (SUPER+I) | Every option in one place: appearance, start menu, island, bar, input, lock & power, default apps, wallpaper, update/doctor/backup. |
+| **Clipboard** (SUPER+V) | Search, image previews, trash button per entry, "delete all", opens at the mouse cursor. |
+| **Ctrl+Alt+Del** | Fullscreen glass screen: lock, log out, sleep, recording, screenshot, task manager, reboot, UEFI, shut down. |
+| **Screenshots** | Screen freezes while you select an area. Saved + copied. |
+| **Screen recording** | wf-recorder, area or monitor, with or without desktop audio, NVENC when available. |
+| **Lock screen** | hyprlock: big thin clock, German date, now playing, gradient password pill. No name, no avatar. |
+| **Wallpapers** | 5 bundled 4K wallpapers, picker with previews, smooth transitions (awww/swww). |
+| **Notifications** | SwayNC in the same glass style (also Discord images/actions). |
 
-    bash ~/.local/share/claudes-glassy/install.sh --restore
+![Clipboard](assets/clipboard-preview.png) ![Settings](assets/settings-preview.png)
 
-Listet alle Backups, du waehlst eins aus.
+## Keybinds
 
-Update: denselben Ein-Befehl nochmal ausfuehren.
+| Keys | Action |
+|------|--------|
+| SUPER (tap) / SUPER+A | Start menu |
+| SUPER+Space / SUPER+R | Search (apps, windows, commands) |
+| SUPER+I | Settings |
+| SUPER+V | Clipboard |
+| CTRL+ALT+Delete | Session screen |
+| CTRL+SHIFT+Esc | Task manager |
+| SUPER+Return | Terminal |
+| SUPER+E / SUPER+B | File manager / browser |
+| SUPER+Q | Close window |
+| SUPER+F / SUPER+SHIFT+F | Fullscreen / maximize |
+| SUPER+T | Toggle floating |
+| SUPER+C | Center window |
+| SUPER+SHIFT+P | Pin window |
+| SUPER+J | Toggle split |
+| SUPER+Arrows | Move focus |
+| SUPER+SHIFT+Arrows | Move window |
+| SUPER+ALT+Arrows | Resize window |
+| SUPER+1..0 | Workspace 1..10 |
+| SUPER+SHIFT+1..0 | Move window to workspace (follow) |
+| SUPER+ALT+1..0 | Move window to workspace (stay) |
+| CTRL+SUPER+Left/Right | Previous / next workspace |
+| SUPER+Tab | Last workspace |
+| SUPER+S / SUPER+CTRL+S | Show scratchpad / move window there |
+| SUPER+F1..F3 | Focus monitor DP-3 / HDMI-A-1 / DP-1 |
+| SUPER+SHIFT+F1..F3 | Move window to that monitor |
+| SUPER+. / SUPER+, | Next / previous monitor |
+| ALT+Tab / SUPER+O | Next window / list of all windows |
+| Print / SUPER+SHIFT+S | Screenshot (area) |
+| SHIFT+Print | Screenshot (monitor) |
+| SUPER+ALT+R | Start / stop screen recording |
+| SUPER+W / SUPER+SHIFT+W | Wallpaper picker / random wallpaper |
+| SUPER+N | Notification center |
+| SUPER+L | Lock |
+| SUPER+Escape | Small power menu |
+| SUPER+SHIFT+B / SUPER+SHIFT+R | Toggle bar / restart bar + island |
+| SUPER+SHIFT+C | Color picker |
 
-## Tastenkuerzel
+## Files
 
-| Kuerzel                    | Aktion                                  |
-|----------------------------|-----------------------------------------|
-| SUPER antippen / SUPER + A | Startmenue                              |
-| SUPER + Space / R          | Suche (Apps, Fenster, Befehle)          |
-| CTRL + ALT + Entf          | Sitzungs-Bildschirm (inkl. Screenshot)  |
-| CTRL + SHIFT + Esc         | Task-Manager                            |
-| SUPER + Return             | Kitty                                   |
-| SUPER + E / B              | Dateimanager / Firefox                  |
-| SUPER + Q                  | Fenster schliessen                      |
-| SUPER + F / SHIFT + F      | Vollbild / Maximieren                   |
-| SUPER + T                  | Schwebend an/aus                        |
-| SUPER + C                  | Fenster zentrieren                      |
-| SUPER + SHIFT + P          | Fenster anpinnen                        |
-| SUPER + J                  | Split drehen                            |
-| SUPER + Pfeile             | Fokus                                   |
-| SUPER + SHIFT + Pfeile     | Fenster verschieben                     |
-| SUPER + ALT + Pfeile       | Groesse aendern                         |
-| SUPER + 1..0               | Workspace                               |
-| CTRL + SUPER + links/rechts| Vorheriger / naechster Workspace        |
-| CTRL + SUPER + SHIFT + l/r | Fenster mitnehmen                       |
-| SUPER + Tab                | Letzter Workspace                       |
-| SUPER + SHIFT + 1..0       | Fenster auf Workspace (folgen)          |
-| SUPER + ALT + 1..0         | Fenster auf Workspace (bleiben)         |
-| SUPER + S                  | Scratchpad anzeigen                     |
-| SUPER + CTRL + S           | Fenster in den Scratchpad parken        |
-| SUPER + F1 / F2 / F3       | Zu Monitor DP-3 / HDMI-A-1 / DP-1       |
-| SUPER + SHIFT + F1..F3     | Fenster auf diesen Monitor schieben     |
-| SUPER + . / ,              | Naechster / vorheriger Monitor          |
-| SUPER + SHIFT + . / ,      | Fenster auf naechsten / vorherigen Mon. |
-| ALT + Tab                  | Naechstes Fenster                       |
-| SUPER + O                  | Liste aller offenen Fenster             |
-| SUPER + W                  | Wallpaper-Auswahl mit Vorschau          |
-| SUPER + SHIFT + W          | Zufaelliges Wallpaper                   |
-| SUPER + V                  | Zwischenablage (Suche, Loeschen je Eintrag, Alles loeschen) |
-| SUPER + ALT + R            | Bildschirmaufnahme starten / stoppen    |
-| SUPER + N                  | Benachrichtigungs-Zentrum               |
-| SUPER + L                  | Sperren                                 |
-| SUPER + Escape             | Kleines Power-Menue                     |
-| SUPER + SHIFT + B / R      | Bar ein/aus / neu starten               |
-| SUPER + SHIFT + C          | Farbpipette                             |
-| Print / SUPER + SHIFT + S  | Screenshot Bereich                      |
-| SHIFT + Print              | Screenshot Monitor                      |
+| Path | Content |
+|------|---------|
+| `~/.config/hypr/hyprland.lua` | Loads the modules in `~/.config/hypr/glassy/` |
+| `~/.config/hypr/glassy-settings.json` | Your settings from SUPER+I (re-applied after every update) |
+| `~/.config/hypr/custom.lua` | Your own additions |
+| `~/.config/hypr/pinned-apps` | Start menu favorites (one `.desktop` id per line) |
+| `~/.config/hypr/startmenu/`, `island/`, `clipboard/`, `settings/` | The GTK4 apps |
+| `~/.cache/claudes-glassy/*.log` | Logs (start menu, island, clipboard, screenshot, recording) |
 
-## Aufbau
+## Anima Engine / desktop pets (Windows apps via Proton)
 
-- `~/.config/hypr/hyprland.lua` laedt die Module aus `~/.config/hypr/glassy/`
-  (keybinds, monitors, env, look, animations, rules, autostart) einzeln und abgesichert.
-  Ein Fehler in einem Modul stoppt die anderen nicht und erscheint als Benachrichtigung.
-- Wallpaper: `~/Pictures/Wallpapers` (mitgeliefert: Unterordner `claudes-glassy`).
-- Startmenue: eigene GTK4-App im Tokyo-Night-Look (`~/.config/hypr/startmenu/startmenu.py`),
-  Aufbau nach Linux Mint + KDE Kickoff: Suche oben, System-Knoepfe links, Kategorien,
-  Favoriten-Raster, Zuletzt verwendet, Orte unten. Favoriten per Rechtsklick oder in
-  `~/.config/hypr/pinned-apps`. Faellt auf ein Rofi-Menue zurueck, wenn GTK4 fehlt.
-  Fehler-Log: `~/.cache/claudes-glassy/startmenu.log`
-
-![Startmenue und Dynamic Island](assets/preview-v3.png)
-
-- Dynamic Island (`~/.config/hypr/island/island.py`): schwarze Pille oben in der Mitte.
-  Zeigt die Uhr, bei Musik Cover + Titel + Balken; klappt bei Songwechsel, Maus drueber
-  oder Klick auf (Cover, Fortschritt, Zurueck/Pause/Weiter). Lautstaerke-Aenderungen
-  erscheinen kurz als Balken. Neu starten: `~/.config/hypr/scripts/island.sh restart`
-- Startmenue-Einstellungen: Regler-Symbol oben rechts im Menue (Profilbild, Uhr,
-  Zuletzt verwendet, Beschreibungen, Kategorie-Hover). Die Suche kann auch rechnen
-  (`12*7+3`) und im Web suchen.
-- Zwischenablage (SUPER+V): eigene GTK4-App mit Suche, Bild-Vorschau, Muelleimer pro Eintrag
-  und "Alles loeschen" (zweimal klicken). Tasten: Enter einfuegen, Entf loeschen, Shift+Entf alles.
-- Screenshot: Der Bildschirm friert ein, solange du den Bereich auswaehlst (hyprpicker).
-- Bildschirmaufnahme (SUPER+ALT+R oder Strg+Alt+Entf -> Aufnahme): Bereich oder Monitor,
-  mit oder ohne Ton, NVENC wenn moeglich. Die Island zeigt REC + Zeit, Klick darauf stoppt.
-  Videos: ~/Videos/Aufnahmen
-
-- Bar: Start-Knopf + Suchleiste links, laeuft auf allen Monitoren; Menues oeffnen sich auf dem Monitor, auf dem du klickst.
-- Sperrbildschirm-Avatar: `~/.face` (sonst Standardbild).
-
-## Anpassen
-
-- Eigene Sachen in ~/.config/hypr/custom.lua, dann bleibt hyprland.lua updatefaehig.
-- Monitore: Abschnitt MONITORE in hyprland.lua (Ausgabe von `hyprctl monitors`).
-- Weniger GPU-Last: in hyprland.lua `blur.passes` auf 2 und die `borderangle`-Animation auf `enabled = false`.
-- Mehr/weniger Glas: `background_opacity` in kitty.conf, `opacity` in der Regel `glass-apps`,
-  `alpha(@base, 0.45)` in waybar/style.css.
-
-## Quellen
-
-- Hyprland Lua-Config: https://wiki.hypr.land/Configuring/Start/
-- Variablen (Blur usw.): https://wiki.hypr.land/Configuring/Basics/Variables/
-- Fensterregeln: https://wiki.hypr.land/Configuring/Basics/Window-Rules/
-- Layer-Regeln: https://wiki.hypr.land/configuring/core/rules/layer-rules/
-- Dispatcher: https://wiki.hypr.land/Configuring/Basics/Dispatchers/
-- Catppuccin Farben: https://catppuccin.com/palette
-
-## Doktor (wenn etwas komisch ist)
-
-    bash ~/.local/share/claudes-glassy/doctor.sh            # pruefen, Bericht in ~/glassy-doctor.txt
-    bash ~/.local/share/claudes-glassy/doctor.sh --repair   # veraenderte/fehlende Dateien aus dem Repo zurueckholen
-
-Prueft Hyprland-Config-Fehler, laufende Dienste, fehlende Pakete und vergleicht jede
-Config-Datei mit dem Repo. `--repair` sichert die alten Versionen vorher und laesst
-`custom.lua`, `pinned-apps`, Avatar und Startmenue-Einstellungen in Ruhe.
-
-## Anima Engine / Desktop-Pets (Windows-Apps ueber Proton)
-
-Schwarzer statt durchsichtiger Hintergrund kommt von Wine/Proton, nicht von Hyprland.
-Abhilfe: GE-Proton (ab GE-Proton11-6) verwenden und in Steam bei den Startoptionen eintragen:
+A black instead of transparent background comes from Wine/Proton, not Hyprland. Use
+GE-Proton (GE-Proton11-6 or newer) and set the Steam launch options to:
 
     WINE_LAYERED_OVERLAY_SHAPE=1 %command%
 
-GE-Proton installieren: `yay -S protonplus` (oder ProtonUp-Qt), dann in Steam unter
-Eigenschaften -> Kompatibilitaet auswaehlen. Die Fensterregeln fuer Anima Engine
-(kein Rahmen, keine Ecken, kein Schatten) sind schon in `glassy/rules.lua`.
+Window rules for Anima Engine (no border, rounding, shadow) are already included.
+
+## Sources
+
+- Hyprland Lua config: https://wiki.hypr.land/Configuring/Start/
+- Layer rules: https://wiki.hypr.land/configuring/core/rules/layer-rules/
+- gtk4-layer-shell: https://github.com/wmww/gtk4-layer-shell
+- Tokyo Night: https://github.com/folke/tokyonight.nvim
+- Catppuccin: https://catppuccin.com/palette
+- GE-Proton overlay patch: https://github.com/GloriousEggroll/proton-ge-custom/pull/553
+
+---
+
+<a id="deutsch"></a>
+## Deutsch
+
+Ein Hyprland-Rice im Glas-Look fuer Arch Linux: Catppuccin Mocha + Tokyo Night, viel Blur,
+runde Ecken, Startmenue wie bei Windows/macOS, Dynamic Island, Zwischenablage,
+Bildschirmaufnahme und eine Einstellungs-App. Fuer **Hyprland 0.55+ (Lua-Config)**.
+
+### Installieren / Aktualisieren
+
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)"
+
+Holt (oder aktualisiert hart) das Repo nach `~/.local/share/claudes-glassy` und startet den
+Installer. Der hat ein Menue (Installieren / Backup wiederherstellen / Abbrechen), fragt nach
+einem Backup deiner Configs (Standard: ja) und ob Pakete per pacman installiert werden sollen.
+
+- Altes Setup zurueck: `bash ~/.local/share/claudes-glassy/install.sh --restore`
+- Etwas kaputt? `bash ~/.local/share/claudes-glassy/doctor.sh` (mit `--repair` reparieren)
+- Eigene Hyprland-Ergaenzungen: `~/.config/hypr/custom.lua` (wird nie ueberschrieben)
+
+### Was drin ist
+
+- **Hyprland:** Lua-Config in abgesicherten Modulen. Ein Fehler zeigt eine Benachrichtigung,
+  statt die Tastenkuerzel lahmzulegen.
+- **Leiste (Waybar):** Glas-Inseln, Start-Knopf, Suchfeld, Workspaces, auf jedem Monitor.
+- **Startmenue:** GTK4, Tokyo Night. Suche (auch Rechner `12*7+3` und Websuche), Kategorien
+  (Wechsel per Klick), Favoriten, Zuletzt verwendet, Orte, Power-Knoepfe mit Bestaetigung.
+  Laeuft als Dienst, oeffnet sofort auf dem Monitor unter der Maus.
+- **Dynamic Island:** Uhr, Musik mit Cover, klappt beim Drueberfahren auf (Spulen per
+  Schieberegler, Steuerung), Lautstaerke-Anzeige, Aufnahme-Anzeige (Klick = Stopp).
+- **Einstellungen (SUPER+I):** alles an einem Ort: Aussehen, Startmenue, Island, Leiste,
+  Eingabe, Sperren & Energie, Standard-Apps, Hintergrund, Update/Doktor/Backup.
+- **Zwischenablage (SUPER+V):** Suche, Bild-Vorschau, Muelleimer pro Eintrag, "Alles
+  loeschen", oeffnet an der Maus.
+- **Strg+Alt+Entf:** Vollbild-Glas mit Sperren, Abmelden, Energiesparen, Aufnahme,
+  Screenshot, Task-Manager, Neustart, UEFI, Herunterfahren.
+- **Screenshots:** Bildschirm friert beim Auswaehlen ein, wird gespeichert und kopiert.
+- **Bildschirmaufnahme (SUPER+ALT+R):** Bereich oder Monitor, mit/ohne Ton, NVENC wenn moeglich.
+- **Sperrbildschirm:** grosse duenne Uhr, deutsches Datum, laufende Musik, Passwort-Pille.
+  Kein Name, kein Profilbild.
+- **Wallpaper:** 5 eigene 4K-Wallpaper, Auswahl mit Vorschau, weiche Uebergaenge.
+- **Benachrichtigungen:** SwayNC im Glas-Look (auch Discord mit Bildern/Aktionen).
+
+Alle Tastenkuerzel stehen oben in der Tabelle "Keybinds" (gleiche Tasten).
+
+### Anima Engine / Desktop-Pets (Windows-Apps ueber Proton)
+
+Schwarzer statt durchsichtiger Hintergrund kommt von Wine/Proton. GE-Proton (ab 11-6)
+verwenden und in Steam bei den Startoptionen eintragen:
+
+    WINE_LAYERED_OVERLAY_SHAPE=1 %command%

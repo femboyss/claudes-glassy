@@ -759,7 +759,7 @@ class StartMenu(Gtk.ApplicationWindow):
         bar.add_css_class("sidebar")
         bar.append(self._sidebtn("files", "Dateien", lambda *_: self._run("xdg-open " + GLib.shell_quote(HOME))))
         bar.append(self._sidebtn("term", "Terminal", lambda *_: self._run("kitty")))
-        bar.append(self._sidebtn("settings", "Systemeinstellungen", lambda *_: self._run(os.path.join(SCRIPTS, "settings.sh"))))
+        bar.append(self._sidebtn("settings", "Systemeinstellungen", lambda *_: self._run(os.path.join(SCRIPTS, "settings-app.sh"))))
         spacer = Gtk.Box()
         spacer.set_vexpand(True)
         bar.append(spacer)

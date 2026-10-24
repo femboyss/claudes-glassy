@@ -15,7 +15,11 @@ SAFE="$HOME/.config-backup-catppuccin-glass-$STAMP-doctor"
 REPAIR=0; [ "$1" = "--repair" ] && REPAIR=1
 
 # Dateien, die dir gehoeren und nie "repariert" werden
-KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json)$'
+KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json))$'
+# Von der Einstellungs-App (SUPER+I) erzeugte Dateien nicht als "veraendert" melden
+if [ -f "$HOME/.config/hypr/glassy-settings.json" ]; then
+    KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json)|waybar/config\.jsonc|hypr/hypridle\.conf)$'
+fi
 
 ok()   { printf '\033[38;2;158;206;106m[ok]\033[0m %s\n' "$*"; }
 warn() { printf '\033[38;2;224;175;104m[!!]\033[0m %s\n' "$*"; }
@@ -100,7 +104,7 @@ while IFS= read -r -d '' f; do
 done < <(find "$REPO_CFG" -type f -not -name '*.pyc' -not -path '*__pycache__*' -print0)
 # Dateien in den Glassy-Ordnern, die es im Repo nicht gibt (z. B. von anderen Tools reingeschrieben)
 extra=()
-for d in hypr/glassy hypr/scripts hypr/startmenu hypr/island hypr/clipboard waybar rofi swaync; do
+for d in hypr/glassy hypr/scripts hypr/startmenu hypr/island hypr/clipboard hypr/settings waybar rofi swaync; do
     [ -d "$HOME/.config/$d" ] || continue
     while IFS= read -r -d '' f; do
         rel="${f#$HOME/.config/}"
@@ -149,6 +153,7 @@ if [ "$REPAIR" = 1 ]; then
             pkill -x swaync; setsid -f swaync >/dev/null 2>&1
             pkill -f startmenu.py
             pkill -f clipman.py
+            [ -f "$HOME/.config/hypr/glassy-settings.json" ] && python3 "$HOME/.config/hypr/settings/glassy_settings.py" --apply --quiet >/dev/null 2>&1
             "$HOME/.config/hypr/scripts/island.sh" restart
             ok "Sitzung neu geladen"
         fi

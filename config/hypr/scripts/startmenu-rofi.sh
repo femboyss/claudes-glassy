@@ -88,7 +88,7 @@ fi
 case $((sel - count)) in
     0) "$SCRIPTS/search.sh" ;;
     1) setsid -f xdg-open "$HOME" >/dev/null 2>&1 ;;
-    2) "$SCRIPTS/settings.sh" ;;
+    2) "$SCRIPTS/settings-app.sh" ;;
     3) pidof hyprlock || hyprlock ;;
     4) "$SCRIPTS/sessionscreen.sh" ;;
 esac
