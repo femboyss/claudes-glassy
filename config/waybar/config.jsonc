@@ -15,7 +15,7 @@
 
     "modules-left":   ["custom/start", "custom/search", "hyprland/workspaces", "hyprland/window"],
     "modules-center": [],          // Mitte frei: dort sitzt die Dynamic Island (Uhr + Musik)
-    "modules-right":  ["tray", "pulseaudio", "network", "cpu", "memory", "custom/notify", "custom/power"],
+    "modules-right":  ["tray", "cpu", "memory", "custom/quick", "pulseaudio", "network", "bluetooth", "custom/notify", "custom/power"],
 
     // Start-Knopf: Startmenue (oeffnet sich auf diesem Monitor)
     "custom/start": {
@@ -83,7 +83,7 @@
         "format-muted": "  aus",
         "format-icons": { "default": ["", "", ""], "headphone": "" },
         "scroll-step": 5,
-        "on-click": "pavucontrol",
+        "on-click": "~/.config/hypr/scripts/panel.sh sound",
         "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
 
@@ -92,7 +92,26 @@
         "format-ethernet": "",
         "format-disconnected": "",
         "tooltip-format": "{ifname}  {ipaddr}\n {bandwidthDownBytes}   {bandwidthUpBytes}",
-        "on-click": "nm-connection-editor"
+        "on-click": "~/.config/hypr/scripts/panel.sh network"
+    },
+
+    // Schnelleinstellungen (wie Windows 11): WLAN, Bluetooth, Nicht stoeren, Nachtlicht, Regler ...
+    "custom/quick": {
+        "format": "󰘮",
+        "tooltip": true,
+        "tooltip-format": "Schnelleinstellungen",
+        "on-click": "~/.config/hypr/scripts/panel.sh quick"
+    },
+
+    "bluetooth": {
+        "format": "󰂯",
+        "format-disabled": "",
+        "format-off": "󰂲",
+        "format-connected": "󰂱  {device_alias}",
+        "format-connected-battery": "󰂱  {device_alias} {device_battery_percentage}%",
+        "tooltip-format-connected": "{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+        "on-click": "~/.config/hypr/scripts/panel.sh bluetooth"
     },
 
     "cpu":    { "format": "  {usage}%", "interval": 3 },

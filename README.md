@@ -48,6 +48,7 @@ Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work
 | **Start menu** | GTK4 + layer-shell, Tokyo Night. Search (also calculator `12*7+3` and web search), categories (switch on click), favorites, recently used, places, power buttons with confirm. Runs as a background service, opens instantly on the monitor under your mouse. |
 | **Dynamic Island** | Black pill at the top: clock, now playing with cover art, expands on hover with seek slider and controls, volume OSD, recording indicator (click = stop). |
 | **Update notifications** | Checks GitHub in the background (on login, then hourly/6 h/daily). A notification with "Install now / What's new / Later" - or installs automatically. All in SUPER+I -> Updates. |
+| **Taskbar flyouts** | Built in, no external apps: quick settings (Wi-Fi, Bluetooth, do not disturb, night light, airplane mode, power profile, volume, mic, brightness, media), sound (devices + per-app volume), Wi-Fi (connect with password, forget), Bluetooth (scan, pair, connect, battery), calendar (click the island). Same views in SUPER+I. |
 | **Settings** (SUPER+I) | Every option in one place: appearance, start menu, island, bar, input, lock & power, default apps, wallpaper, update/doctor/backup. |
 | **Clipboard** (SUPER+V) | Search, image previews, trash button per entry, "delete all", opens at the mouse cursor. |
 | **Ctrl+Alt+Del** | Fullscreen glass screen: lock, log out, sleep, recording, screenshot, task manager, reboot, UEFI, shut down. |
@@ -76,7 +77,8 @@ date, greeting, now playing, keyboard layout/uptime, fading password field, cloc
 
 | Keys | Action |
 |------|--------|
-| SUPER (tap) / SUPER+A | Start menu |
+| SUPER (tap) | Start menu |
+| SUPER+A | Quick settings |
 | SUPER+Space / SUPER+R | Search (apps, windows, commands) |
 | SUPER+I | Settings |
 | SUPER+V | Clipboard |
@@ -194,6 +196,11 @@ auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.
 - **Update-Benachrichtigung:** sucht im Hintergrund auf GitHub (beim Login, dann stuendlich /
   alle 6 Std / taeglich). Benachrichtigung mit "Jetzt installieren / Was ist neu / Spaeter" -
   oder installiert automatisch. Alles in SUPER+I -> Updates.
+- **Flyouts der Leiste (eingebaut, keine externen Apps):** Schnelleinstellungen (SUPER+A: WLAN,
+  Bluetooth, Nicht stoeren, Nachtlicht, Flugmodus, Energieprofil, Lautstaerke, Mikrofon,
+  Helligkeit, Musik), Sound (Geraete + Lautstaerke pro App), WLAN (verbinden mit Passwort,
+  vergessen), Bluetooth (suchen, koppeln, verbinden, Akku), Kalender (Klick auf die Island).
+  Dieselben Ansichten gibt es in SUPER+I unter Sound, Netzwerk und Bluetooth.
 - **Einstellungen (SUPER+I):** alles an einem Ort: Aussehen, Startmenue, Island, Leiste,
   Eingabe, Sperren & Energie, Standard-Apps, Hintergrund, Update/Doktor/Backup.
 - **Zwischenablage (SUPER+V):** Suche, Bild-Vorschau, Muelleimer pro Eintrag, "Alles

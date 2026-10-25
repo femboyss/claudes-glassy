@@ -11,5 +11,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd(GLASSY.scripts .. "/startmenu.sh --start-daemon")   -- Startmenue vorladen = sofort offen
     hl.exec_cmd(GLASSY.scripts .. "/island.sh")                     -- Dynamic Island oben in der Mitte
     hl.exec_cmd(GLASSY.scripts .. "/clipboard.sh --start-daemon")   -- Zwischenablage vorladen
+    hl.exec_cmd(GLASSY.scripts .. "/panel.sh --start-daemon")       -- Flyouts der Leiste vorladen
     hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/glassy --watch")  -- Update-Benachrichtigung (SUPER+I -> Updates)
 end)

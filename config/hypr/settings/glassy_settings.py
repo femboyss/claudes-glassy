@@ -524,6 +524,12 @@ def run_gui():
     gi.require_version("Gtk", "4.0")
     gi.require_version("Gdk", "4.0")
     from gi.repository import Gdk, Gio, GLib, Gtk
+    sys.path.insert(0, os.path.join(HYPR, "panel"))
+    try:
+        import views as PV          # dieselben Ansichten wie in den Flyouts der Leiste
+    except Exception as e:  # noqa: BLE001
+        print("[settings] Panel-Ansichten fehlen:", e, file=sys.stderr)
+        PV = None
 
     CSS = r"""
 @define-color tn_bg      #1a1b26;
@@ -618,7 +624,11 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             self.stack.set_hexpand(True)
             root.append(self.stack)
 
+            self.live = {}
             pages = [
+                ("sound", "\U000f057e", "Sound", self.page_sound),
+                ("network", "\U000f05a9", "Netzwerk", self.page_network),
+                ("bt", "\U000f00af", "Bluetooth", self.page_bt),
                 ("look", "", "Aussehen", self.page_look),
                 ("start", "", "Startmenü", self.page_start),
                 ("island", "", "Dynamic Island", self.page_island),
@@ -647,7 +657,15 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
                 sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
                 sw.set_child(builder())
                 self.stack.add_named(sw, key)
-            self.nav.connect("row-selected", lambda lb, r: r and self.stack.set_visible_child_name(r._key))
+            def selected(lb, r):
+                if not r:
+                    return
+                self.stack.set_visible_child_name(r._key)
+                v = self.live.get(r._key)
+                if v is not None:
+                    v.refresh()
+            self.nav.connect("row-selected", selected)
+            GLib.timeout_add_seconds(3, self._tick_live)
             self.nav.select_row(self.nav.get_row_at_index(0))
 
             keys = Gtk.EventControllerKey()
@@ -760,6 +778,33 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             self.row(card, label, desc, b)
 
         # ---------- Seiten ----------
+        def _live_page(self, key, title, sub, make):
+            p = self.page(title, sub)
+            if PV is None:
+                p.append(Gtk.Label(label="Panel-Dateien fehlen (glassy --repair).", xalign=0))
+                return p
+            v = make()
+            v.set_margin_top(6)
+            self.live[key] = v
+            p.append(v)
+            return p
+
+        def _tick_live(self):
+            cur = self.stack.get_visible_child_name()
+            if cur == "sound" and "sound" in self.live:      # Lautstaerke / Apps aktuell halten
+                self.live["sound"].refresh()
+            return True
+
+        def page_sound(self):
+            return self._live_page("sound", "Sound", "Ausgabe- und Eingabegeräte, Lautstärke pro App. Wie in den Schnelleinstellungen der Leiste.",
+                                   lambda: PV.SoundView(compact=False))
+
+        def page_network(self):
+            return self._live_page("network", "Netzwerk", "WLAN an/aus, Netze verbinden, gespeicherte Netze vergessen.", PV.NetworkView if PV else None)
+
+        def page_bt(self):
+            return self._live_page("bt", "Bluetooth", "Geräte suchen, koppeln, verbinden und entfernen.", PV.BluetoothView if PV else None)
+
         def page_look(self):
             p = self.page("Aussehen", "Fenster, Abstände, Glas-Effekt und Animationen.")
             c = self.group(p, "Fenster")
@@ -943,9 +988,9 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             Gtk.Application.do_startup(self)
             prov = Gtk.CssProvider()
             if hasattr(prov, "load_from_string"):
-                prov.load_from_string(CSS)
+                prov.load_from_string(CSS + (PV.CSS if PV else ""))
             else:
-                prov.load_from_data(CSS.encode())
+                prov.load_from_data((CSS + (PV.CSS if PV else "")).encode())
             Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
                                                       Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)
             st = Gtk.Settings.get_default()

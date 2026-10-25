@@ -232,6 +232,7 @@ reload_all() {
     pkill -x swaync; setsid -f swaync >/dev/null 2>&1
     pkill -f "startmenu.py --daemon"; "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon
     pkill -f "clipman.py --daemon";   "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon
+    pkill -f "panel/panel.py";        "$HOME/.config/hypr/scripts/panel.sh" --start-daemon
     "$HOME/.config/hypr/scripts/island.sh" restart
     pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch >/dev/null 2>&1
     hyprctl reload >/dev/null 2>&1

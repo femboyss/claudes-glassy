@@ -641,7 +641,8 @@ class IslandApp(Gtk.Application):
             self.state.rec_start = 0
             self.refresh()
             return
-        # sonst nichts: aufgeklappt wird nur, solange die Maus drueber ist
+        # sonst: Kalender-Flyout (wie Klick auf die Uhr bei Windows)
+        run_async([os.path.join(HOME, ".config", "hypr", "scripts", "panel.sh"), "calendar"])
 
     def _check_recording(self):
         st = self.state

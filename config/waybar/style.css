@@ -42,6 +42,8 @@ tooltip label { color: @text; }
 /* Gemeinsamer Glas-Look fuer jede Insel */
 #custom-start,
 #custom-search,
+#custom-quick,
+#bluetooth,
 #workspaces,
 #window,
 #clock,
@@ -135,3 +137,8 @@ window#waybar.empty #window { background: transparent; border-color: transparent
 #network:hover,
 #mpris:hover,
 #custom-notify:hover { background: alpha(@surface1, 0.55); }
+
+#custom-quick { color: @blue; font-size: 15px; }
+#bluetooth { color: @blue; }
+#bluetooth.off, #bluetooth.disabled { color: @overlay0; }
+#custom-quick:hover, #bluetooth:hover { background: alpha(@surface1, 0.55); }

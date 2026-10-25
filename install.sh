@@ -52,6 +52,7 @@ PKGS=(
     grim slurp wl-clipboard cliphist jq libnotify playerctl
     pavucontrol network-manager-applet btop xdg-utils
     python-gobject gtk4 gtk4-layer-shell libpulse wf-recorder ffmpeg hyprpicker
+    hyprsunset bluez bluez-utils networkmanager
     ttf-jetbrains-mono-nerd inter-font papirus-icon-theme
     swaybg
 )
@@ -76,6 +77,7 @@ restart_session() {
     "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon || true
     "$HOME/.config/hypr/scripts/island.sh" restart || true
     pkill -f "clipman.py --daemon" 2>/dev/null; "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon || true
+    pkill -f "panel/panel.py" 2>/dev/null; "$HOME/.config/hypr/scripts/panel.sh" --start-daemon || true
     pgrep -f "glassy --watch" >/dev/null || setsid -f "$HOME/.local/bin/glassy" --watch >/dev/null 2>&1 || true
 }
 

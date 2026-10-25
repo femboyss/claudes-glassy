@@ -67,6 +67,7 @@ pgrep -f "startmenu.py --daemon" >/dev/null && ok "Startmenue-Dienst laeuft" || 
 pgrep -f "island/island.py" >/dev/null && ok "Dynamic Island laeuft" || bad "Dynamic Island laeuft NICHT  ->  ~/.config/hypr/scripts/island.sh"
 pgrep -f "clipman.py --daemon" >/dev/null && ok "Zwischenablage-Dienst laeuft" || warn "Zwischenablage-Dienst laeuft nicht (startet beim naechsten SUPER+V)"
 pgrep -f "glassy --watch" >/dev/null && ok "Update-Suche laeuft (SUPER+I -> Updates)" || warn "Update-Suche laeuft nicht  ->  glassy --reload"
+pgrep -f "panel/panel.py" >/dev/null && ok "Flyouts der Leiste laufen" || warn "Flyouts laufen nicht (starten beim ersten Klick in der Leiste)"
 [ -f "$HOME/.cache/claudes-glassy/recording.pid" ] && kill -0 "$(cat "$HOME/.cache/claudes-glassy/recording.pid")" 2>/dev/null && warn "Bildschirmaufnahme laeuft gerade"
 pgrep -x qs >/dev/null || pgrep -x quickshell >/dev/null && warn "Quickshell (end-4) laeuft noch parallel"
 echo
@@ -87,7 +88,7 @@ echo
 echo "== Pakete =="
 missing=()
 for p in hyprland hyprlock hypridle waybar rofi swaync kitty grim slurp wl-clipboard cliphist jq playerctl \
-         python-gobject gtk4 gtk4-layer-shell libpulse wf-recorder hyprpicker ttf-jetbrains-mono-nerd inter-font papirus-icon-theme; do
+         python-gobject gtk4 gtk4-layer-shell libpulse wf-recorder hyprpicker hyprsunset bluez-utils networkmanager ttf-jetbrains-mono-nerd inter-font papirus-icon-theme; do
     pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p")
 done
 if [ ${#missing[@]} -eq 0 ]; then ok "alle Pakete da"; else bad "fehlt: ${missing[*]}"; echo "   sudo pacman -S --needed ${missing[*]}"; fi
@@ -105,7 +106,7 @@ while IFS= read -r -d '' f; do
 done < <(find "$REPO_CFG" -type f -not -name '*.pyc' -not -path '*__pycache__*' -print0)
 # Dateien in den Glassy-Ordnern, die es im Repo nicht gibt (z. B. von anderen Tools reingeschrieben)
 extra=()
-for d in hypr/glassy hypr/scripts hypr/startmenu hypr/island hypr/clipboard hypr/settings waybar rofi swaync; do
+for d in hypr/glassy hypr/scripts hypr/startmenu hypr/island hypr/clipboard hypr/settings hypr/panel waybar rofi swaync; do
     [ -d "$HOME/.config/$d" ] || continue
     while IFS= read -r -d '' f; do
         rel="${f#$HOME/.config/}"
@@ -125,7 +126,7 @@ for r in "${extra[@]}";   do warn "fremd:      ~/.config/$r (nicht aus dem Repo)
 echo
 
 echo "== Logs (letzte Zeilen) =="
-for l in startmenu island clipboard screenshot record; do
+for l in startmenu island clipboard panel screenshot record; do
     f="$HOME/.cache/claudes-glassy/$l.log"
     [ -s "$f" ] && { echo "--- $l.log"; tail -n 5 "$f"; }
 done
