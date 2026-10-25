@@ -53,6 +53,7 @@ PKGS=(
     pavucontrol network-manager-applet btop xdg-utils
     python-gobject gtk4 gtk4-layer-shell libpulse wf-recorder ffmpeg hyprpicker
     hyprsunset bluez bluez-utils networkmanager
+    plasma-integration qt6ct          # Dolphin & Co. dunkel + Theme-Farben
     ttf-jetbrains-mono-nerd inter-font papirus-icon-theme
     swaybg
 )
