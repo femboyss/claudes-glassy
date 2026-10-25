@@ -55,10 +55,13 @@ Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work
 
 ### Lock screen
 
-Default (left) and customized in SUPER+I -> Sperrbildschirm (accent pink, huge bold clock, no music):
+Default look:
 
 ![Lock screen](assets/lockscreen.png)
-![Lock screen customized](assets/lockscreen-custom.png)
+
+Everything is customizable in SUPER+I -> Sperrbildschirm. Four examples:
+
+![Lock screen variants](assets/lockscreen-variants.png)
 
 Lock screen options: accent color, clock size and font, brightness, blur, and toggles for lock icon,
 date, greeting, now playing, keyboard layout/uptime, fading password field, clock on other monitors.
@@ -192,6 +195,7 @@ auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.
 - **Sperrbildschirm:** grosse Uhr, deutsches Datum, laufende Musik, Passwort-Pille. Kein Name,
   kein Profilbild. In SUPER+I -> Sperrbildschirm anpassbar: Akzentfarbe, Uhrgroesse und -schrift,
   Helligkeit, Unschaerfe und welche Elemente angezeigt werden.
+  Beispiele: siehe Bilder oben unter "Lock screen".
 - **Wallpaper:** 5 eigene 4K-Wallpaper, Auswahl mit Vorschau, weiche Uebergaenge.
 - **Benachrichtigungen:** SwayNC im Glas-Look (auch Discord mit Bildern/Aktionen).
 
