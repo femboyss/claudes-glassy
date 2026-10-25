@@ -5,6 +5,10 @@
 #    glassy --update      neuesten STABILEN Stand holen (Branch main) und installieren
 #    glassy --debug       TEST-Stand holen (Branch debug) und installieren
 #    glassy --status      welcher Stand ist installiert? Updates da?
+#    glassy --upgrade     Update fuer deinen aktuellen Kanal (main oder debug) installieren
+#    glassy --check       nach Updates suchen (--notify: als Benachrichtigung, --force: auch "alles aktuell")
+#    glassy --whatsnew    was ist neu / was hat sich geaendert
+#    glassy --watch       im Hintergrund regelmaessig suchen (startet mit Hyprland, Einstellungen: SUPER+I -> Updates)
 #    glassy --doctor      pruefen      (glassy --repair: kaputte Dateien reparieren)
 #    glassy --restore     altes Backup zurueckspielen
 #    glassy --settings    Einstellungen oeffnen (wie SUPER+I)
@@ -76,12 +80,160 @@ status() {
     fi
 }
 
+# ------------------------------------------------------------------ Updates
+STATE_DIR="$HOME/.local/state/claudes-glassy"
+SETTINGS_JSON="$HOME/.config/hypr/glassy-settings.json"
+GLASSY_BIN="$HOME/.local/bin/glassy"
+
+setting() {   # $1 = Schluessel, $2 = Standardwert
+    local v
+    v="$(jq -r --arg k "$1" '.[$k] // empty' "$SETTINGS_JSON" 2>/dev/null)"
+    [ -n "$v" ] && echo "$v" || echo "$2"
+}
+
+term_run() {  # Befehl in einem Terminal-Fenster ausfuehren (bleibt offen bis Enter)
+    local t; t="$(setting terminal kitty)"
+    setsid -f "$t" -e bash -c "$1; echo; read -r -p 'Enter zum Schliessen '" >/dev/null 2>&1
+}
+
+remote_rev() { timeout 10 git ls-remote "$REPO_URL" "refs/heads/$1" 2>/dev/null | cut -c1-40; }
+
+# Neue Commits zwischen installiert und GitHub, eine Zeile pro Commit: "hash  Titel"
+new_commits() {   # $1 = Branch
+    local local_rev
+    local_rev="$(git -C "$DEST" rev-parse HEAD 2>/dev/null)"
+    git -C "$DEST" fetch -q --depth 60 origin "$1" 2>/dev/null || return 1
+    git -C "$DEST" log --format='%H %h  %s' FETCH_HEAD 2>/dev/null | while read -r full rest; do
+        [ "$full" = "$local_rev" ] && break
+        echo "$rest"
+    done
+}
+
+notify_update() {   # $1 = Branch, $2 = Anzahl, $3 = Text
+    command -v notify-send >/dev/null 2>&1 || return
+    local label; label="$( [ "$1" = debug ] && echo 'Test-Stand (debug)' || echo 'stabil (main)')"
+    (
+        act="$(notify-send -a claudes-glassy -i system-software-update -t 0 \
+            -A install="Jetzt installieren" -A news="Was ist neu" -A later="Spaeter" --wait \
+            "claudes-glassy: $2 neue Aenderung(en)" "Kanal: $label\n$3")"
+        case "$act" in
+            install) term_run "$GLASSY_BIN --upgrade" ;;
+            news)    term_run "$GLASSY_BIN --whatsnew" ;;
+        esac
+    ) &
+}
+
+check_updates() {   # [--notify] [--force]
+    local notify=0 force=0 b local_rev rr list n
+    for a in "$@"; do
+        case "$a" in --notify) notify=1 ;; --force) force=1 ;; esac
+    done
+    b="$(channel)"
+    [ -d "$DEST/.git" ] || { c_warn "Noch nicht installiert:  glassy --update"; return 2; }
+    local_rev="$(git -C "$DEST" rev-parse HEAD 2>/dev/null)"
+    rr="$(remote_rev "$b")"
+    if [ -z "$rr" ]; then
+        c_warn "GitHub nicht erreichbar"
+        [ "$notify" = 1 ] && [ "$force" = 1 ] && notify-send -a claudes-glassy "claudes-glassy" "GitHub nicht erreichbar - spaeter nochmal"
+        return 2
+    fi
+    if [ "$rr" = "$local_rev" ]; then
+        c_ok "Alles aktuell ($b, ${local_rev:0:7})"
+        [ "$notify" = 1 ] && [ "$force" = 1 ] && notify-send -a claudes-glassy -i emblem-default "claudes-glassy" "Alles aktuell (${local_rev:0:7}, Kanal $b)"
+        return 1
+    fi
+    list="$(new_commits "$b")"
+    n="$(printf '%s\n' "$list" | grep -c . )"
+    [ "$n" -eq 0 ] && { n=1; list="${rr:0:7}  (neuer Stand)"; }
+    c_info "$n neue Aenderung(en) auf '$b':"
+    printf '%s\n' "$list" | sed 's/^/   /'
+    echo "   Installieren:  glassy --upgrade"
+    if [ "$notify" = 1 ]; then
+        mkdir -p "$STATE_DIR"
+        # dieselbe Version nur einmal am Tag melden (ausser "Jetzt suchen")
+        local last; last="$(cat "$STATE_DIR/notified" 2>/dev/null)"
+        if [ "$force" = 1 ] || [ "$last" != "$rr $(date +%F)" ]; then
+            echo "$rr $(date +%F)" > "$STATE_DIR/notified"
+            notify_update "$b" "$n" "$(printf '%s\n' "$list" | head -n 4 | cut -c1-70)"
+        fi
+    fi
+    return 0
+}
+
+whatsnew() {
+    local b list
+    b="$(channel)"
+    echo "Kanal: $b    Installiert: $(git -C "$DEST" log -1 --format='%h  %s' 2>/dev/null)"
+    echo
+    list="$(new_commits "$b")"
+    if [ -n "$list" ]; then
+        c_info "Neu auf GitHub (noch nicht installiert):"
+        printf '%s\n' "$list" | sed 's/^/   /'
+        echo
+        echo "Installieren:  glassy --upgrade"
+    else
+        c_ok "Du hast den neuesten Stand. Die letzten Aenderungen:"
+        git -C "$DEST" fetch -q --depth 15 origin "$b" 2>/dev/null
+        git -C "$DEST" log -10 --format='   %h  %s  (%cd)' --date=format:'%d.%m. %H:%M' FETCH_HEAD 2>/dev/null \
+            || git -C "$DEST" log -10 --format='   %h  %s' 2>/dev/null
+    fi
+}
+
+# Automatisch im Hintergrund aktualisieren (ohne Fragen, ohne sudo)
+background_update() {
+    local b before after missing=()
+    mkdir -p "$STATE_DIR"
+    b="$(channel)"
+    before="$(git -C "$DEST" rev-parse --short HEAD 2>/dev/null)"
+    fetch_branch "$b" >/dev/null 2>&1 || { notify-send -a claudes-glassy "claudes-glassy" "Automatisches Update fehlgeschlagen (kein Netz?)"; return 1; }
+    bash "$DEST/install.sh" --background >"$STATE_DIR/last-update.log" 2>&1
+    after="$(git -C "$DEST" rev-parse --short HEAD 2>/dev/null)"
+    # Pakete, die neu dazugekommen sind, brauchen sudo -> nur Bescheid geben
+    for p in $(grep -A12 '^PKGS=(' "$DEST/install.sh" | sed -n '2,/^)/p' | tr -d ')'); do
+        pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p")
+    done
+    (
+        if [ ${#missing[@]} -gt 0 ]; then
+            act="$(notify-send -a claudes-glassy -i system-software-update -t 0 -A pkgs="Im Terminal installieren" --wait \
+                "claudes-glassy aktualisiert ($before -> $after)" "Neue Pakete noetig: ${missing[*]}")"
+            [ "$act" = pkgs ] && term_run "sudo pacman -S --needed ${missing[*]}"
+        else
+            act="$(notify-send -a claudes-glassy -i emblem-default -A news="Was ist neu" --wait \
+                "claudes-glassy aktualisiert" "$before -> $after  ($(git -C "$DEST" log -1 --format='%s' | cut -c1-60))")"
+            [ "$act" = news ] && term_run "$GLASSY_BIN --whatsnew"
+        fi
+    ) &
+}
+
+watch_loop() {
+    mkdir -p "$STATE_DIR"
+    exec 9>"$STATE_DIR/watch.lock"
+    flock -n 9 || exit 0                       # laeuft schon
+    local waited=0 interval first=1
+    sleep 90                                   # nach dem Login erst mal Ruhe
+    while true; do
+        interval="$(setting update_interval 360)"
+        if [ "$first" = 1 ] || { [ "$interval" -gt 0 ] && [ "$waited" -ge $(( interval * 60 )) ]; }; then
+            first=0; waited=0
+            if [ "$(setting update_check true)" = true ]; then
+                if [ "$(setting update_auto false)" = true ]; then
+                    check_updates >/dev/null 2>&1 && background_update
+                elif [ "$(setting update_notify true)" = true ]; then
+                    check_updates --notify >/dev/null 2>&1
+                fi
+            fi
+        fi
+        sleep 60; waited=$(( waited + 60 ))
+    done
+}
+
 reload_all() {
     pkill -x waybar; setsid -f waybar >/dev/null 2>&1
     pkill -x swaync; setsid -f swaync >/dev/null 2>&1
     pkill -f "startmenu.py --daemon"; "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon
     pkill -f "clipman.py --daemon";   "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon
     "$HOME/.config/hypr/scripts/island.sh" restart
+    pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch >/dev/null 2>&1
     hyprctl reload >/dev/null 2>&1
     c_ok "neu geladen"
 }
@@ -95,5 +247,10 @@ case "${1:---help}" in
     --restore|restore)    bash "$DEST/install.sh" --restore ;;
     --settings|settings)  "$HOME/.config/hypr/scripts/settings-app.sh" ;;
     --reload|reload)      reload_all ;;
-    --help|-h|help|*)     sed -n '3,16p' "$0" | sed 's/^# \{0,1\}//' ;;
+    --upgrade|upgrade)    fetch_branch "$(channel)" && install_now ;;
+    --background-update)  background_update ;;
+    --check|check)        shift; check_updates "$@" ;;
+    --whatsnew|whatsnew)  whatsnew ;;
+    --watch|watch)        watch_loop ;;
+    --help|-h|help|*)     sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

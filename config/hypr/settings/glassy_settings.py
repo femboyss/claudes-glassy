@@ -60,7 +60,12 @@ DEFAULTS = {
     "lock_show_date": True, "lock_show_greeting": True, "lock_show_music": True,
     "lock_show_info": True, "lock_show_icon": True, "lock_dim": 0.45, "lock_blur": 3,
     "lock_input_fade": True, "lock_other_monitors": True,
+    # Updates (glassy --watch)
+    "update_check": True, "update_interval": 360, "update_notify": True, "update_auto": False,
+    "update_channel": "main",
 }
+CHANNEL_FILE = os.path.join(HOME, ".local", "state", "claudes-glassy", "channel")
+GLASSY_BIN = os.path.join(HOME, ".local", "bin", "glassy")
 
 ACCENTS = {   # (Hauptfarbe, Verlauf-Partner) - Tokyo Night
     "blue": ("7aa2f7", "7dcfff"), "purple": ("bb9af7", "7aa2f7"), "cyan": ("7dcfff", "2ac3de"),
@@ -80,6 +85,13 @@ def load():
             s.update({k: v for k, v in json.load(f).items() if k in DEFAULTS})
         have_store = True
     except (FileNotFoundError, ValueError):
+        pass
+    try:
+        with open(CHANNEL_FILE, encoding="utf-8") as f:
+            ch = f.read().strip()
+        if ch in ("main", "debug"):
+            s["update_channel"] = ch
+    except OSError:
         pass
     # Im Startmenue selbst (Regler-Symbol) geaendert? Dann diese Werte nehmen.
     try:
@@ -461,11 +473,16 @@ label {{
 def apply_all(s, what=None, quiet=False):
     """Schreibt die Dateien und laedt die betroffenen Teile neu.
     what = None -> alles, sonst Menge aus {'hypr','bar','idle','startmenu','island'}"""
-    what = what or {"hypr", "bar", "idle", "startmenu", "island", "lock"}
+    what = what or {"hypr", "bar", "idle", "startmenu", "island", "lock", "updates"}
     with open(STORE + ".tmp", "w", encoding="utf-8") as f:
         json.dump(s, f, indent=2, ensure_ascii=False)
     os.replace(STORE + ".tmp", STORE)
 
+    if "updates" in what:
+        write(CHANNEL_FILE, s["update_channel"] + "\n")
+        if not quiet:
+            # Hintergrund-Suche starten, falls sie noch nicht laeuft (liest die Werte jede Minute neu)
+            sh(f"pgrep -f 'glassy --watch' >/dev/null || setsid -f {GLASSY_BIN} --watch")
     if "hypr" in what:
         write(LUA_OUT, gen_lua(s))
         if not quiet:
@@ -611,6 +628,7 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
                 ("power", "", "Sperren & Energie", self.page_power),
                 ("apps", "", "Standard-Apps", self.page_apps),
                 ("wall", "", "Hintergrund", self.page_wall),
+                ("updates", "\uf021", "Updates", self.page_updates),
                 ("system", "", "System", self.page_system),
             ]
             for key, gl, name, builder in pages:
@@ -868,6 +886,32 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             self.button(c, "Wallpaper-Ordner öffnen", None, "Öffnen", "xdg-open " + os.path.join(HOME, "Pictures", "Wallpapers"))
             return p
 
+        def page_updates(self):
+            p = self.page("Updates", "Sagt dir Bescheid, wenn es auf GitHub etwas Neues gibt - oder installiert es gleich selbst.")
+            ver = Gtk.Label(label="Installiert: " + repo_version() + "     Kanal: " + s["update_channel"], xalign=0)
+            ver.add_css_class("ver")
+            p.append(ver)
+            term = s.get("terminal") or "kitty"
+            c = self.group(p, "Automatisch")
+            self.sw(c, "update_check", "Nach Updates suchen", "Im Hintergrund, kurz nach dem Login und dann regelmäßig", {"updates"})
+            self.choice(c, "update_interval", "Wie oft", None,
+                        [(0, "Nur beim Login"), (60, "Jede Stunde"), (360, "Alle 6 Stunden"), (1440, "Einmal am Tag")], {"updates"})
+            self.sw(c, "update_notify", "Benachrichtigung zeigen",
+                    "Mit Knöpfen: Jetzt installieren / Was ist neu / Später", {"updates"})
+            self.sw(c, "update_auto", "Automatisch installieren",
+                    "Ohne Nachfrage im Hintergrund. Neue Pakete (sudo) fragen trotzdem nach.", {"updates"})
+            c = self.group(p, "Kanal")
+            self.choice(c, "update_channel", "Welcher Stand", "Test = Branch debug: neue Fixes zuerst, kann kaputt sein",
+                        [("main", "Stabil (main)"), ("debug", "Test (debug)")], {"updates"})
+            c = self.group(p, "Jetzt")
+            self.button(c, "Jetzt nach Updates suchen", "Zeigt das Ergebnis als Benachrichtigung", "Suchen",
+                        f"{GLASSY_BIN} --check --notify --force")
+            self.button(c, "Was ist neu", "Neue Änderungen auf GitHub bzw. die letzten Änderungen", "Anzeigen",
+                        f"{term} -e bash -c '{GLASSY_BIN} --whatsnew; echo; read -p \"Enter zum Schließen\"'")
+            self.button(c, "Update installieren", "Für deinen Kanal (glassy --upgrade)", "Installieren",
+                        f"{term} -e bash -c '{GLASSY_BIN} --upgrade; echo; read -p \"Enter zum Schließen\"'")
+            return p
+
         def page_system(self):
             p = self.page("System", "Update, Reparatur und Backups.")
             ver = Gtk.Label(label="Version: " + repo_version(), xalign=0)
@@ -876,7 +920,7 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             term = s.get("terminal") or "kitty"
             c = self.group(p, "Wartung")
             self.button(c, "Nach Updates suchen", "Holt den neuesten Stand von GitHub und installiert ihn",
-                        "Aktualisieren", f"{term} -e bash -c 'bash -c \"$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)\"; read -p \"Enter zum Schließen\"'")
+                        "Aktualisieren", f"{term} -e bash -c '{GLASSY_BIN} --upgrade; echo; read -p \"Enter zum Schließen\"'")
             self.button(c, "Doktor", "Prüft Configs, Dienste und Pakete", "Prüfen",
                         f"{term} -e bash -c 'bash {REPO}/doctor.sh; read -p \"Enter zum Schließen\"'")
             self.button(c, "Doktor: reparieren", "Holt kaputte Dateien aus dem Repo zurück", "Reparieren",

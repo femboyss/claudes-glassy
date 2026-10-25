@@ -32,6 +32,7 @@ c_err()  { printf '\033[38;2;243;139;168m[xx]\033[0m %s\n' "$*"; }
 
 # ja/nein-Frage; $2 = Standard (j oder n)
 AUTO=0
+SKIP_PKGS=0     # --background: Pakete auslassen (kein sudo moeglich)
 ask() {
     local q="$1" def="${2:-n}" hint ans
     if [ "$AUTO" = 1 ]; then
@@ -67,6 +68,7 @@ restart_session() {
     setsid -f waybar   >/dev/null 2>&1
     setsid -f swaync   >/dev/null 2>&1
     setsid -f hypridle >/dev/null 2>&1
+    pkill -f "wl-paste --type" 2>/dev/null || true           # keine doppelten Waechter
     setsid -f bash -c 'wl-paste --type text  --watch cliphist store' >/dev/null 2>&1
     setsid -f bash -c 'wl-paste --type image --watch cliphist store' >/dev/null 2>&1
     "$HOME/.config/hypr/scripts/wallpaper.sh" init || true
@@ -74,6 +76,7 @@ restart_session() {
     "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon || true
     "$HOME/.config/hypr/scripts/island.sh" restart || true
     pkill -f "clipman.py --daemon" 2>/dev/null; "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon || true
+    pgrep -f "glassy --watch" >/dev/null || setsid -f "$HOME/.local/bin/glassy" --watch >/dev/null 2>&1 || true
 }
 
 # ------------------------------------------------------------------
@@ -105,7 +108,7 @@ do_install() {
         ask "Wirklich ohne Backup weitermachen?" n || { c_warn "Abgebrochen."; exit 0; }
     fi
 
-    ask "Pakete installieren/aktualisieren (sudo pacman)?" j && {
+    [ "$SKIP_PKGS" = 0 ] && ask "Pakete installieren/aktualisieren (sudo pacman)?" j && {
         c_info "Installiere Pakete ..."
         if [ "$AUTO" = 1 ]; then
             sudo pacman -S --needed --noconfirm "${PKGS[@]}"
@@ -282,7 +285,8 @@ do_restore() {
 # ------------------------------------------------------------------
 case "${1:-}" in
     --install|-i) do_install ;;
-    --auto)       AUTO=1; do_install ;;     # ohne Fragen (fuer "glassy --update" / "glassy --debug")
+    --auto)       AUTO=1; do_install ;;
+    --background) AUTO=1; SKIP_PKGS=1; do_install ;;   # automatisches Update aus "glassy --watch"     # ohne Fragen (fuer "glassy --update" / "glassy --debug")
     --restore|-r) do_restore ;;
     "")
         echo

@@ -42,28 +42,64 @@ ensure_daemon() {   # $1 = awww|swww
     return 1
 }
 
+TRANS_DUR=1.4                     # Sekunden - Dauer der Uebergangs-Animation
+WANT="$CACHE/wallpaper-want"      # zuletzt gewuenschtes Bild (Warteschlange mit 1 Platz)
+LOCK="$CACHE/wallpaper.lock"
+
+# Bild an awww/swww schicken und warten, bis die Animation fertig ist
+show_with_transition() {   # $1 = backend  $2 = bild
+    "$1" img "$2" \
+        --transition-type grow \
+        --transition-pos center \
+        --transition-duration "$TRANS_DUR" \
+        --transition-fps 144 \
+        --transition-bezier .43,1.19,1,.4 >/dev/null 2>&1 \
+    || "$1" img "$2" >/dev/null 2>&1
+    sleep "$(awk -v d="$TRANS_DUR" 'BEGIN { print d + 0.15 }')"
+}
+
+# Zeigt der Daemon wirklich das Bild? Sonst (abgestuerzt/haengt) neu starten und ohne Animation setzen
+verify_or_repair() {   # $1 = backend  $2 = bild
+    "$1" query 2>/dev/null | grep -qF "$2" && return 0
+    echo "$(date '+%F %T') $1 zeigt nicht $2 -> Daemon neu" >> "$CACHE/wallpaper.log"
+    pkill -x "${1}-daemon" 2>/dev/null; sleep 0.3
+    ensure_daemon "$1" && "$1" img "$2" --transition-type none >/dev/null 2>&1
+}
+
 set_wall() {
-    local img="$1" b
+    local img="$1" b target applied
     [ -f "$img" ] || { notify "Datei nicht gefunden" "$img"; exit 1; }
     img="$(realpath "$img")"
     b="$(backend)"
 
-    if [ "$b" != swaybg ] && ensure_daemon "$b"; then
-        pkill -x swaybg 2>/dev/null
-        "$b" img "$img" \
-            --transition-type grow \
-            --transition-pos center \
-            --transition-duration 1.4 \
-            --transition-fps 144 \
-            --transition-bezier .43,1.19,1,.4 >/dev/null 2>&1 \
-        || "$b" img "$img" >/dev/null 2>&1
-    else
-        pkill -x swaybg 2>/dev/null
-        setsid -f swaybg -i "$img" -m fill >/dev/null 2>&1
-    fi
+    # Wunsch merken. Laeuft gerade eine Animation, wartet dieser Aufruf; danach wird nur
+    # noch das NEUESTE Wunsch-Bild gezeigt (schnelles Mehrfach-Wechseln = kein Abbruch mitten drin).
+    printf '%s\n' "$img" > "$WANT.tmp" && mv -f "$WANT.tmp" "$WANT"
+    exec 8>"$LOCK"
+    flock -w 20 8 || return 1
 
-    echo "$img" > "$STATE"
-    ln -sfn "$img" "$LINK"
+    while true; do
+        target="$(cat "$WANT" 2>/dev/null)"
+        applied="$(cat "$STATE" 2>/dev/null)"
+        [ -n "$target" ] && [ -f "$target" ] || break
+        [ "$target" = "$applied" ] && [ -n "${done_once:-}" ] && break
+        [ "$target" = "$applied" ] && [ "$b" != swaybg ] && "$b" query 2>/dev/null | grep -qF "$target" && break
+
+        if [ "$b" != swaybg ] && ensure_daemon "$b"; then
+            pkill -x swaybg 2>/dev/null
+            show_with_transition "$b" "$target"
+            verify_or_repair "$b" "$target"
+        else
+            pkill -x swaybg 2>/dev/null
+            setsid -f swaybg -i "$target" -m fill >/dev/null 2>&1
+        fi
+        echo "$target" > "$STATE"
+        ln -sfn "$target" "$LINK"
+        done_once=1
+        # Kam waehrend der Animation ein neuer Wunsch? Dann den gleich hinterher (Schleife).
+        [ "$(cat "$WANT" 2>/dev/null)" = "$target" ] && break
+    done
+    exec 8>&-
 }
 
 random_wall() {

@@ -66,6 +66,7 @@ done
 pgrep -f "startmenu.py --daemon" >/dev/null && ok "Startmenue-Dienst laeuft" || warn "Startmenue-Dienst laeuft nicht (startet beim naechsten Super)"
 pgrep -f "island/island.py" >/dev/null && ok "Dynamic Island laeuft" || bad "Dynamic Island laeuft NICHT  ->  ~/.config/hypr/scripts/island.sh"
 pgrep -f "clipman.py --daemon" >/dev/null && ok "Zwischenablage-Dienst laeuft" || warn "Zwischenablage-Dienst laeuft nicht (startet beim naechsten SUPER+V)"
+pgrep -f "glassy --watch" >/dev/null && ok "Update-Suche laeuft (SUPER+I -> Updates)" || warn "Update-Suche laeuft nicht  ->  glassy --reload"
 [ -f "$HOME/.cache/claudes-glassy/recording.pid" ] && kill -0 "$(cat "$HOME/.cache/claudes-glassy/recording.pid")" 2>/dev/null && warn "Bildschirmaufnahme laeuft gerade"
 pgrep -x qs >/dev/null || pgrep -x quickshell >/dev/null && warn "Quickshell (end-4) laeuft noch parallel"
 echo

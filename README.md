@@ -23,6 +23,9 @@ After the first install you have the `glassy` command (in `~/.local/bin`, added 
 |---------|--------------|
 | `glassy --update` | Get the latest **stable** version (branch `main`) and install it |
 | `glassy --debug` | Get the **test** version (branch `debug`) and install it |
+| `glassy --upgrade` | Install the update for your current channel (main or debug) |
+| `glassy --check` | Look for updates now (`--notify` as a notification) |
+| `glassy --whatsnew` | What's new on GitHub / the latest changes |
 | `glassy --status` | Installed version, and whether main/debug have something newer |
 | `glassy --doctor` / `--repair` | Check / repair configs, services, packages |
 | `glassy --restore` | Restore a backup from before the install |
@@ -44,6 +47,7 @@ Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work
 | **Bar** (Waybar) | Glass "islands", start button, search pill, workspaces, on every monitor. |
 | **Start menu** | GTK4 + layer-shell, Tokyo Night. Search (also calculator `12*7+3` and web search), categories (switch on click), favorites, recently used, places, power buttons with confirm. Runs as a background service, opens instantly on the monitor under your mouse. |
 | **Dynamic Island** | Black pill at the top: clock, now playing with cover art, expands on hover with seek slider and controls, volume OSD, recording indicator (click = stop). |
+| **Update notifications** | Checks GitHub in the background (on login, then hourly/6 h/daily). A notification with "Install now / What's new / Later" - or installs automatically. All in SUPER+I -> Updates. |
 | **Settings** (SUPER+I) | Every option in one place: appearance, start menu, island, bar, input, lock & power, default apps, wallpaper, update/doctor/backup. |
 | **Clipboard** (SUPER+V) | Search, image previews, trash button per entry, "delete all", opens at the mouse cursor. |
 | **Ctrl+Alt+Del** | Fullscreen glass screen: lock, log out, sleep, recording, screenshot, task manager, reboot, UEFI, shut down. |
@@ -161,6 +165,9 @@ Danach gibt es den Befehl `glassy`:
 |--------|--------------|
 | `glassy --update` | Neuesten **stabilen** Stand holen (Branch `main`) und installieren |
 | `glassy --debug` | **Test**-Stand holen (Branch `debug`) und installieren |
+| `glassy --upgrade` | Update fuer deinen aktuellen Kanal (main oder debug) installieren |
+| `glassy --check` | Jetzt nach Updates suchen (`--notify` als Benachrichtigung) |
+| `glassy --whatsnew` | Was ist neu auf GitHub / die letzten Aenderungen |
 | `glassy --status` | Was ist installiert, gibt es auf main/debug etwas Neueres? |
 | `glassy --doctor` / `--repair` | Configs, Dienste, Pakete pruefen / reparieren |
 | `glassy --restore` | Backup von vor der Installation zurueckspielen |
@@ -184,6 +191,9 @@ auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.
   Laeuft als Dienst, oeffnet sofort auf dem Monitor unter der Maus.
 - **Dynamic Island:** Uhr, Musik mit Cover, klappt beim Drueberfahren auf (Spulen per
   Schieberegler, Steuerung), Lautstaerke-Anzeige, Aufnahme-Anzeige (Klick = Stopp).
+- **Update-Benachrichtigung:** sucht im Hintergrund auf GitHub (beim Login, dann stuendlich /
+  alle 6 Std / taeglich). Benachrichtigung mit "Jetzt installieren / Was ist neu / Spaeter" -
+  oder installiert automatisch. Alles in SUPER+I -> Updates.
 - **Einstellungen (SUPER+I):** alles an einem Ort: Aussehen, Startmenue, Island, Leiste,
   Eingabe, Sperren & Energie, Standard-Apps, Hintergrund, Update/Doktor/Backup.
 - **Zwischenablage (SUPER+V):** Suche, Bild-Vorschau, Muelleimer pro Eintrag, "Alles
