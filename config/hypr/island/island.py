@@ -255,6 +255,7 @@ class State:
         self.volume = None
         self.muted = False
         self.rec_start = 0
+        self.instance = ""
 
     @property
     def has_media(self):
@@ -475,16 +476,18 @@ class IslandWindow(Gtk.ApplicationWindow):
             self.eartist.set_label(st.artist or "")
             self.eplayer.set_label((st.player or "").upper())
             self.playbtn.set_label(G["pause"] if playing else G["play"])
-            if st.art_pixbuf is not None:
-                small = st.art_pixbuf.scale_simple(44, 44, GdkPixbuf.InterpType.BILINEAR)
-                big = st.art_pixbuf.scale_simple(116, 116, GdkPixbuf.InterpType.BILINEAR)
-                self.ccover.set_from_paintable(Gdk.Texture.new_for_pixbuf(small))
-                self.bcover.set_from_paintable(Gdk.Texture.new_for_pixbuf(big))
-            else:
-                self.ccover.set_from_icon_name("audio-x-generic")
-                self.bcover.set_from_icon_name("audio-x-generic")
-            self.ccover.set_pixel_size(22)
-            self.bcover.set_pixel_size(58)
+            if getattr(self, "_shown_art", False) is not st.art_pixbuf:
+                self._shown_art = st.art_pixbuf
+                if st.art_pixbuf is not None:
+                    small = st.art_pixbuf.scale_simple(44, 44, GdkPixbuf.InterpType.BILINEAR)
+                    big = st.art_pixbuf.scale_simple(116, 116, GdkPixbuf.InterpType.BILINEAR)
+                    self.ccover.set_from_paintable(Gdk.Texture.new_for_pixbuf(small))
+                    self.bcover.set_from_paintable(Gdk.Texture.new_for_pixbuf(big))
+                else:
+                    self.ccover.set_from_icon_name("audio-x-generic")
+                    self.bcover.set_from_icon_name("audio-x-generic")
+                self.ccover.set_pixel_size(22)
+                self.bcover.set_pixel_size(58)
             if time.monotonic() > self.app.seek_hold_until:   # nicht reinfunken, waehrend gezogen wird
                 self.updating = True
                 self.pbar.set_range(0, max(1.0, st.length / 1_000_000))
@@ -662,8 +665,14 @@ class IslandApp(Gtk.Application):
         return True
 
     # ---- Medien (playerctl) ----
+    def pctl(self, *args):
+        """playerctl immer an DEN Player schicken, der gerade angezeigt wird
+        (sonst fragt es z. B. Firefox statt Spotify -> falsche Zeit / Fehler)."""
+        inst = getattr(self.state, "instance", "") or ""
+        return ["playerctl"] + (["-p", inst] if inst else []) + list(args)
+
     def player_cmd(self, cmd):
-        run_async(["playerctl", cmd])
+        run_async(self.pctl(cmd))
         GLib.timeout_add(350, lambda: (self._poll_position(), False)[1])
 
     def seek_to(self, seconds):
@@ -679,7 +688,7 @@ class IslandApp(Gtk.Application):
 
         def go():
             self.seek_id = 0
-            run_async(["playerctl", "position", f"{seconds:.2f}"])
+            run_async(self.pctl("position", f"{seconds:.2f}"))
             GLib.timeout_add(400, lambda: (self._poll_position(), False)[1])
             return False
         self.seek_id = GLib.timeout_add(120, go)
@@ -687,22 +696,26 @@ class IslandApp(Gtk.Application):
     def _poll_position(self):
         if not have("playerctl"):
             return
+        asked_for = (self.state.title, self.state.artist)
 
         def got(out):
             if time.monotonic() < self.seek_hold_until:
+                return
+            if (self.state.title, self.state.artist) != asked_for:   # Song hat inzwischen gewechselt
                 return
             try:
                 self.state.position = int(float(out.strip()) * 1_000_000)
             except ValueError:
                 return
             self.refresh()
-        run_async(["playerctl", "position"], got)
+        run_async(self.pctl("position"), got)
 
     def _follow_player(self):
         if not have("playerctl"):
             print("[island] playerctl fehlt - Musik-Anzeige aus", file=sys.stderr, flush=True)
             return
-        fmt = SEP.join(["{{status}}", "{{playerName}}", "{{title}}", "{{artist}}", "{{mpris:artUrl}}", "{{mpris:length}}"])
+        fmt = SEP.join(["{{status}}", "{{playerName}}", "{{title}}", "{{artist}}", "{{mpris:artUrl}}", "{{mpris:length}}",
+                        "{{playerInstance}}"])
         try:
             proc = Gio.Subprocess.new(["playerctl", "--follow", "metadata", "--format", fmt],
                                       Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE)
@@ -735,6 +748,7 @@ class IslandApp(Gtk.Application):
             self.refresh()
             return
         status, player, title, artist, art, length = parts[:6]
+        st.instance = parts[6] if len(parts) > 6 and parts[6] else player
         changed = title != st.title or artist != st.artist
         st.status, st.player, st.title, st.artist = status, player, title, artist
         try:
@@ -748,12 +762,13 @@ class IslandApp(Gtk.Application):
                 if SET["auto_expand"]:      # Einstellung (SUPER+I): bei neuem Song kurz aufklappen
                     self.auto_until = time.monotonic() + AUTO_EXPAND_SECS
                     GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
-                GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
-        if art != st.art_url:
+        if art and art != st.art_url:
             st.art_url = art
             st.art_pixbuf = None
-            if art:
-                self._load_art(art)
+            self._load_art(art)
+        elif not art and changed:          # neuer Song ohne Cover
+            st.art_url = ""
+            st.art_pixbuf = None
         self.refresh()
 
     def _load_art(self, url):
