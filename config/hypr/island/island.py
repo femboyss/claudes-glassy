@@ -710,14 +710,22 @@ class IslandApp(Gtk.Application):
             self.refresh()
         run_async(self.pctl("position"), got)
 
+    # Player, die nur andere Player spiegeln (keine eigenen Cover/Zeiten) -> nur nehmen, wenn sonst nichts da ist
+    MIRROR_PLAYERS = ("playerctld", "kdeconnect", "mpris-proxy")
+
     def _follow_player(self):
+        """Verfolgt ALLE Player gleichzeitig und zeigt den besten an.
+        Frueher: nur "zuletzt aktualisierter Player" -> ein zweiter Player (Browser-Tab,
+        KDE Connect, ...) hat Spotify staendig verdraengt -> kein Cover, keine Zeit."""
         if not have("playerctl"):
             print("[island] playerctl fehlt - Musik-Anzeige aus", file=sys.stderr, flush=True)
             return
-        fmt = SEP.join(["{{status}}", "{{playerName}}", "{{title}}", "{{artist}}", "{{mpris:artUrl}}", "{{mpris:length}}",
-                        "{{playerInstance}}"])
+        if not hasattr(self, "players"):
+            self.players = {}
+        fmt = SEP.join(["{{playerInstance}}", "{{status}}", "{{playerName}}", "{{title}}", "{{artist}}",
+                        "{{mpris:artUrl}}", "{{mpris:length}}"])
         try:
-            proc = Gio.Subprocess.new(["playerctl", "--follow", "metadata", "--format", fmt],
+            proc = Gio.Subprocess.new(["playerctl", "--all-players", "--follow", "metadata", "--format", fmt],
                                       Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE)
         except GLib.Error as e:
             print("[island] playerctl:", e, file=sys.stderr)
@@ -741,32 +749,62 @@ class IslandApp(Gtk.Application):
 
     def _on_player_line(self, line):
         parts = line.split(SEP)
+        if len(parts) < 7 or not parts[0]:
+            # Ein Player ist verschwunden -> Liste der noch laufenden Player neu holen
+            run_async(["playerctl", "-l"], self._prune_players)
+            return
+        inst, status, name, title, artist, art, length = parts[:7]
+        try:
+            length = int(length) if length else 0
+        except ValueError:
+            length = 0
+        if not status or status == "Stopped" or not title:
+            self.players.pop(inst, None)
+        else:
+            self.players[inst] = {"status": status, "name": name, "title": title, "artist": artist,
+                                  "art": art, "length": length, "ts": time.monotonic()}
+        self._choose_player()
+
+    def _prune_players(self, out):
+        alive = set(out.split())
+        for inst in list(self.players):
+            if inst not in alive:
+                self.players.pop(inst, None)
+        self._choose_player()
+
+    def _score(self, inst, p):
+        mirror = any(inst.startswith(m) for m in self.MIRROR_PLAYERS)
+        return ((100 if p["status"] == "Playing" else 0)
+                + (25 if p["art"] else 0)
+                + (25 if p["length"] > 0 else 0)
+                + (15 if inst == self.state.instance else 0)     # nicht hin- und herspringen
+                - (60 if mirror else 0)
+                + min(5.0, p["ts"] / 1e6))                         # minimal: neuere zuerst
+
+    def _choose_player(self):
         st = self.state
-        if len(parts) < 6 or not parts[0]:
-            st.status, st.title = "Stopped", ""
+        if not self.players:
+            st.status, st.title, st.instance = "Stopped", "", ""
             self.pinned = False
             self.refresh()
             return
-        status, player, title, artist, art, length = parts[:6]
-        st.instance = parts[6] if len(parts) > 6 and parts[6] else player
-        changed = title != st.title or artist != st.artist
-        st.status, st.player, st.title, st.artist = status, player, title, artist
-        try:
-            st.length = int(length) if length else 0
-        except ValueError:
-            st.length = 0
+        inst, p = max(self.players.items(), key=lambda kv: self._score(*kv))
+        changed = inst != st.instance or p["title"] != st.title or p["artist"] != st.artist
+        st.instance = inst
+        st.status, st.player, st.title, st.artist = p["status"], p["name"], p["title"], p["artist"]
+        st.length = p["length"]
         if changed:
             st.position = 0
             self._poll_position()
-            if status == "Playing" and title:
-                if SET["auto_expand"]:      # Einstellung (SUPER+I): bei neuem Song kurz aufklappen
-                    self.auto_until = time.monotonic() + AUTO_EXPAND_SECS
-                    GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
+            if st.status == "Playing" and SET["auto_expand"]:   # Einstellung (SUPER+I)
+                self.auto_until = time.monotonic() + AUTO_EXPAND_SECS
+                GLib.timeout_add((AUTO_EXPAND_SECS * 1000) + 50, lambda: (self.refresh(), False)[1])
+        art = p["art"]
         if art and art != st.art_url:
             st.art_url = art
             st.art_pixbuf = None
             self._load_art(art)
-        elif not art and changed:          # neuer Song ohne Cover
+        elif not art and changed:          # anderer Song ohne Cover
             st.art_url = ""
             st.art_pixbuf = None
         self.refresh()
