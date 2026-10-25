@@ -94,6 +94,28 @@ done
 if [ ${#missing[@]} -eq 0 ]; then ok "alle Pakete da"; else bad "fehlt: ${missing[*]}"; echo "   sudo pacman -S --needed ${missing[*]}"; fi
 echo
 
+echo "== Theme =="
+th_missing=()
+for f in .config/hypr/theme/colors.css .config/waybar/colors.css .config/swaync/colors.css \
+         .config/rofi/glassy-colors.rasi .config/kitty/glassy-theme.conf .config/hypr/glassy-theme.lua; do
+    [ -f "$HOME/$f" ] || th_missing+=("~/$f")
+done
+if [ ${#th_missing[@]} -eq 0 ]; then
+    ok "Theme: $(python3 "$HOME/.config/hypr/theme/theme.py" current 2>/dev/null)  (Dateien da)"
+else
+    bad "Theme-Dateien fehlen: ${th_missing[*]}"
+    echo "   python3 ~/.config/hypr/theme/theme.py apply"
+fi
+if command -v dolphin >/dev/null 2>&1; then
+    if [ -f /usr/lib/qt6/plugins/platformthemes/KDEPlasmaPlatformTheme6.so ]; then
+        ok "Dolphin & Co.: KDE-Plattform-Theme da (Farben vom Theme)"
+    else
+        warn "Dolphin & Co. bleiben evtl. hell: plasma-integration fehlt"
+        echo "   sudo pacman -S --needed plasma-integration   (danach neu anmelden)"
+    fi
+fi
+echo
+
 echo "== Configs im Vergleich zum Repo =="
 changed=(); absent=()
 while IFS= read -r -d '' f; do

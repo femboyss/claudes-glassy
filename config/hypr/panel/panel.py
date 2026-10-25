@@ -34,6 +34,29 @@ except (ValueError, ImportError):
 
 import views as V  # noqa: E402
 
+
+def _theme_css():
+    """Farben des aktiven Themes (erzeugt von theme/theme.py) - kommen NACH den
+    Standardfarben, ueberschreiben sie also."""
+    try:
+        with open(os.path.expanduser("~/.config/hypr/theme/colors.css"), encoding="utf-8") as f:
+            return "\n" + f.read()
+    except OSError:
+        return ""
+
+
+def _themed(css):
+    """Theme-Farben einsetzen: GTK nimmt bei doppeltem @define-color nicht zuverlaessig
+    den letzten Wert -> eigene Standardwerte fuer diese Namen entfernen, Theme davor."""
+    import re
+    t = _theme_css()
+    if not t:
+        return css
+    names = set(re.findall(r"@define-color\s+(\w+)", t))
+    css = re.sub(r"^[ \t]*@define-color\s+(\w+)[^\n]*\n",
+                 lambda m: "" if m.group(1) in names else m.group(0), css, flags=re.M)
+    return t + "\n" + css
+
 HOME = os.path.expanduser("~")
 CACHE = os.path.join(HOME, ".cache", "claudes-glassy")
 FIFO = os.path.join(CACHE, "panel.fifo")
@@ -45,16 +68,16 @@ PANEL_CSS = r"""
 window, window.background, window.background:backdrop, window > * {
     background: none; background-color: transparent; background-image: none; box-shadow: none; border: none; }
 .gl-panel {
-    background-color: alpha(#1a1b26, 0.86);
-    background-image: linear-gradient(90deg, alpha(#bb9af7, 0.0), alpha(#7aa2f7, 0.85), alpha(#7dcfff, 0.85), alpha(#bb9af7, 0.0));
+    background-color: alpha(@tn_bg, 0.86);
+    background-image: linear-gradient(90deg, alpha(@tn_purple, 0.0), alpha(@tn_blue, 0.85), alpha(@tn_cyan, 0.85), alpha(@tn_purple, 0.0));
     background-size: 100% 2px; background-repeat: no-repeat; background-position: top;
-    border: 1px solid alpha(#7aa2f7, 0.20); border-radius: 16px;
+    border: 1px solid alpha(@tn_blue, 0.20); border-radius: 16px;
     box-shadow: 0 10px 28px alpha(black, 0.42);
     padding: 14px;
 }
 .gl-top { margin-bottom: 6px; }
-.gl-title { font-size: 14px; font-weight: 800; color: #c0caf5; }
-.gl-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid alpha(#565f89, 0.25); }
+.gl-title { font-size: 14px; font-weight: 800; color: @tn_fg; }
+.gl-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid alpha(@tn_comment, 0.25); }
 """
 
 TITLES = {"quick": "", "sound": "Sound", "network": "", "bluetooth": "", "calendar": ""}
@@ -116,6 +139,8 @@ class Panel(Gtk.ApplicationWindow):
             for e in (LS.Edge.TOP, LS.Edge.BOTTOM, LS.Edge.LEFT, LS.Edge.RIGHT):
                 LS.set_anchor(self, e, True)
             LS.set_exclusive_zone(self, -1)
+            # Wichtig: sonst ist die Ebene nur so gross wie der Inhalt und klebt links oben
+            self.set_resizable(True)
         else:
             self.set_default_size(WIDTH + 40, 560)
         print(f"[panel] layer-shell: {'an' if self.layer else 'AUS'}", file=sys.stderr, flush=True)
@@ -300,9 +325,9 @@ class App(Gtk.Application):
         prov = Gtk.CssProvider()
         css = V.CSS + PANEL_CSS
         if hasattr(prov, "load_from_string"):
-            prov.load_from_string(css)
+            prov.load_from_string(_themed(css))
         else:
-            prov.load_from_data(css.encode())
+            prov.load_from_data((_themed(css)).encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov, Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)
         st = Gtk.Settings.get_default()
         if st is not None:

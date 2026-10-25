@@ -13,6 +13,7 @@
 #    glassy --restore     altes Backup zurueckspielen
 #    glassy --settings    Einstellungen oeffnen (wie SUPER+I)
 #    glassy --reload      Leiste, Island, Startmenue, Zwischenablage neu starten
+#    glassy --theme       Themes anzeigen   (glassy --theme glass: Theme setzen)
 #    glassy --help        diese Hilfe
 #
 #  Ablauf bei Fehlern: Fixes kommen zuerst auf "debug" -> mit "glassy --debug"
@@ -248,10 +249,13 @@ case "${1:---help}" in
     --restore|restore)    bash "$DEST/install.sh" --restore ;;
     --settings|settings)  "$HOME/.config/hypr/scripts/settings-app.sh" ;;
     --reload|reload)      reload_all ;;
+    --theme|theme)        shift
+                          if [ $# -eq 0 ]; then python3 "$HOME/.config/hypr/theme/theme.py" list
+                          else python3 "$HOME/.config/hypr/theme/theme.py" apply "$1"; fi ;;
     --upgrade|upgrade)    fetch_branch "$(channel)" && install_now ;;
     --background-update)  background_update ;;
     --check|check)        shift; check_updates "$@" ;;
     --whatsnew|whatsnew)  whatsnew ;;
     --watch|watch)        watch_loop ;;
-    --help|-h|help|*)     sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//' ;;
+    --help|-h|help|*)     sed -n '3,21p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

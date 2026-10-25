@@ -9,15 +9,22 @@
     red:       #f38ba8;
     tile:      rgba(49, 50, 68, 45%);
     tileedge:  rgba(205, 214, 244, 10%);
+    dim:           rgba(17, 17, 27, 62%);
+    tile-sel:      rgba(203, 166, 247, 28%);
+    tile-sel-edge: rgba(203, 166, 247, 70%);
+    tile-urg:      rgba(243, 139, 168, 30%);
+    tile-urg-edge: rgba(243, 139, 168, 80%);
     font:             "Inter SemiBold 13";
     background-color: transparent;
     text-color:       @text;
     margin: 0; padding: 0; spacing: 0;
 }
 
+@import "glassy-colors.rasi"
+
 window {
     fullscreen:       true;
-    background-color: rgba(17, 17, 27, 62%);
+    background-color: @dim;
     padding:          0;
 }
 
@@ -64,12 +71,12 @@ element {
 }
 
 element selected.normal {
-    background-color: rgba(203, 166, 247, 28%);
-    border-color:     rgba(203, 166, 247, 70%);
+    background-color: @tile-sel;
+    border-color:     @tile-sel-edge;
 }
 element selected.urgent {
-    background-color: rgba(243, 139, 168, 30%);
-    border-color:     rgba(243, 139, 168, 80%);
+    background-color: @tile-urg;
+    border-color:     @tile-urg-edge;
 }
 element normal.urgent, element alternate.urgent {
     background-color: @tile;

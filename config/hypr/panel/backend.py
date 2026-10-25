@@ -278,11 +278,20 @@ def set_airplane(on):
 
 
 # ------------------------------------------------------------------ Bluetooth
+_BT_DEAD_UNTIL = [0.0]
+
+
 def bt_available():
-    if not have("bluetoothctl"):
+    """Ohne laufenden bluetoothd haengt bluetoothctl ewig ("Waiting to connect...").
+    Dann 60 s lang gar nicht mehr fragen, damit das Panel flott bleibt."""
+    import time
+    if not have("bluetoothctl") or time.monotonic() < _BT_DEAD_UNTIL[0]:
         return False
-    ok, out = run(["bluetoothctl", "show"], timeout=4)
-    return ok and "Controller" in out
+    ok, out = run(["bluetoothctl", "show"], timeout=2)
+    if not ok or "Controller" not in out:
+        _BT_DEAD_UNTIL[0] = time.monotonic() + 60
+        return False
+    return True
 
 
 def bt_powered():

@@ -42,6 +42,8 @@ CSS = r"""
 @define-color tn_green   #9ece6a;
 @define-color tn_red     #f7768e;
 @define-color tn_yellow  #e0af68;
+@define-color tn_on_accent #16161e;
+@define-color tn_island_bg rgba(6, 6, 10, 0.92);
 
 .gl-view * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
 .gl-view { color: @tn_fg; }
@@ -59,7 +61,7 @@ CSS = r"""
     color: @tn_fg_dark; transition: all 140ms ease;
 }
 .gl-tile:hover { background-color: alpha(@tn_hl, 0.95); }
-.gl-tile.on { background-color: alpha(@tn_blue, 0.85); color: #16161e; border-color: alpha(@tn_cyan, 0.6); }
+.gl-tile.on { background-color: alpha(@tn_blue, 0.85); color: @tn_on_accent; border-color: alpha(@tn_cyan, 0.6); }
 .gl-tile.on:hover { background-color: @tn_blue; }
 .gl-tile .t-glyph { font-family: "JetBrainsMono Nerd Font"; font-size: 17px; }
 .gl-tile .t-name  { font-size: 11px; font-weight: 700; }
@@ -122,7 +124,7 @@ calendar.gl-cal > header { border: none; }
 calendar.gl-cal > header button { background: transparent; border: none; box-shadow: none; color: @tn_fg_dark; }
 calendar.gl-cal > grid > label.day-name { color: @tn_comment; font-size: 10px; font-weight: 800; }
 calendar.gl-cal > grid > label.day-number { border-radius: 99px; padding: 6px; font-size: 12px; }
-calendar.gl-cal > grid > label.day-number:selected { background-color: @tn_blue; color: #16161e; font-weight: 800; }
+calendar.gl-cal > grid > label.day-number:selected { background-color: @tn_blue; color: @tn_on_accent; font-weight: 800; }
 calendar.gl-cal > grid > label.day-number.other-month { color: alpha(@tn_comment, 0.5); }
 calendar.gl-cal > grid > label.today { box-shadow: inset 0 0 0 2px @tn_purple; }
 .gl-bigtime { font-size: 30px; font-weight: 300; color: @tn_fg; }
@@ -400,14 +402,16 @@ class NetworkView(Gtk.Box):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         self.add_css_class("gl-view")
         head = Gtk.Box(spacing=8)
-        head.append(label("WLAN", "gl-head"))
+        self.head_title = label("Netzwerk", "gl-head")
+        head.append(self.head_title)
         sp = Gtk.Box()
         sp.set_hexpand(True)
         head.append(sp)
         self.spinner = Gtk.Spinner()
         self.spinner.add_css_class("gl-spinner")
         head.append(self.spinner)
-        head.append(iconbtn(G["refresh"], "Neu suchen", lambda: self.refresh(rescan=True)))
+        self.rescan_btn = iconbtn(G["refresh"], "Neu suchen", lambda: self.refresh(rescan=True))
+        head.append(self.rescan_btn)
         self.sw = Gtk.Switch()
         self.sw.add_css_class("gl-switch")
         self.sw.set_valign(Gtk.Align.CENTER)
@@ -415,7 +419,10 @@ class NetworkView(Gtk.Box):
         self.sw.connect("notify::active", self._toggle)
         head.append(self.sw)
         self.append(head)
-        self.eth = label("", "gl-sub", ellipsize=False)
+        # Kabel-Verbindungen: eine Zeile pro Anschluss
+        self.eth = Gtk.ListBox()
+        self.eth.add_css_class("gl-list")
+        self.eth.set_selection_mode(Gtk.SelectionMode.NONE)
         self.append(self.eth)
         self.msg = label("", "gl-msg", ellipsize=False)
         self.msg.set_wrap(True)
@@ -450,13 +457,19 @@ class NetworkView(Gtk.Box):
         self.sw_updating = False
         eth = [d for d in devs if d["type"] == "ethernet"]
         has_wifi = any(d["type"] == "wifi" for d in devs)
-        self.eth.set_label("  ".join(
-            (G["eth"] + "  " + (d["connection"] if d["state"].startswith("connected") else "Kabel nicht verbunden"))
-            for d in eth))
-        self.eth.set_visible(bool(eth))
+        # Verbundene Kabel zuerst; nicht verbundene nur, wenn gar nichts verbunden ist
+        conn = [d for d in eth if d["state"].startswith("connected")]
+        shown = conn or eth[:1]
+        clear(self.eth)
+        for d in shown:
+            self.eth.append(self._eth_row(d))
+        self.eth.set_visible(bool(shown))
+        self.head_title.set_label("WLAN" if has_wifi else "Netzwerk")
+        self.sw.set_visible(has_wifi)
+        self.rescan_btn.set_visible(has_wifi)
         clear(self.list)
         if not has_wifi:
-            self._say("Kein WLAN-Adapter gefunden.")
+            self._say("" if conn else "Kein WLAN-Adapter und kein Kabel verbunden.")
             return
         if not on:
             self._say("WLAN ist aus.")
@@ -467,6 +480,22 @@ class NetworkView(Gtk.Box):
             self.list.append(self._row(n))
         if not nets:
             self._say("Keine Netze gefunden.")
+
+    def _eth_row(self, d):
+        row = Gtk.ListBoxRow()
+        row.set_activatable(False)
+        on = d["state"].startswith("connected")
+        if on:
+            row.add_css_class("active")
+        b = Gtk.Box(spacing=8)
+        b.append(glyph(G["eth"], "gl-rglyph"))
+        tb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        tb.set_hexpand(True)
+        tb.append(label(d["connection"] if on and d["connection"] else "Ethernet", "gl-rname"))
+        tb.append(label(("Verbunden" if on else "Kabel nicht verbunden") + "  ·  " + d["device"], "gl-rsub"))
+        b.append(tb)
+        row.set_child(b)
+        return row
 
     def _row(self, n):
         row = Gtk.ListBoxRow()
@@ -742,7 +771,10 @@ class QuickView(Gtk.Box):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         self.add_css_class("gl-view")
         self.open_page, self.run_cmd = open_page, run_cmd
-        self.state = {}
+        self.busy = set()
+        self.state = {"net": False, "wifi": False, "devs": [], "plane": False, "bt_avail": False, "bt": False,
+                      "bt_conn": [], "dnd": False, "night_avail": False, "night": False, "profiles": [],
+                      "profile": "", "sink": None, "source": None, "bright": None, "media": None}
         grid = Gtk.Grid(column_spacing=8, row_spacing=8, column_homogeneous=True)
         self.t_wifi = Tile(G["wifi"], "WLAN", self._wifi, lambda: open_page("network"))
         self.t_bt = Tile(G["bt"], "Bluetooth", self._bt, lambda: open_page("bluetooth"))
@@ -779,32 +811,52 @@ class QuickView(Gtk.Box):
         self.append(self.media)
 
     def refresh(self):
-        def get():
+        # Schnelle Werte (Ton, Musik, Schalter) und langsame (Netz, Bluetooth) getrennt holen:
+        # haengt bluetoothctl/nmcli, bleiben Lautstaerke & Co trotzdem sofort richtig.
+        def fast():
             return {
-                "net": B.net_available(), "wifi": B.net_available() and B.wifi_enabled(),
-                "devs": B.net_devices() if B.net_available() else [],
-                "bt_avail": B.bt_available(), "bt": B.bt_powered(),
-                "bt_conn": [d["name"] for d in B.bt_devices() if d["connected"]] if B.bt_powered() else [],
                 "dnd": B.dnd_on() if B.have("swaync-client") else False,
                 "night_avail": B.nightlight_available(), "night": B.nightlight_on(),
-                "plane": B.airplane_on() if B.net_available() else False,
                 "profiles": B.power_profiles(), "profile": B.power_profile() if B.have("powerprofilesctl") else "",
                 "sink": B.default_sink_state(), "source": B.default_source_state(),
                 "bright": B.brightness(), "media": B.media(),
             }
-        bg(get, done=self._fill)
+
+        def slow():
+            net = B.net_available()
+            bt_avail = B.bt_available()
+            bt = bt_avail and B.bt_powered()
+            return {
+                "net": net, "wifi": net and B.wifi_enabled(),
+                "devs": B.net_devices() if net else [],
+                "plane": B.airplane_on() if net else False,
+                "bt_avail": bt_avail, "bt": bt,
+                "bt_conn": [d["name"] for d in B.bt_devices() if d["connected"]] if bt else [],
+            }
+        for key, fn in (("fast", fast), ("slow", slow)):
+            if key in self.busy:
+                continue
+            self.busy.add(key)
+            bg(fn, done=lambda st, k=key: self._merge(k, st))
+
+    def _merge(self, key, st):
+        self.busy.discard(key)
+        if st:
+            self.state.update(st)
+            self._fill(self.state)
 
     def _fill(self, st):
         if not st:
             return
-        self.state = st
         wifi_dev = next((d for d in st["devs"] if d["type"] == "wifi"), None)
         eth = next((d for d in st["devs"] if d["type"] == "ethernet" and d["state"].startswith("connected")), None)
         if wifi_dev:
             conn = wifi_dev["connection"] if wifi_dev["state"] == "connected" else ("Ein" if st["wifi"] else "Aus")
+            self.t_wifi.n.set_label("WLAN")
             self.t_wifi.set(st["wifi"], conn, G["wifi"] if st["wifi"] else G["wifi_off"])
         else:
-            self.t_wifi.set(bool(eth), "Ethernet" if eth else "Kein Netz", G["eth"])
+            self.t_wifi.n.set_label("Netzwerk")
+            self.t_wifi.set(bool(eth), "Kabel" if eth else "Kein Netz", G["eth"])
         self.t_bt.set(st["bt"], (st["bt_conn"][0] if st["bt_conn"] else ("Ein" if st["bt"] else "Aus")) if st["bt_avail"] else "Kein Adapter",
                       G["bt"] if st["bt"] else G["bt_off"])
         self.t_dnd.set(st["dnd"], "Ein" if st["dnd"] else "Aus")

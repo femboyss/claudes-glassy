@@ -1,12 +1,20 @@
--- claudes-glassy: Aussehen (Catppuccin Mocha, Glas)
+-- claudes-glassy: Aussehen (Farben kommen vom Theme)
 -- Variablen: https://wiki.hypr.land/Configuring/Basics/Variables/
 
 local c = {
-    mauve    = "rgba(cba6f7ee)",
-    blue     = "rgba(89b4faee)",
-    pink     = "rgba(f5c2e7ee)",
-    surface0 = "rgba(31324488)",
+    mauve    = "rgba(bb9af7ee)",
+    blue     = "rgba(7aa2f7ee)",
+    pink     = "rgba(ff79c6ee)",
+    surface0 = "rgba(292e4288)",
 }
+-- Rahmenfarben vom aktiven Theme (SUPER+I -> Aussehen -> Theme)
+do
+    local ok, t = pcall(dofile, os.getenv("HOME") .. "/.config/hypr/glassy-theme.lua")
+    if ok and type(t) == "table" then
+        c.mauve, c.blue, c.pink = t.border_a or c.mauve, t.border_b or c.blue, t.border_c or c.pink
+        c.surface0 = t.border_inactive or c.surface0
+    end
+end
 
 hl.config({
     general = {

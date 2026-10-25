@@ -212,6 +212,10 @@ EOF
 
     install_cli
 
+    # Theme-Farben erzeugen (Leiste, Mitteilungen, rofi, kitty, Rahmen, Dolphin ...)
+    python3 "$HOME/.config/hypr/theme/theme.py" apply --no-reload >/dev/null 2>&1 \
+        && c_ok "Theme: $(python3 "$HOME/.config/hypr/theme/theme.py" current 2>/dev/null)"
+
     # Eigene Einstellungen (SUPER+I) nach einem Update wieder anwenden
     if [ -f "$HOME/.config/hypr/glassy-settings.json" ]; then
         python3 "$HOME/.config/hypr/settings/glassy_settings.py" --apply --quiet >/dev/null 2>&1 \

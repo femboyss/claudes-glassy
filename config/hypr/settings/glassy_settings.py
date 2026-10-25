@@ -21,6 +21,29 @@ import os
 import subprocess
 import sys
 
+
+def _theme_css():
+    """Farben des aktiven Themes (erzeugt von theme/theme.py) - kommen NACH den
+    Standardfarben, ueberschreiben sie also."""
+    try:
+        with open(os.path.expanduser("~/.config/hypr/theme/colors.css"), encoding="utf-8") as f:
+            return "\n" + f.read()
+    except OSError:
+        return ""
+
+
+def _themed(css):
+    """Theme-Farben einsetzen: GTK nimmt bei doppeltem @define-color nicht zuverlaessig
+    den letzten Wert -> eigene Standardwerte fuer diese Namen entfernen, Theme davor."""
+    import re
+    t = _theme_css()
+    if not t:
+        return css
+    names = set(re.findall(r"@define-color\s+(\w+)", t))
+    css = re.sub(r"^[ \t]*@define-color\s+(\w+)[^\n]*\n",
+                 lambda m: "" if m.group(1) in names else m.group(0), css, flags=re.M)
+    return t + "\n" + css
+
 HOME = os.path.expanduser("~")
 HYPR = os.path.join(HOME, ".config", "hypr")
 STORE = os.path.join(HYPR, "glassy-settings.json")
@@ -33,7 +56,16 @@ ISLAND_JSON = os.path.join(HYPR, "island", "settings.json")
 REPO = os.path.join(HOME, ".local", "share", "claudes-glassy")
 SCRIPTS = os.path.join(HYPR, "scripts")
 
+sys.path.insert(0, os.path.join(HYPR, "theme"))
+try:
+    import theme as TM          # ~/.config/hypr/theme/theme.py
+except Exception:  # noqa: BLE001
+    TM = None
+ON_THEME = []                   # Callbacks: eigenes Fenster neu einfaerben
+
 DEFAULTS = {
+    # Theme (Farben + Glas fuer alles)
+    "theme": "tokyo", "qt_theme": True,
     # Aussehen (Hyprland)
     "gaps_in": 6, "gaps_out": 14, "border_size": 2, "rounding": 16,
     "blur": True, "blur_passes": 3, "blur_size": 8,
@@ -56,7 +88,7 @@ DEFAULTS = {
     # Sperren & Energie
     "lock_minutes": 10, "screen_off_minutes": 12, "suspend_minutes": 0,
     # Sperrbildschirm
-    "lock_accent": "blue", "lock_clock_size": "large", "lock_clock_font": "thin",
+    "lock_accent": "theme", "lock_clock_size": "large", "lock_clock_font": "thin",
     "lock_show_date": True, "lock_show_greeting": True, "lock_show_music": True,
     "lock_show_info": True, "lock_show_icon": True, "lock_dim": 0.45, "lock_blur": 3,
     "lock_input_fade": True, "lock_other_monitors": True,
@@ -229,7 +261,13 @@ def gen_waybar(s):
     cfg["modules-center"] = [] if s["island_enabled"] else ["clock"]
     head = ("// Automatisch erzeugt von den claudes-glassy Einstellungen (SUPER+I).\n"
             "// Vorlage: ~/.local/share/claudes-glassy/config/waybar/config.jsonc\n")
-    return head + json.dumps(cfg, indent=4, ensure_ascii=False) + "\n"
+    txt = json.dumps(cfg, indent=4, ensure_ascii=False)
+    if TM is not None:            # Farben im Kalender-Tooltip / Mitteilungs-Symbol vom Theme
+        t = TM.get(s.get("theme"))
+        for old, key in (("cba6f7", "purple"), ("cdd6f4", "fg"), ("94e2d5", "teal"),
+                         ("f9e2af", "yellow"), ("f38ba8", "red")):
+            txt = txt.replace("#" + old, "#" + t[key])
+    return head + txt + "\n"
 
 
 def gen_idle(s):
@@ -270,7 +308,19 @@ listener {{
 
 
 def gen_lock(s):
+    txt = _gen_lock(s)
+    if TM is not None:            # Textfarben vom Theme
+        t = TM.get(s.get("theme"))
+        for old, key in (("c0caf5", "fg"), ("a9b1d6", "fg_dark"), ("565f89", "comment"), ("16161e", "bg_dark")):
+            txt = txt.replace(old, t[key])
+    return txt
+
+
+def _gen_lock(s):
     a1, a2 = ACCENTS.get(s["lock_accent"], ACCENTS["blue"])
+    if s["lock_accent"] == "theme" and TM is not None:
+        t = TM.get(s.get("theme"))
+        a1, a2 = t["blue"], t["cyan"]
     size = CLOCK_SIZES.get(s["lock_clock_size"], 124)
     font = CLOCK_FONTS.get(s["lock_clock_font"], "Inter Light")
     script = "~/.config/hypr/scripts/lockinfo.sh"
@@ -473,11 +523,22 @@ label {{
 def apply_all(s, what=None, quiet=False):
     """Schreibt die Dateien und laedt die betroffenen Teile neu.
     what = None -> alles, sonst Menge aus {'hypr','bar','idle','startmenu','island'}"""
-    what = what or {"hypr", "bar", "idle", "startmenu", "island", "lock", "updates"}
+    what = what or {"theme", "qt", "hypr", "bar", "idle", "startmenu", "island", "lock", "updates"}
     with open(STORE + ".tmp", "w", encoding="utf-8") as f:
         json.dump(s, f, indent=2, ensure_ascii=False)
     os.replace(STORE + ".tmp", STORE)
 
+    if "theme" in what and TM is not None:
+        TM.write_files(s["theme"])
+        if not quiet:
+            TM.reload_running()
+            for cb in ON_THEME:
+                cb()
+    if "qt" in what:
+        qt = os.path.join(SCRIPTS, "qt-theme.sh")
+        if os.path.exists(qt):
+            subprocess.run(["bash", qt, "apply" if s["qt_theme"] else "restore", "--quiet"],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if "updates" in what:
         write(CHANNEL_FILE, s["update_channel"] + "\n")
         if not quiet:
@@ -543,6 +604,8 @@ def run_gui():
 @define-color tn_purple  #bb9af7;
 @define-color tn_green   #9ece6a;
 @define-color tn_red     #f7768e;
+@define-color tn_on_accent #16161e;
+@define-color tn_island_bg rgba(6, 6, 10, 0.92);
 
 window.glassy, window.glassy.background { background-color: alpha(@tn_bg, 0.93); color: @tn_fg; }
 window.glassy * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
@@ -751,6 +814,51 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             w.connect("value-changed", lambda x: self.changed(key, round(x.get_value(), 2), what))
             self.row(card, label, desc, w)
 
+        def theme_picker(self, page):
+            g = Gtk.Label(label="THEME", xalign=0)
+            g.add_css_class("group")
+            page.append(g)
+            flow = Gtk.FlowBox()
+            flow.set_selection_mode(Gtk.SelectionMode.NONE)
+            flow.set_max_children_per_line(3)
+            flow.set_min_children_per_line(2)
+            flow.set_column_spacing(8)
+            flow.set_row_spacing(8)
+            flow.set_homogeneous(True)
+            self.theme_btns = {}
+            for key, t in TM.THEMES.items():
+                b = Gtk.Button()
+                b.add_css_class("themecard")
+                v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+                sw = Gtk.Box(spacing=0)
+                sw.add_css_class("swatches")
+                for i in range(6):
+                    d = Gtk.Box()
+                    d.set_hexpand(True)
+                    d.add_css_class(f"sw-{key}-{i}")
+                    d.set_size_request(-1, 26)
+                    sw.append(d)
+                v.append(sw)
+                n = Gtk.Label(label=t["label"], xalign=0)
+                n.add_css_class("olabel")
+                v.append(n)
+                dsc = Gtk.Label(label=t["desc"], xalign=0)
+                dsc.add_css_class("odesc")
+                dsc.set_wrap(True)
+                v.append(dsc)
+                b.set_child(v)
+                b.connect("clicked", lambda _b, k=key: self.pick_theme(k))
+                if s.get("theme") == key:
+                    b.add_css_class("sel")
+                self.theme_btns[key] = b
+                flow.append(b)
+            page.append(flow)
+
+        def pick_theme(self, key):
+            for k, b in self.theme_btns.items():
+                (b.add_css_class if k == key else b.remove_css_class)("sel")
+            self.changed("theme", key, {"theme", "qt", "bar", "lock"})
+
         def choice(self, card, key, label, desc, options, what):
             # options: [(wert, anzeige)]
             names = [o[1] for o in options]
@@ -806,7 +914,11 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             return self._live_page("bt", "Bluetooth", "Geräte suchen, koppeln, verbinden und entfernen.", PV.BluetoothView if PV else None)
 
         def page_look(self):
-            p = self.page("Aussehen", "Fenster, Abstände, Glas-Effekt und Animationen.")
+            p = self.page("Aussehen", "Theme, Fenster, Abstände, Glas-Effekt und Animationen.")
+            if TM is not None:
+                self.theme_picker(p)
+                c = self.group(p, "Andere Programme")
+                self.sw(c, "qt_theme", "Qt/KDE-Apps einfärben", "Dolphin, Kate, Ark … passend zum Theme (neu starten)", {"qt"})
             c = self.group(p, "Fenster")
             self.spin(c, "gaps_in", "Abstand zwischen Fenstern", "Pixel", 0, 40, 1, {"hypr"})
             self.spin(c, "gaps_out", "Abstand zum Bildschirmrand", "Pixel", 0, 60, 1, {"hypr"})
@@ -885,7 +997,7 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             c = self.group(p, "Farbe & Uhr")
             self.choice(c, "lock_accent", "Akzentfarbe", "Schloss, Passwort-Rahmen, Tastatur-Symbol",
                         [("blue", "Blau"), ("purple", "Lila"), ("cyan", "Cyan"), ("pink", "Pink"),
-                         ("green", "Gr\u00fcn"), ("orange", "Orange")], {"lock"})
+                         ("green", "Gr\u00fcn"), ("orange", "Orange"), ("theme", "Wie das Theme")], {"lock"})
             self.choice(c, "lock_clock_size", "Uhrgr\u00f6\u00dfe", None,
                         [("small", "Klein"), ("medium", "Mittel"), ("large", "Gro\u00df"), ("huge", "Riesig")], {"lock"})
             self.choice(c, "lock_clock_font", "Uhr-Schrift", None,
@@ -979,6 +1091,25 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
             self.button(c, "GitHub-Seite", None, "Öffnen", "xdg-open https://github.com/femboyss/claudes-glassy")
             return p
 
+    def swatch_css():
+        if TM is None:
+            return ""
+        out = []
+        for key, t in TM.THEMES.items():
+            gl = t["glass"]
+            cols = [TM.rgba(t["bg"], max(gl, 0.25)), TM.rgba(t["hl"], max(gl, 0.3)), "#" + t["fg"],
+                    "#" + t["blue"], "#" + t["purple"], "#" + t["red"]]
+            for i, c in enumerate(cols):
+                out.append(f".sw-{key}-{i} {{ background-color: {c}; }}")
+        out.append(".swatches { border-radius: 8px; border: 1px solid alpha(@tn_fg, 0.12); }")
+        out.append(".swatches > box:first-child { border-radius: 8px 0 0 8px; }")
+        out.append(".swatches > box:last-child { border-radius: 0 8px 8px 0; }")
+        out.append("button.themecard { padding: 10px; border-radius: 12px; background-color: alpha(@tn_hl, 0.5);"
+                   " border: 1px solid alpha(@tn_fg, 0.06); }")
+        out.append("button.themecard:hover { background-color: alpha(@tn_hl, 0.85); }")
+        out.append("button.themecard.sel { border: 2px solid @tn_blue; background-color: alpha(@tn_blue, 0.12); }")
+        return "\n".join(out) + "\n"
+
     class App(Gtk.Application):
         def __init__(self):
             super().__init__(application_id="glassy.settings", flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
@@ -987,10 +1118,16 @@ button.act.danger { background-color: alpha(@tn_red, 0.10); color: @tn_red; bord
         def do_startup(self):
             Gtk.Application.do_startup(self)
             prov = Gtk.CssProvider()
-            if hasattr(prov, "load_from_string"):
-                prov.load_from_string(CSS + (PV.CSS if PV else ""))
-            else:
-                prov.load_from_data((CSS + (PV.CSS if PV else "")).encode())
+            self.prov = prov
+
+            def load():
+                css = _themed(CSS + (PV.CSS if PV else "") + swatch_css())
+                if hasattr(prov, "load_from_string"):
+                    prov.load_from_string(css)
+                else:
+                    prov.load_from_data(css.encode())
+            load()
+            ON_THEME.append(load)
             Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
                                                       Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)
             st = Gtk.Settings.get_default()

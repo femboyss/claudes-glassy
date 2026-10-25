@@ -31,6 +31,29 @@ try:
 except (ValueError, ImportError):
     LS = None
 
+
+def _theme_css():
+    """Farben des aktiven Themes (erzeugt von theme/theme.py) - kommen NACH den
+    Standardfarben, ueberschreiben sie also."""
+    try:
+        with open(os.path.expanduser("~/.config/hypr/theme/colors.css"), encoding="utf-8") as f:
+            return "\n" + f.read()
+    except OSError:
+        return ""
+
+
+def _themed(css):
+    """Theme-Farben einsetzen: GTK nimmt bei doppeltem @define-color nicht zuverlaessig
+    den letzten Wert -> eigene Standardwerte fuer diese Namen entfernen, Theme davor."""
+    import re
+    t = _theme_css()
+    if not t:
+        return css
+    names = set(re.findall(r"@define-color\s+(\w+)", t))
+    css = re.sub(r"^[ \t]*@define-color\s+(\w+)[^\n]*\n",
+                 lambda m: "" if m.group(1) in names else m.group(0), css, flags=re.M)
+    return t + "\n" + css
+
 HOME = os.path.expanduser("~")
 CACHE = os.path.join(HOME, ".cache", "claudes-glassy")
 ART_CACHE = os.path.join(CACHE, "covers")
@@ -72,6 +95,8 @@ CSS = r"""
 @define-color tn_green   #9ece6a;
 @define-color tn_red     #f7768e;
 @define-color tn_hl      #292e42;
+@define-color tn_on_accent #16161e;
+@define-color tn_island_bg rgba(6, 6, 10, 0.92);
 
 window, window.background, window.background:backdrop, window > *, .frame {
     background: none; background-color: transparent; background-image: none;
@@ -79,7 +104,7 @@ window, window.background, window.background:backdrop, window > *, .frame {
 * { font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif; }
 
 .island {
-    background-color: alpha(#06060a, 0.92);
+    background-color: @tn_island_bg;
     border: 1px solid alpha(@tn_blue, 0.16);
     border-radius: 19px;
     box-shadow: 0 4px 14px alpha(black, 0.40);
@@ -145,10 +170,10 @@ button.ctl.main  { min-width: 36px; min-height: 36px; font-size: 15px;
 button.ctl.main:hover { background-color: @tn_cyan; color: #06060a; }
 
 /* Aufnahme */
-.recdot  { background-color: #f7768e; border-radius: 99px; min-width: 9px; min-height: 9px;
+.recdot  { background-color: @tn_red; border-radius: 99px; min-width: 9px; min-height: 9px;
            animation: recpulse 1.2s ease-in-out infinite; }
 @keyframes recpulse { 0% { opacity: 1; } 50% { opacity: 0.25; } 100% { opacity: 1; } }
-.rectext { font-size: 11.5px; font-weight: 800; color: #f7768e; letter-spacing: 1px; }
+.rectext { font-size: 11.5px; font-weight: 800; color: @tn_red; letter-spacing: 1px; }
 .rectime { font-size: 12px; font-weight: 700; color: @tn_fg; font-feature-settings: "tnum"; }
 .rechint { font-size: 9.5px; color: @tn_comment; }
 
@@ -531,9 +556,9 @@ class IslandApp(Gtk.Application):
         Gtk.Application.do_startup(self)
         prov = Gtk.CssProvider()
         if hasattr(prov, "load_from_string"):
-            prov.load_from_string(CSS)
+            prov.load_from_string(_themed(CSS))
         else:
-            prov.load_from_data(CSS.encode())
+            prov.load_from_data((_themed(CSS)).encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
                                                   Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)   # ueber ~/.config/gtk-4.0/gtk.css
         os.makedirs(ART_CACHE, exist_ok=True)

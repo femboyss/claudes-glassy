@@ -31,6 +31,7 @@ After the first install you have the `glassy` command (in `~/.local/bin`, added 
 | `glassy --restore` | Restore a backup from before the install |
 | `glassy --settings` | Open the settings app (same as SUPER+I) |
 | `glassy --reload` | Restart bar, island, start menu, clipboard |
+| `glassy --theme` | List themes (`glassy --theme glass` sets one) |
 
 Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work they go to
 `main`, and `glassy --update` brings you back to the stable channel.
@@ -49,6 +50,7 @@ Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work
 | **Dynamic Island** | Black pill at the top: clock, now playing with cover art, expands on hover with seek slider and controls, volume OSD, recording indicator (click = stop). |
 | **Update notifications** | Checks GitHub in the background (on login, then hourly/6 h/daily). A notification with "Install now / What's new / Later" - or installs automatically. All in SUPER+I -> Updates. |
 | **Taskbar flyouts** | Built in, no external apps: quick settings (Wi-Fi, Bluetooth, do not disturb, night light, airplane mode, power profile, volume, mic, brightness, media), sound (devices + per-app volume), Wi-Fi (connect with password, forget), Bluetooth (scan, pair, connect, battery), calendar (click the island). Same views in SUPER+I. |
+| **Themes** | 9 themes for everything at once (bar, flyouts, start menu, island, clipboard, notifications, rofi, kitty, borders, lock screen, Dolphin/Qt apps): Tokyo Night, Catppuccin Mocha, Complete Glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, Black/White. Pick in SUPER+I -> Appearance. |
 | **Settings** (SUPER+I) | Every option in one place: appearance, start menu, island, bar, input, lock & power, default apps, wallpaper, update/doctor/backup. |
 | **Clipboard** (SUPER+V) | Search, image previews, trash button per entry, "delete all", opens at the mouse cursor. |
 | **Ctrl+Alt+Del** | Fullscreen glass screen: lock, log out, sleep, recording, screenshot, task manager, reboot, UEFI, shut down. |
@@ -175,6 +177,14 @@ Danach gibt es den Befehl `glassy`:
 | `glassy --restore` | Backup von vor der Installation zurueckspielen |
 | `glassy --settings` | Einstellungen oeffnen (wie SUPER+I) |
 | `glassy --reload` | Leiste, Island, Startmenue, Zwischenablage neu starten |
+| `glassy --theme` | Themes anzeigen (`glassy --theme glass` setzt eins) |
+
+### Themes
+
+SUPER+I -> Aussehen -> Theme (oder `glassy --theme <name>`). Ein Theme faerbt alles auf einmal:
+Leiste, Flyouts, Startmenue, Island, Zwischenablage, Mitteilungen, rofi, kitty, Fensterrahmen,
+Sperrbildschirm und Qt/KDE-Apps wie Dolphin. Dabei: Tokyo Night, Catppuccin Mocha,
+**Komplett Glas**, **Nur Durchsicht**, Nord, Gruvbox, Rose Pine, Dracula, Schwarz/Weiss.
 
 Fixes kommen zuerst auf `debug`. Mit `glassy --debug` testen; wenn alles passt, landen sie
 auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.

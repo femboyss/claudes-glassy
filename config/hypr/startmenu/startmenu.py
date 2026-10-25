@@ -36,6 +36,29 @@ try:
 except (ValueError, ImportError):
     LS = None
 
+
+def _theme_css():
+    """Farben des aktiven Themes (erzeugt von theme/theme.py) - kommen NACH den
+    Standardfarben, ueberschreiben sie also."""
+    try:
+        with open(os.path.expanduser("~/.config/hypr/theme/colors.css"), encoding="utf-8") as f:
+            return "\n" + f.read()
+    except OSError:
+        return ""
+
+
+def _themed(css):
+    """Theme-Farben einsetzen: GTK nimmt bei doppeltem @define-color nicht zuverlaessig
+    den letzten Wert -> eigene Standardwerte fuer diese Namen entfernen, Theme davor."""
+    import re
+    t = _theme_css()
+    if not t:
+        return css
+    names = set(re.findall(r"@define-color\s+(\w+)", t))
+    css = re.sub(r"^[ \t]*@define-color\s+(\w+)[^\n]*\n",
+                 lambda m: "" if m.group(1) in names else m.group(0), css, flags=re.M)
+    return t + "\n" + css
+
 HOME = os.path.expanduser("~")
 HYPR = os.path.join(HOME, ".config", "hypr")
 FAV_FILE = os.path.join(HYPR, "pinned-apps")
@@ -105,6 +128,8 @@ CSS = r"""
 @define-color tn_yellow    #e0af68;
 @define-color tn_red       #f7768e;
 @define-color tn_teal      #1abc9c;
+@define-color tn_on_accent #16161e;
+@define-color tn_island_bg rgba(6, 6, 10, 0.92);
 
 window, window.background, window.background:backdrop, window > *, .frame {
     background: none; background-color: transparent; background-image: none;
@@ -179,7 +204,7 @@ button.flat-icon:hover { background-color: alpha(@tn_bg_hl, 0.9); color: @tn_cya
 .sidebtn.suspend:hover  { color: @tn_blue; }
 .sidebtn.reboot:hover   { color: @tn_orange; }
 .sidebtn.power:hover    { color: @tn_red; background-color: alpha(@tn_red, 0.14); }
-.sidebtn.confirm        { color: @tn_bg; background-color: @tn_red; }
+.sidebtn.confirm        { color: @tn_on_accent; background-color: @tn_red; }
 .sidebtn.confirm.reboot { background-color: @tn_orange; }
 .sidebtn.confirm.logout { background-color: @tn_yellow; }
 
@@ -569,6 +594,8 @@ class StartMenu(Gtk.ApplicationWindow):
             for edge in (LS.Edge.TOP, LS.Edge.BOTTOM, LS.Edge.LEFT, LS.Edge.RIGHT):
                 LS.set_anchor(self, edge, True)
             LS.set_exclusive_zone(self, -1)
+            # Wichtig: sonst ist die Ebene nur so gross wie der Inhalt und klebt links oben
+            self.set_resizable(True)
             mon = self._find_monitor(monitor_name)
             if mon is not None:
                 LS.set_monitor(self, mon)
@@ -1274,9 +1301,9 @@ class App(Gtk.Application):
         Gtk.Application.do_startup(self)
         prov = Gtk.CssProvider()
         if hasattr(prov, "load_from_string"):
-            prov.load_from_string(CSS)
+            prov.load_from_string(_themed(CSS))
         else:
-            prov.load_from_data(CSS.encode())
+            prov.load_from_data((_themed(CSS)).encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
                                                   Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)   # ueber ~/.config/gtk-4.0/gtk.css
         settings = Gtk.Settings.get_default()

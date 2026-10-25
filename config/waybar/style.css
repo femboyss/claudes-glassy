@@ -1,22 +1,8 @@
-/* Catppuccin Glass - Waybar
+@import url("colors.css");   /* Farben: vom Theme erzeugt (SUPER+I -> Aussehen -> Theme) */
+
+/* claudes-glassy - Waybar
    Transparente "Inseln" ueber dem Hyprland-Blur (Layer-Regel waybar-glass). */
 
-@define-color base     #1e1e2e;
-@define-color mantle   #181825;
-@define-color crust    #11111b;
-@define-color surface0 #313244;
-@define-color surface1 #45475a;
-@define-color overlay0 #6c7086;
-@define-color text     #cdd6f4;
-@define-color subtext  #a6adc8;
-@define-color mauve    #cba6f7;
-@define-color blue     #89b4fa;
-@define-color pink     #f5c2e7;
-@define-color teal     #94e2d5;
-@define-color green    #a6e3a1;
-@define-color yellow   #f9e2af;
-@define-color peach    #fab387;
-@define-color red      #f38ba8;
 
 * {
     font-family: "Inter", "JetBrainsMono Nerd Font", sans-serif;

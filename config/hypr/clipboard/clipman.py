@@ -30,6 +30,29 @@ try:
 except (ValueError, ImportError):
     LS = None
 
+
+def _theme_css():
+    """Farben des aktiven Themes (erzeugt von theme/theme.py) - kommen NACH den
+    Standardfarben, ueberschreiben sie also."""
+    try:
+        with open(os.path.expanduser("~/.config/hypr/theme/colors.css"), encoding="utf-8") as f:
+            return "\n" + f.read()
+    except OSError:
+        return ""
+
+
+def _themed(css):
+    """Theme-Farben einsetzen: GTK nimmt bei doppeltem @define-color nicht zuverlaessig
+    den letzten Wert -> eigene Standardwerte fuer diese Namen entfernen, Theme davor."""
+    import re
+    t = _theme_css()
+    if not t:
+        return css
+    names = set(re.findall(r"@define-color\s+(\w+)", t))
+    css = re.sub(r"^[ \t]*@define-color\s+(\w+)[^\n]*\n",
+                 lambda m: "" if m.group(1) in names else m.group(0), css, flags=re.M)
+    return t + "\n" + css
+
 HOME = os.path.expanduser("~")
 CACHE = os.path.join(HOME, ".cache", "claudes-glassy")
 THUMBS = os.path.join(CACHE, "clip-thumbs")
@@ -53,6 +76,8 @@ CSS = r"""
 @define-color tn_purple  #bb9af7;
 @define-color tn_green   #9ece6a;
 @define-color tn_red     #f7768e;
+@define-color tn_on_accent #16161e;
+@define-color tn_island_bg rgba(6, 6, 10, 0.92);
 
 window, window.background, window.background:backdrop, window > *, .frame {
     background: none; background-color: transparent; background-image: none;
@@ -84,7 +109,7 @@ button.wipe {
     transition: all 140ms ease;
 }
 button.wipe:hover   { background: alpha(@tn_red, 0.20); }
-button.wipe.confirm { background: @tn_red; color: @tn_bg_dark; border-color: @tn_red; }
+button.wipe.confirm { background: @tn_red; color: @tn_on_accent; border-color: @tn_red; }
 
 entry.search {
     min-height: 30px; margin: 0 12px 8px 12px; padding: 0 10px;
@@ -259,6 +284,8 @@ class ClipWindow(Gtk.ApplicationWindow):
             for e in (LS.Edge.TOP, LS.Edge.BOTTOM, LS.Edge.LEFT, LS.Edge.RIGHT):
                 LS.set_anchor(self, e, True)
             LS.set_exclusive_zone(self, -1)
+            # Wichtig: sonst ist die Ebene nur so gross wie der Inhalt und klebt links oben
+            self.set_resizable(True)
         else:
             self.set_default_size(PANEL_W, PANEL_H)
 
@@ -610,9 +637,9 @@ class App(Gtk.Application):
         Gtk.Application.do_startup(self)
         prov = Gtk.CssProvider()
         if hasattr(prov, "load_from_string"):
-            prov.load_from_string(CSS)
+            prov.load_from_string(_themed(CSS))
         else:
-            prov.load_from_data(CSS.encode())
+            prov.load_from_data((_themed(CSS)).encode())
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov,
                                                   Gtk.STYLE_PROVIDER_PRIORITY_USER + 10)   # ueber ~/.config/gtk-4.0/gtk.css
 
