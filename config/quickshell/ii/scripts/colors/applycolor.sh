@@ -21,6 +21,14 @@ colorstrings=''
 colorlist=()
 colorvalues=()
 
+# claudes-glassy: ohne fertige Farben (z. B. Farb-Erzeugung im venv fehlgeschlagen) NICHTS
+# anfassen - sonst landen ungefuellte Platzhalter wie "#$term0 #" in kitty und allen Terminals
+if ! grep -q '^\$term0: #' "$STATE_DIR/user/generated/material_colors.scss" 2>/dev/null \
+   || ! grep -q '^\$primary: #' "$STATE_DIR/user/generated/material_colors.scss" 2>/dev/null; then
+  echo "applycolor: material_colors.scss fehlt oder ist unvollstaendig - Terminal-Farben uebersprungen" >&2
+  exit 0
+fi
+
 colornames=$(cat $STATE_DIR/user/generated/material_colors.scss | cut -d: -f1)
 colorstrings=$(cat $STATE_DIR/user/generated/material_colors.scss | cut -d: -f2 | cut -d ' ' -f2 | cut -d ";" -f1)
 IFS=$'\n'
@@ -35,11 +43,20 @@ apply_kitty() {
   fi
   # Copy template
   mkdir -p "$STATE_DIR"/user/generated/terminal
-  cp "$SCRIPT_DIR/terminal/kitty-theme.conf" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
+  # claudes-glassy: erst in eine Temp-Datei, dann atomar austauschen (kitty liest sonst halbfertige Dateien)
+  local out="$STATE_DIR"/user/generated/terminal/kitty-theme.conf
+  local tmp="$out.tmp.$$"
+  cp "$SCRIPT_DIR/terminal/kitty-theme.conf" "$tmp"
   # Apply colors
   for i in "${!colorlist[@]}"; do
-    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/kitty-theme.conf
+    sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$tmp"
   done
+  if grep -q '#\$' "$tmp"; then
+    echo "applycolor: kitty-Farben unvollstaendig, alte Datei bleibt" >&2
+    rm -f "$tmp"
+    return
+  fi
+  mv "$tmp" "$out"
 
   # Reload
   if ! pgrep -f kitty >/dev/null; then

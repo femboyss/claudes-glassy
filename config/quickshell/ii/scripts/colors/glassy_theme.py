@@ -351,7 +351,7 @@ def kitty_material(opacity):
 
 
 def reload_apps(reload_hypr=True):
-    subprocess.run(["bash", "-c", "pkill -SIGUSR1 -x kitty"], stderr=subprocess.DEVNULL)
+    subprocess.run(["bash", "-c", "pkill -SIGUSR1 -x kitty"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if reload_hypr and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
         subprocess.run(["hyprctl", "reload"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
@@ -369,6 +369,7 @@ def apply(name, reload_hypr=True):
         print(f"Unbekanntes Theme: {name}\nVerfuegbar: {', '.join(ALL_NAMES)}", file=sys.stderr)
         return 1
     cfg = load_config()
+    previous = deep_get(cfg, ["glassy", "theme"], DEFAULT)
     deep_set(cfg, ["glassy", "theme"], name)
     deep_set(cfg, ["appearance", "transparency", "enable"], True)
     deep_set(cfg, ["appearance", "transparency", "automatic"], False)
@@ -381,7 +382,29 @@ def apply(name, reload_hypr=True):
         deep_set(cfg, ["appearance", "transparency", "contentTransparency"], content_t)
         save_config(cfg)
         switchwall = os.path.join(SCRIPT_DIR, "switchwall.sh")
-        subprocess.run(["bash", switchwall, "--noswitch"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        res = subprocess.run(["bash", switchwall, "--noswitch"], capture_output=True, text=True)
+        scss = os.path.join(GEN_DIR, "material_colors.scss")
+        try:
+            ok = "$term0: #" in open(scss, encoding="utf-8").read()
+        except OSError:
+            ok = False
+        if not ok:
+            # Farb-Erzeugung (Python-venv) kaputt -> zurueck zum vorherigen Theme statt kaputter Farben
+            fallback = previous if previous in THEMES else DEFAULT
+            msg = ("Material You fehlgeschlagen: die Python-Umgebung fuer die Farb-Erzeugung fehlt oder ist kaputt "
+                   f"({os.path.join(XDG_STATE, 'quickshell', '.venv')}). Reparieren: bash ~/.local/share/claudes-glassy/install.sh --install "
+                   f"-> zurueck zu {LABELS[fallback]}")
+            print(msg, file=sys.stderr)
+            tail = (res.stderr or res.stdout or "").strip().splitlines()[-5:]
+            if tail:
+                print("  " + "\n  ".join(tail), file=sys.stderr)
+            try:
+                subprocess.run(["notify-send", "-a", "claudes-glassy", "Material You fehlgeschlagen", msg],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except OSError:
+                pass
+            apply(fallback, reload_hypr)
+            return 2
         c = read_generated_colors()
         hypr_values(cfg, border_from_m3(c))
         kitty_material(0.75)

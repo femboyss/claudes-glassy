@@ -87,7 +87,15 @@ pgrep -f "glassy --watch" >/dev/null && ok "Update-Suche laeuft" || warn "Update
 for p in waybar swaync; do pgrep -x "$p" >/dev/null && warn "$p (claudes-glassy 1) laeuft noch parallel  ->  pkill $p"; done
 pgrep -f "startmenu.py --daemon|island/island.py|panel/panel.py|clipman.py" >/dev/null && warn "Alte GTK-Apps von claudes-glassy 1 laufen noch  ->  ab- und wieder anmelden"
 VENV="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/.venv"
-[ -x "$VENV/bin/python" ] && ok "Python-Umgebung da ($VENV)" || bad "Python-Umgebung fehlt (Material You, KI-Sidebar)  ->  bash $HERE/install.sh --install"
+if [ -x "$VENV/bin/python" ]; then
+    if "$VENV/bin/python" -c "import materialyoucolor, PIL" 2>/dev/null; then
+        ok "Python-Umgebung da und vollstaendig ($VENV)"
+    else
+        bad "Python-Umgebung unvollstaendig (Material You geht nicht)  ->  glassy --fix-venv"
+    fi
+else
+    bad "Python-Umgebung fehlt (Material You, KI-Sidebar)  ->  glassy --fix-venv"
+fi
 fc-list 2>/dev/null | grep -qi "Google Sans Flex" && ok "Schrift Google Sans Flex da" || warn "Schrift Google Sans Flex fehlt (Shell sieht anders aus)"
 fc-list 2>/dev/null | grep -qi "Material Symbols" && ok "Icon-Schrift Material Symbols da" || bad "Material Symbols fehlt -> Icons sind Kaestchen  (yay -S ttf-material-symbols-variable-git)"
 echo

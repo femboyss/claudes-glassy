@@ -17,6 +17,7 @@
 #                         glassy --theme material: Farben aus dem Wallpaper)
 #    glassy --perf        Performance-Modus an/aus (weniger Blur/Schatten)
 #    glassy --logs        Log der Shell (Quickshell) anzeigen
+#    glassy --fix-venv    Python-Umgebung neu bauen (wenn Material You nicht geht)
 #    glassy --help        diese Hilfe
 #
 #  Ablauf bei Fehlern: Fixes kommen zuerst auf "debug" -> mit "glassy --debug"
@@ -242,6 +243,16 @@ reload_all() {
     c_ok "neu geladen (Shell + Hyprland)"
 }
 
+fix_venv() {   # Python-Umgebung fuer Material You / Farb-Erzeugung neu bauen
+    local venv="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/.venv"
+    command -v uv >/dev/null 2>&1 || sudo pacman -S --needed uv
+    c_info "Baue Python-Umgebung neu: $venv"
+    rm -rf "$venv"
+    UV_NO_MODIFY_PATH=1 uv venv --prompt .venv "$venv" -p 3.12 || { c_err "uv venv fehlgeschlagen"; return 1; }
+    uv pip install --python "$venv/bin/python" -r "$DEST/deps/uv/requirements.txt" || { c_err "Pakete fehlgeschlagen (Ausgabe oben)"; return 1; }
+    "$venv/bin/python" -c "import materialyoucolor, PIL" && c_ok "Python-Umgebung ok - Material You geht jetzt (glassy --theme material)"
+}
+
 toggle_perf() {
     local now new
     now="$(jq -r '.glassy.performanceMode // false' "$SHELL_CONFIG" 2>/dev/null)"
@@ -265,11 +276,12 @@ case "${1:---help}" in
                           if [ $# -eq 0 ]; then python3 "$THEME_PY" list
                           else python3 "$THEME_PY" apply "$1"; fi ;;
     --perf|perf)          toggle_perf ;;
+    --fix-venv|fix-venv)  fix_venv ;;
     --logs|logs)          qs -c ii log 2>/dev/null | tail -n 80 || c_warn "Kein Log (laeuft die Shell?)" ;;
     --upgrade|upgrade)    fetch_branch "$(channel)" && install_now ;;
     --background-update)  background_update ;;
     --check|check)        shift; check_updates "$@" ;;
     --whatsnew|whatsnew)  whatsnew ;;
     --watch|watch)        watch_loop ;;
-    --help|-h|help|*)     sed -n '3,24p' "$0" | sed 's/^# \{0,1\}//' ;;
+    --help|-h|help|*)     sed -n '3,25p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac
