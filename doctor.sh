@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
 # ==================================================================
-#  claudes-glassy - Doktor: findet kaputte / veraenderte Configs
+#  claudes-glassy - Doktor: findet kaputte / veraenderte Configs und Lag-Ursachen
 #    bash doctor.sh            -> pruefen, Bericht nach ~/glassy-doctor.txt
 #    bash doctor.sh --repair   -> veraenderte/fehlende Dateien aus dem Repo
 #                                 zurueckholen (alte Versionen werden gesichert)
-#  Eigene Sachen in ~/.config/hypr/custom.lua, pinned-apps und den
-#  Startmenue-Einstellungen werden NICHT angefasst.
+#  Deine Sachen in ~/.config/hypr/custom/, custom.lua, monitors.lua und die
+#  Shell-Einstellungen werden NICHT angefasst.
 # ==================================================================
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_CFG="$HERE/config"
 OUT="$HOME/glassy-doctor.txt"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 SAFE="$HOME/.config-backup-catppuccin-glass-$STAMP-doctor"
-REPAIR=0; [ "$1" = "--repair" ] && REPAIR=1
+REPAIR=0; [ "${1:-}" = "--repair" ] && REPAIR=1
+SHELL_CONFIG="$HOME/.config/illogical-impulse/config.json"
 
-# Dateien, die dir gehoeren und nie "repariert" werden
-KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json))$'
-# Von der Einstellungs-App (SUPER+I) erzeugte Dateien nicht als "veraendert" melden
-if [ -f "$HOME/.config/hypr/glassy-settings.json" ]; then
-    KEEP_RE='(hypr/custom\.lua|hypr/pinned-apps|hypr/avatar\.png|hypr/startmenu/settings\.json|hypr/island/settings\.json|hypr/glassy-settings\.(lua|json)|waybar/config\.jsonc|hypr/hypridle\.conf|hypr/hyprlock\.conf)$'
-fi
+# Dateien, die dir gehoeren oder automatisch erzeugt werden -> nie "reparieren"
+KEEP_RE='^(hypr/custom/|hypr/custom\.lua|hypr/monitors\.lua|hypr/workspaces\.lua|hypr/hyprland/shellOverrides/main\.lua|hypr/hyprland/colors\.lua|hypr/hyprlock/colors\.conf|hypr/glassy-generated\.lua|hypr/custom-defaults/|fuzzel/fuzzel_theme\.ini|kitty/glassy-theme\.conf|illogical-impulse/)'
 
 ok()   { printf '\033[38;2;158;206;106m[ok]\033[0m %s\n' "$*"; }
 warn() { printf '\033[38;2;224;175;104m[!!]\033[0m %s\n' "$*"; }
@@ -27,21 +24,22 @@ bad()  { printf '\033[38;2;247;118;142m[xx]\033[0m %s\n' "$*"; }
 
 exec > >(tee "$OUT") 2>&1
 echo "claudes-glassy Doktor  -  $(date)"
-echo "Repo: $HERE ($(git -C "$HERE" rev-parse --short HEAD 2>/dev/null || echo '?'))"
+echo "Repo: $HERE ($(git -C "$HERE" rev-parse --short HEAD 2>/dev/null || echo '?'), Kanal $(cat "$HOME/.local/state/claudes-glassy/channel" 2>/dev/null || echo main))"
 echo
 
 echo "== Repo-Kopie =="
 if [ -d "$HERE/.git" ]; then
     if [ -n "$(git -C "$HERE" status --porcelain 2>/dev/null)" ]; then
         bad "In der Repo-Kopie ($HERE) wurde rumgeschrieben -> Updates bleiben haengen."
-        echo "   Fix:  bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)\""
+        echo "   Fix:  glassy --upgrade"
     fi
-    if timeout 8 git -C "$HERE" fetch -q --depth 1 origin main 2>/dev/null; then
-        if [ "$(git -C "$HERE" rev-parse HEAD)" != "$(git -C "$HERE" rev-parse origin/main)" ]; then
-            bad "Repo-Kopie ist NICHT aktuell (lokal $(git -C "$HERE" rev-parse --short HEAD), GitHub $(git -C "$HERE" rev-parse --short origin/main))"
-            echo "   Fix:  bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)\""
+    ch="$(cat "$HOME/.local/state/claudes-glassy/channel" 2>/dev/null || echo main)"
+    if timeout 8 git -C "$HERE" fetch -q --depth 1 origin "$ch" 2>/dev/null; then
+        if [ "$(git -C "$HERE" rev-parse HEAD)" != "$(git -C "$HERE" rev-parse FETCH_HEAD)" ]; then
+            bad "Repo-Kopie ist NICHT aktuell (lokal $(git -C "$HERE" rev-parse --short HEAD), GitHub $(git -C "$HERE" rev-parse --short FETCH_HEAD))"
+            echo "   Fix:  glassy --upgrade"
         else
-            ok "Repo-Kopie ist aktuell"
+            ok "Repo-Kopie ist aktuell ($ch)"
         fi
     else
         warn "GitHub nicht erreichbar - Aktualitaet nicht geprueft"
@@ -54,104 +52,83 @@ if command -v hyprctl >/dev/null; then
     hyprctl version 2>/dev/null | head -n 2
     errs="$(hyprctl configerrors 2>/dev/null)"
     if [ -z "$errs" ] || echo "$errs" | grep -qi "no errors"; then ok "keine Config-Fehler"; else bad "Config-Fehler:"; echo "$errs"; fi
+    [ -f "$HOME/.config/hypr/hyprland.conf" ] && warn "hypr/hyprland.conf existiert (alte hyprlang-Config). Hyprland nimmt hyprland.lua, solange die da ist."
+    # Monitore auf voller Hz-Zahl?
+    if command -v jq >/dev/null; then
+        hyprctl monitors -j 2>/dev/null | jq -r '.[] | "\(.name) \(.width)x\(.height) @ \(.refreshRate|floor) Hz  (transform \(.transform))"' | while read -r line; do
+            hz="$(echo "$line" | sed -E 's/.*@ ([0-9]+) Hz.*/\1/')"
+            if [ "${hz:-0}" -le 61 ]; then warn "Monitor $line  <- nur 60 Hz? (mode = \"highrr\" in glassy/monitors.lua)"; else ok "Monitor $line"; fi
+        done
+    fi
 else
     bad "hyprctl nicht gefunden"
 fi
 echo
 
-echo "== Laufende Dienste =="
-for p in waybar swaync hypridle; do
-    pgrep -x "$p" >/dev/null && ok "$p laeuft" || bad "$p laeuft NICHT"
-done
-pgrep -f "startmenu.py --daemon" >/dev/null && ok "Startmenue-Dienst laeuft" || warn "Startmenue-Dienst laeuft nicht (startet beim naechsten Super)"
-pgrep -f "island/island.py" >/dev/null && ok "Dynamic Island laeuft" || bad "Dynamic Island laeuft NICHT  ->  ~/.config/hypr/scripts/island.sh"
-pgrep -f "clipman.py --daemon" >/dev/null && ok "Zwischenablage-Dienst laeuft" || warn "Zwischenablage-Dienst laeuft nicht (startet beim naechsten SUPER+V)"
-pgrep -f "glassy --watch" >/dev/null && ok "Update-Suche laeuft (SUPER+I -> Updates)" || warn "Update-Suche laeuft nicht  ->  glassy --reload"
-pgrep -f "panel/panel.py" >/dev/null && ok "Flyouts der Leiste laufen" || warn "Flyouts laufen nicht (starten beim ersten Klick in der Leiste)"
-[ -f "$HOME/.cache/claudes-glassy/recording.pid" ] && kill -0 "$(cat "$HOME/.cache/claudes-glassy/recording.pid")" 2>/dev/null && warn "Bildschirmaufnahme laeuft gerade"
-pgrep -x qs >/dev/null || pgrep -x quickshell >/dev/null && warn "Quickshell (end-4) laeuft noch parallel"
-echo
-
-# Laeuft noch eine alte Version im Hintergrund? (Prozess aelter als die Datei)
-stale() {   # $1 = pgrep-Muster  $2 = Datei
-    local pid et mt
-    pid="$(pgrep -f "$1" | head -n 1)"; [ -z "$pid" ] && return 1
-    et="$(ps -o etimes= -p "$pid" 2>/dev/null | tr -d ' ')"; [ -z "$et" ] && return 1
-    mt="$(stat -c %Y "$2" 2>/dev/null)"; [ -z "$mt" ] && return 1
-    [ "$mt" -gt "$(( $(date +%s) - et ))" ]
-}
-stale "startmenu.py --daemon" "$HOME/.config/hypr/startmenu/startmenu.py" && bad "Startmenue laeuft noch in ALTER Version  ->  pkill -f startmenu.py"
-stale "island/island.py"      "$HOME/.config/hypr/island/island.py"       && bad "Island laeuft noch in ALTER Version  ->  ~/.config/hypr/scripts/island.sh restart"
-stale "clipman.py --daemon"   "$HOME/.config/hypr/clipboard/clipman.py"   && bad "Zwischenablage laeuft noch in ALTER Version  ->  pkill -f clipman.py"
-echo
-
-echo "== Pakete =="
-missing=()
-for p in hyprland hyprlock hypridle waybar rofi swaync kitty grim slurp wl-clipboard cliphist jq playerctl \
-         python-gobject gtk4 gtk4-layer-shell libpulse wf-recorder hyprpicker hyprsunset bluez-utils networkmanager ttf-jetbrains-mono-nerd inter-font papirus-icon-theme; do
-    pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p")
-done
-if [ ${#missing[@]} -eq 0 ]; then ok "alle Pakete da"; else bad "fehlt: ${missing[*]}"; echo "   sudo pacman -S --needed ${missing[*]}"; fi
-echo
-
-echo "== Theme =="
-th_missing=()
-for f in .config/hypr/theme/colors.css .config/waybar/colors.css .config/swaync/colors.css \
-         .config/rofi/glassy-colors.rasi .config/kitty/glassy-theme.conf .config/hypr/glassy-theme.lua; do
-    [ -f "$HOME/$f" ] || th_missing+=("~/$f")
-done
-if [ ${#th_missing[@]} -eq 0 ]; then
-    ok "Theme: $(python3 "$HOME/.config/hypr/theme/theme.py" current 2>/dev/null)  (Dateien da)"
+echo "== Shell (Quickshell / illogical-impulse) =="
+if command -v qs >/dev/null 2>&1; then
+    ok "quickshell: $(qs --version 2>/dev/null | head -n1)"
 else
-    bad "Theme-Dateien fehlen: ${th_missing[*]}"
-    echo "   python3 ~/.config/hypr/theme/theme.py apply"
+    bad "quickshell (qs) fehlt  ->  bash $HERE/install.sh --install"
 fi
-if command -v dolphin >/dev/null 2>&1; then
-    if [ -f /usr/lib/qt6/plugins/platformthemes/KDEPlasmaPlatformTheme6.so ]; then
-        ok "Dolphin & Co.: KDE-Plattform-Theme da (Farben vom Theme)"
-    else
-        warn "Dolphin & Co. bleiben evtl. hell: plasma-integration fehlt"
-        echo "   sudo pacman -S --needed plasma-integration   (danach neu anmelden)"
+if pgrep -x qs >/dev/null || pgrep -x quickshell >/dev/null; then
+    pid="$(pgrep -x qs | head -n1)"; [ -z "$pid" ] && pid="$(pgrep -x quickshell | head -n1)"
+    read -r cpu rss et < <(ps -o %cpu=,rss=,etimes= -p "$pid" 2>/dev/null)
+    ok "Shell laeuft (PID $pid, CPU ${cpu:-?}%, RAM $(( ${rss:-0} / 1024 )) MB, seit $(( ${et:-0} / 3600 )) h)"
+    if [ "${cpu%.*}" -ge 15 ] 2>/dev/null; then
+        warn "Shell braucht viel CPU. Oft: zu viele gespeicherte Mitteilungen oder Live-Vorschau an. SUPER+I -> Glassy -> Performance"
     fi
+else
+    bad "Shell laeuft NICHT  ->  glassy --reload   (Fehler: glassy --logs)"
 fi
+for p in hypridle; do pgrep -x "$p" >/dev/null && ok "$p laeuft" || warn "$p laeuft nicht"; done
+pgrep -f "wl-paste --type text" >/dev/null && ok "Zwischenablage-Verlauf laeuft" || warn "Zwischenablage-Verlauf laeuft nicht  ->  glassy --reload"
+pgrep -f "glassy --watch" >/dev/null && ok "Update-Suche laeuft" || warn "Update-Suche laeuft nicht  ->  glassy --reload"
+for p in waybar swaync; do pgrep -x "$p" >/dev/null && warn "$p (claudes-glassy 1) laeuft noch parallel  ->  pkill $p"; done
+pgrep -f "startmenu.py --daemon|island/island.py|panel/panel.py|clipman.py" >/dev/null && warn "Alte GTK-Apps von claudes-glassy 1 laufen noch  ->  ab- und wieder anmelden"
+VENV="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/.venv"
+[ -x "$VENV/bin/python" ] && ok "Python-Umgebung da ($VENV)" || bad "Python-Umgebung fehlt (Material You, KI-Sidebar)  ->  bash $HERE/install.sh --install"
+fc-list 2>/dev/null | grep -qi "Google Sans Flex" && ok "Schrift Google Sans Flex da" || warn "Schrift Google Sans Flex fehlt (Shell sieht anders aus)"
+fc-list 2>/dev/null | grep -qi "Material Symbols" && ok "Icon-Schrift Material Symbols da" || bad "Material Symbols fehlt -> Icons sind Kaestchen  (yay -S ttf-material-symbols-variable-git)"
+echo
+
+echo "== Einstellungen / Lag =="
+if [ -f "$SHELL_CONFIG" ] && command -v jq >/dev/null; then
+    echo "   Theme:            $(jq -r '.glassy.theme // "?"' "$SHELL_CONFIG")"
+    echo "   Leisten-Stil:     $(jq -r '.panelFamily // "ii"' "$SHELL_CONFIG")"
+    echo "   Performance-Modus: $(jq -r '.glassy.performanceMode // false' "$SHELL_CONFIG")"
+    [ "$(jq -r '.glassy.borderAnimation // false' "$SHELL_CONFIG")" = true ] && warn "Rotierender Rahmen ist an (kostet bei 240 Hz GPU)" || ok "Rotierender Rahmen aus"
+    [ "$(jq -r '.overview.livePreviews // false' "$SHELL_CONFIG")" = true ] && warn "Live-Vorschau in der Uebersicht ist an (kostet GPU)" || ok "Uebersicht: Standbilder (schnell)"
+    n="$(jq 'length' "$HOME/.cache/quickshell/notifications/notifications.json" 2>/dev/null || echo 0)"
+    ok "Gespeicherte Mitteilungen: $n (max. $(jq -r '.notifications.maxStored // 60' "$SHELL_CONFIG"))"
+else
+    warn "Shell-Einstellungen fehlen ($SHELL_CONFIG)  ->  glassy --repair"
+fi
+[ -f "$HOME/.local/state/quickshell/user/generated/colors.json" ] && ok "Theme-Farben erzeugt" || bad "Theme-Farben fehlen  ->  glassy --theme tokyo"
 echo
 
 echo "== Configs im Vergleich zum Repo =="
 changed=(); absent=()
 while IFS= read -r -d '' f; do
-    rel="${f#$REPO_CFG/}"
+    rel="${f#"$REPO_CFG"/}"
     [[ "$rel" =~ $KEEP_RE ]] && continue
     dst="$HOME/.config/$rel"
     if [ ! -e "$dst" ]; then absent+=("$rel")
     elif ! cmp -s "$f" "$dst"; then changed+=("$rel")
     fi
 done < <(find "$REPO_CFG" -type f -not -name '*.pyc' -not -path '*__pycache__*' -print0)
-# Dateien in den Glassy-Ordnern, die es im Repo nicht gibt (z. B. von anderen Tools reingeschrieben)
 extra=()
-for d in hypr/glassy hypr/scripts hypr/startmenu hypr/island hypr/clipboard hypr/settings hypr/panel waybar rofi swaync; do
+for d in hypr/glassy; do
     [ -d "$HOME/.config/$d" ] || continue
     while IFS= read -r -d '' f; do
-        rel="${f#$HOME/.config/}"
-        [[ "$rel" =~ $KEEP_RE ]] && continue
+        rel="${f#"$HOME"/.config/}"
         [ -e "$REPO_CFG/$rel" ] || extra+=("$rel")
-    done < <(find "$HOME/.config/$d" -type f -not -name '*.pyc' -not -path '*__pycache__*' -print0)
+    done < <(find "$HOME/.config/$d" -type f -print0)
 done
-if [ -f "$HOME/.config/gtk-4.0/gtk.css" ] && grep -qiE '(^|[ ,])window' "$HOME/.config/gtk-4.0/gtk.css"; then
-    warn "~/.config/gtk-4.0/gtk.css setzt Fenster-Hintergruende (kann Island/Startmenue dunkel machen; glassy ueberschreibt das jetzt)"
-fi
-[ -f "$HOME/.config/hypr/hyprland.conf" ] && warn "hypr/hyprland.conf existiert (alte hyprlang-Config). Hyprland nimmt hyprland.lua, solange die da ist."
-
 if [ ${#changed[@]} -eq 0 ] && [ ${#absent[@]} -eq 0 ]; then ok "alle Dateien wie im Repo"; fi
 for r in "${changed[@]}"; do warn "veraendert: ~/.config/$r"; done
 for r in "${absent[@]}";  do bad  "fehlt:      ~/.config/$r"; done
 for r in "${extra[@]}";   do warn "fremd:      ~/.config/$r (nicht aus dem Repo)"; done
-echo
-
-echo "== Logs (letzte Zeilen) =="
-for l in startmenu island clipboard panel screenshot record; do
-    f="$HOME/.cache/claudes-glassy/$l.log"
-    [ -s "$f" ] && { echo "--- $l.log"; tail -n 5 "$f"; }
-done
 echo
 
 if [ "$REPAIR" = 1 ]; then
@@ -170,26 +147,20 @@ if [ "$REPAIR" = 1 ]; then
             ok "wiederhergestellt: ~/.config/$r"
         done
         [ -d "$SAFE" ] && echo "   alte Versionen gesichert in: $SAFE"
-        chmod +x "$HOME/.config/hypr/scripts/"*.sh 2>/dev/null
-        if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-            hyprctl reload >/dev/null 2>&1
-            pkill -x waybar; setsid -f waybar >/dev/null 2>&1
-            pkill -x swaync; setsid -f swaync >/dev/null 2>&1
-            pkill -f startmenu.py
-            pkill -f clipman.py
-            [ -f "$HOME/.config/hypr/glassy-settings.json" ] && python3 "$HOME/.config/hypr/settings/glassy_settings.py" --apply --quiet >/dev/null 2>&1
-            "$HOME/.config/hypr/scripts/island.sh" restart
-            ok "Sitzung neu geladen"
-        fi
+    fi
+    python3 "$HOME/.config/quickshell/ii/scripts/colors/glassy_theme.py" defaults "$REPO_CFG/illogical-impulse/glassy-defaults.json" >/dev/null 2>&1
+    python3 "$HOME/.config/quickshell/ii/scripts/colors/glassy_theme.py" apply --no-reload >/dev/null 2>&1 && ok "Theme neu angewendet"
+    if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        "$HOME/.local/bin/glassy" --reload
     fi
     if [ ${#extra[@]} -gt 0 ]; then
-        warn "Fremde Dateien habe ich NICHT geloescht. Wenn du sie nicht brauchst, schau sie dir an:"
+        warn "Fremde Dateien habe ich NICHT geloescht:"
         for r in "${extra[@]}"; do echo "     ~/.config/$r"; done
     fi
     echo
 else
     if [ ${#changed[@]} -gt 0 ] || [ ${#absent[@]} -gt 0 ]; then
-        echo "Reparieren:  bash $HERE/doctor.sh --repair"
+        echo "Reparieren:  glassy --repair"
     fi
 fi
 echo "Bericht gespeichert: $OUT"

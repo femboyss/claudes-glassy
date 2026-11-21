@@ -1,0 +1,42 @@
+{
+    "panelFamily": "ii",
+    "glassy": {
+        "theme": "tokyo",
+        "borderAnimation": false,
+        "performanceMode": false
+    },
+    "appearance": {
+        "fakeScreenRounding": 2,
+        "transparency": {
+            "enable": true,
+            "automatic": false,
+            "backgroundTransparency": 0.3,
+            "contentTransparency": 0.5
+        },
+        "wallpaperTheming": {
+            "enableQtApps": false
+        }
+    },
+    "bar": {
+        "cornerStyle": 1,
+        "floatStyleShadow": true
+    },
+    "background": {
+        "wallpaperPath": "@HOME@/Pictures/Wallpapers/claudes-glassy/01-aurora.jpg"
+    },
+    "language": {
+        "ui": "de_DE"
+    },
+    "time": {
+        "format": "hh:mm",
+        "shortDateFormat": "dd.MM",
+        "dateWithYearFormat": "dd.MM.yyyy",
+        "dateFormat": "ddd, dd.MM"
+    },
+    "overview": {
+        "livePreviews": false
+    },
+    "notifications": {
+        "maxStored": 60
+    }
+}

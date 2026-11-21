@@ -1,132 +1,139 @@
-# claudes-glassy
+# claudes-glassy 2
 
-A glassy Hyprland rice for Arch Linux: Catppuccin Mocha + Tokyo Night, lots of blur,
-rounded corners, a Windows/macOS-style start menu, a Dynamic Island, a clipboard manager,
-screen recording and a settings app. Built for **Hyprland 0.55+ (Lua config)**.
+A glassy Hyprland rice for Arch Linux, now built on **Quickshell** and
+[end-4's illogical-impulse](https://github.com/end-4/dots-hyprland) shell:
+Overview, AI sidebar, quick settings sidebar, Material You colors - plus the
+claudes-glassy look (Tokyo Night / Catppuccin / full glass themes, gradient borders,
+lots of blur) and a pile of performance fixes for multi-monitor, high refresh rate setups.
+Built for **Hyprland 0.55+ (Lua config)**.
 
-> The user interface (menus, settings, notifications) is in German.
+> The interface and all keybind descriptions are in German.
 > Deutsche Anleitung: [ganz unten](#deutsch).
 
-![Desktop: start menu, Dynamic Island, clipboard](assets/preview-desktop.png)
+## What changed in version 2
+
+Version 1 was Waybar + own GTK4 apps. Version 2 replaces all of that with the
+illogical-impulse Quickshell shell (vendored in `config/quickshell/ii`, upstream commit
+in `vendor/ii-upstream-commit`) and puts the glassy look and fixes on top:
+
+| | |
+|---|---|
+| **Overview** (SUPER+Tab) | All workspaces with window previews, drag windows between workspaces |
+| **Search / start menu** (tap SUPER) | Apps, calculator, commands, web search, clipboard, emoji |
+| **AI sidebar** (SUPER+K) | Chat with Gemini, Ollama (local) or any OpenAI-compatible API, translator |
+| **Right sidebar** (SUPER+A / SUPER+N) | Notifications, quick toggles (Wi-Fi, Bluetooth, night light, game mode ...), calendar, to-do, timer |
+| **Themes** (SUPER+I -> Glassy) | Tokyo Night, Catppuccin Mocha, Full glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, Black/White, **Material You** (colors from the wallpaper) |
+| **Two styles** (CTRL+SUPER+P) | Glassy (illogical-impulse) or Windows 11 (taskbar + start menu at the bottom) |
+| **Lock screen, session menu, OSD, media controls, screen snip, OCR, recording** | From the shell |
+
+## Performance fixes (vs. stock illogical-impulse and claudes-glassy 1)
+
+| Problem | Fix |
+|---|---|
+| Shell CPU grows over hours | Notifications were stored forever (thousands after a day with Discord), every new one regrouped and rewrote the whole list. Now capped (default 60), saving is batched, removed entries are freed. |
+| Lag while typing in browsers / terminals, moving windows | Every Hyprland event (including `windowtitle`, which fires constantly) spawned 5 `hyprctl` processes. Now only the data an event can change is refetched, events are coalesced (33 ms), nothing gets lost while a fetch is running. |
+| Overview lags (especially with a rotated monitor) | Every window on every workspace had a live video stream. Now still frames, live only for the window under the mouse (switchable). |
+| GPU busy at idle on 240 Hz | The rotating border gradient redraws all monitors every frame. Off by default (SUPER+I -> Glassy). |
+| Blur cost | 2 passes instead of 3, `xray` (blur computed once and cached), no shadows for tiled windows. |
+| Every Ctrl+C started a second Quickshell process | Text copies are picked up by the running shell, only images use IPC. |
+| Games | Tearing allowed for `immediate` windows, `direct_scanout = 2`, no dimming/opacity for games. |
+| Monitors at 60 Hz | All monitors use `highrr` (max refresh rate). |
+
+Plus an optional **performance mode** (`glassy --perf` or SUPER+I -> Glassy): less blur,
+no shadows, shorter animations.
 
 ## Install / update
 
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)"
 
-This clones (or hard-updates) the repo to `~/.local/share/claudes-glassy` and starts the
-installer. The installer has a menu (install / restore backup / cancel), asks whether to back
-up your current configs (default: yes) and whether to install packages via pacman.
+Test version (branch `debug`):
 
-After the first install you have the `glassy` command (in `~/.local/bin`, added to PATH for fish and bash):
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/debug/get.sh)" _ debug
+
+This clones (or hard-updates) the repo to `~/.local/share/claudes-glassy` and starts the
+installer. It asks whether to back up your configs (default: yes) and whether to install
+packages. Packages come from the illogical-impulse meta packages (`deps/arch`), installed
+with `yay` (installed automatically if missing). The first install builds Quickshell, that
+takes a few minutes.
+
+Coming from stock end-4 dots? Your `~/.config/illogical-impulse/config.json` is kept
+(copy saved next to it), glassy only sets its look once.
+
+After the first install you have the `glassy` command:
 
 | Command | What it does |
 |---------|--------------|
 | `glassy --update` | Get the latest **stable** version (branch `main`) and install it |
 | `glassy --debug` | Get the **test** version (branch `debug`) and install it |
-| `glassy --upgrade` | Install the update for your current channel (main or debug) |
+| `glassy --upgrade` | Install the update for your current channel |
 | `glassy --check` | Look for updates now (`--notify` as a notification) |
-| `glassy --whatsnew` | What's new on GitHub / the latest changes |
+| `glassy --whatsnew` | What's new on GitHub |
 | `glassy --status` | Installed version, and whether main/debug have something newer |
-| `glassy --doctor` / `--repair` | Check / repair configs, services, packages |
+| `glassy --doctor` / `--repair` | Check / repair configs, shell, fonts, refresh rates, lag settings |
 | `glassy --restore` | Restore a backup from before the install |
 | `glassy --settings` | Open the settings app (same as SUPER+I) |
-| `glassy --reload` | Restart bar, island, start menu, clipboard |
-| `glassy --theme` | List themes (`glassy --theme glass` sets one) |
+| `glassy --reload` | Restart the shell and reload Hyprland |
+| `glassy --theme [name]` | List themes / set one (`glassy --theme catppuccin`, `glassy --theme material`) |
+| `glassy --perf` | Toggle performance mode |
+| `glassy --logs` | Show the shell log |
 
 Bug fixes land on `debug` first. Test them with `glassy --debug`; once they work they go to
 `main`, and `glassy --update` brings you back to the stable channel.
 
-- Restore your previous setup: `bash ~/.local/share/claudes-glassy/install.sh --restore`
-- Something broken? `bash ~/.local/share/claudes-glassy/doctor.sh` (add `--repair` to fix)
-- Your own Hyprland additions go to `~/.config/hypr/custom.lua` (never overwritten)
-
-## Features
-
-| Part | What it does |
-|------|--------------|
-| **Hyprland** | Lua config split into isolated modules (`~/.config/hypr/glassy/`). An error in one module shows a notification instead of killing your keybinds. |
-| **Bar** (Waybar) | Glass "islands", start button, search pill, workspaces, on every monitor. |
-| **Start menu** | GTK4 + layer-shell, Tokyo Night. Search (also calculator `12*7+3` and web search), categories (switch on click), favorites, recently used, places, power buttons with confirm. Runs as a background service, opens instantly on the monitor under your mouse. |
-| **Dynamic Island** | Black pill at the top: clock, now playing with cover art, expands on hover with seek slider and controls, volume OSD, recording indicator (click = stop). |
-| **Update notifications** | Checks GitHub in the background (on login, then hourly/6 h/daily). A notification with "Install now / What's new / Later" - or installs automatically. All in SUPER+I -> Updates. |
-| **Taskbar flyouts** | Built in, no external apps: quick settings (Wi-Fi, Bluetooth, do not disturb, night light, airplane mode, power profile, volume, mic, brightness, media), sound (devices + per-app volume), Wi-Fi (connect with password, forget), Bluetooth (scan, pair, connect, battery), calendar (click the island). Same views in SUPER+I. |
-| **Themes** | 9 themes for everything at once (bar, flyouts, start menu, island, clipboard, notifications, rofi, kitty, borders, lock screen, Dolphin/Qt apps): Tokyo Night, Catppuccin Mocha, Complete Glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, Black/White. Pick in SUPER+I -> Appearance. |
-| **Settings** (SUPER+I) | Every option in one place: appearance, start menu, island, bar, input, lock & power, default apps, wallpaper, update/doctor/backup. |
-| **Clipboard** (SUPER+V) | Search, image previews, trash button per entry, "delete all", opens at the mouse cursor. |
-| **Ctrl+Alt+Del** | Fullscreen glass screen: lock, log out, sleep, recording, screenshot, task manager, reboot, UEFI, shut down. |
-| **Screenshots** | Screen freezes while you select an area. Saved + copied. |
-| **Screen recording** | wf-recorder, area or monitor, with or without desktop audio, NVENC when available. |
-| **Lock screen** | hyprlock: big clock, German date, now playing, gradient password pill. No name, no avatar. Fully customizable in SUPER+I. |
-| **Wallpapers** | 5 bundled 4K wallpapers, picker with previews, smooth transitions (awww/swww). |
-| **Notifications** | SwayNC in the same glass style (also Discord images/actions). |
-
-### Lock screen
-
-Default look:
-
-![Lock screen](assets/lockscreen.png)
-
-Everything is customizable in SUPER+I -> Sperrbildschirm. Four examples:
-
-![Lock screen variants](assets/lockscreen-variants.png)
-
-Lock screen options: accent color, clock size and font, brightness, blur, and toggles for lock icon,
-date, greeting, now playing, keyboard layout/uptime, fading password field, clock on other monitors.
-
-![Lock screen settings](assets/settings-lockscreen.png)
-
 ## Keybinds
+
+Press **SUPER+H** for the full cheat sheet (generated from the binds).
 
 | Keys | Action |
 |------|--------|
-| SUPER (tap) | Start menu |
-| SUPER+A | Quick settings |
-| SUPER+Space / SUPER+R | Search (apps, windows, commands) |
-| SUPER+I | Settings |
+| SUPER (tap) / SUPER+Space | Search / start menu |
+| SUPER+Tab / SUPER+O | Overview |
+| SUPER+A / SUPER+N | Right sidebar (quick settings, notifications) |
+| SUPER+K | AI sidebar (SUPER+ALT+K: as a window) |
 | SUPER+V | Clipboard |
-| CTRL+ALT+Delete | Session screen |
+| SUPER+SHIFT+E | Emoji |
+| SUPER+I | Settings |
+| SUPER+H | Cheat sheet |
+| SUPER+M / SUPER+G | Media controls / widget overlay |
+| SUPER+W / SUPER+SHIFT+W | Wallpaper picker / random wallpaper |
+| CTRL+ALT+Delete / SUPER+Escape | Session menu |
 | CTRL+SHIFT+Esc | Task manager |
-| SUPER+Return | Terminal |
-| SUPER+E / SUPER+B | File manager / browser |
+| SUPER+Return / SUPER+E / SUPER+B | Terminal / file manager / browser |
 | SUPER+Q | Close window |
 | SUPER+F / SUPER+SHIFT+F | Fullscreen / maximize |
 | SUPER+T | Toggle floating |
 | SUPER+C | Center window |
 | SUPER+SHIFT+P | Pin window |
 | SUPER+J | Toggle split |
-| SUPER+Arrows | Move focus |
-| SUPER+SHIFT+Arrows | Move window |
-| SUPER+ALT+Arrows | Resize window |
+| SUPER+Arrows / +SHIFT / +ALT | Focus / move / resize |
 | SUPER+1..0 | Workspace 1..10 |
-| SUPER+SHIFT+1..0 | Move window to workspace (follow) |
-| SUPER+ALT+1..0 | Move window to workspace (stay) |
+| SUPER+SHIFT+1..0 / SUPER+ALT+1..0 | Move window to workspace (follow / stay) |
 | CTRL+SUPER+Left/Right | Previous / next workspace |
-| SUPER+Tab | Last workspace |
-| SUPER+S / SUPER+CTRL+S | Show scratchpad / move window there |
-| SUPER+F1..F3 | Focus monitor DP-3 / HDMI-A-1 / DP-1 |
-| SUPER+SHIFT+F1..F3 | Move window to that monitor |
+| SUPER+^ | Last workspace |
+| SUPER+S / SUPER+CTRL+S | Scratchpad / move window there |
+| SUPER+F1..F3 (+SHIFT) | Focus monitor DP-3 / HDMI-A-1 / DP-1 (move window) |
 | SUPER+. / SUPER+, | Next / previous monitor |
-| ALT+Tab / SUPER+O | Next window / list of all windows |
-| Print / SUPER+SHIFT+S | Screenshot (area) |
-| SHIFT+Print | Screenshot (monitor) |
+| Print / SUPER+SHIFT+S | Screenshot (area, with window detection) |
+| SHIFT+Print | Screenshot (monitor, saved + copied) |
+| SUPER+SHIFT+X / +A / +T | OCR / Google Lens / translate screen |
 | SUPER+ALT+R | Start / stop screen recording |
-| SUPER+W / SUPER+SHIFT+W | Wallpaper picker / random wallpaper |
-| SUPER+N | Notification center |
-| SUPER+L | Lock |
-| SUPER+Escape | Small power menu |
-| SUPER+SHIFT+B / SUPER+SHIFT+R | Toggle bar / restart bar + island |
 | SUPER+SHIFT+C | Color picker |
+| SUPER+L | Lock |
+| SUPER+SHIFT+B | Toggle bar |
+| SUPER+SHIFT+R | Restart shell |
+| CTRL+SUPER+P | Switch style (Glassy / Windows 11) |
+| SUPER+ALT+F1 | VM mode (all keybinds off/on) |
 
 ## Files
 
 | Path | Content |
 |------|---------|
-| `~/.config/hypr/hyprland.lua` | Loads the modules in `~/.config/hypr/glassy/` |
-| `~/.config/hypr/glassy-settings.json` | Your settings from SUPER+I (re-applied after every update) |
-| `~/.config/hypr/custom.lua` | Your own additions |
-| `~/.config/hypr/pinned-apps` | Start menu favorites (one `.desktop` id per line) |
-| `~/.config/hypr/startmenu/`, `island/`, `clipboard/`, `settings/` | The GTK4 apps |
-| `~/.cache/claudes-glassy/*.log` | Logs (start menu, island, clipboard, screenshot, recording) |
+| `~/.config/hypr/hyprland.lua` | Loads the modules, each one isolated |
+| `~/.config/hypr/glassy/` | claudes-glassy modules (keybinds, look, performance, rules, monitors ...) |
+| `~/.config/hypr/custom/*.lua`, `~/.config/hypr/custom.lua` | **Your** additions (never overwritten) |
+| `~/.config/quickshell/ii/` | The shell (illogical-impulse + glassy patches) |
+| `~/.config/illogical-impulse/config.json` | Shell settings (SUPER+I) |
+| `~/.config/hypr/glassy-generated.lua` | Border colors + switches, written by the theme script |
 
 ## Anima Engine / desktop pets (Windows apps via Proton)
 
@@ -135,13 +142,22 @@ GE-Proton (GE-Proton11-6 or newer) and set the Steam launch options to:
 
     WINE_LAYERED_OVERLAY_SHAPE=1 %command%
 
-Window rules for Anima Engine (no border, rounding, shadow) are already included.
+Window rules for Anima Engine (no border, rounding, shadow) are included.
+
+## Credits and license
+
+- Shell: [illogical-impulse by end-4](https://github.com/end-4/dots-hyprland), GPL-3.0
+  (see `LICENSE-illogical-impulse`). The files in `config/quickshell/ii`, `config/matugen`,
+  `config/fuzzel`, `config/hypr/hyprland`, `config/hypr/hyprlock*` and `deps/` come from it;
+  claudes-glassy changes are marked with `claudes-glassy` comments.
+- (c) 34 & Claude
 
 ## Sources
 
 - Hyprland Lua config: https://wiki.hypr.land/Configuring/Start/
 - Layer rules: https://wiki.hypr.land/configuring/core/rules/layer-rules/
-- gtk4-layer-shell: https://github.com/wmww/gtk4-layer-shell
+- illogical-impulse wiki: https://end-4.github.io/dots-hyprland-wiki/en/
+- Quickshell: https://quickshell.org/
 - Tokyo Night: https://github.com/folke/tokyonight.nvim
 - Catppuccin: https://catppuccin.com/palette
 - GE-Proton overlay patch: https://github.com/GloriousEggroll/proton-ge-custom/pull/553
@@ -151,82 +167,72 @@ Window rules for Anima Engine (no border, rounding, shadow) are already included
 <a id="deutsch"></a>
 ## Deutsch
 
-Ein Hyprland-Rice im Glas-Look fuer Arch Linux: Catppuccin Mocha + Tokyo Night, viel Blur,
-runde Ecken, Startmenue wie bei Windows/macOS, Dynamic Island, Zwischenablage,
-Bildschirmaufnahme und eine Einstellungs-App. Fuer **Hyprland 0.55+ (Lua-Config)**.
+Ein Hyprland-Rice im Glas-Look fuer Arch Linux, jetzt auf Basis von **Quickshell** und der
+Shell [illogical-impulse von end-4](https://github.com/end-4/dots-hyprland): Uebersicht,
+KI-Seitenleiste, Schnelleinstellungen, Material-You-Farben - dazu der claudes-glassy-Look
+(Tokyo Night, Catppuccin, Komplett-Glas usw., Verlaufsrahmen, viel Blur) und viele
+Lag-Fixes fuer mehrere Monitore mit hoher Hz-Zahl. Fuer **Hyprland 0.55+ (Lua-Config)**.
+
+### Was ist neu in Version 2
+
+Version 1 war Waybar + eigene GTK4-Apps. Version 2 ersetzt das komplett durch die
+Quickshell-Shell von illogical-impulse (liegt in `config/quickshell/ii`) mit Glassy-Look obendrauf:
+
+- **Uebersicht (SUPER+Tab):** alle Workspaces mit Fenster-Vorschau, Fenster per Ziehen verschieben
+- **Suche / Startmenue (Super antippen):** Apps, Rechner, Befehle, Websuche, Zwischenablage, Emojis
+- **KI-Seitenleiste (SUPER+K):** Gemini, Ollama (lokal) oder jede OpenAI-kompatible API, Uebersetzer
+- **Seitenleiste rechts (SUPER+A / SUPER+N):** Mitteilungen, Schnellschalter (WLAN, Bluetooth,
+  Nachtlicht, Spielmodus ...), Kalender, To-do, Timer
+- **Themes (SUPER+I -> Glassy):** Tokyo Night, Catppuccin Mocha, Komplett Glas, Nur Durchsicht,
+  Nord, Gruvbox, Rose Pine, Dracula, Schwarz/Weiss und **Material You** (Farben aus dem Wallpaper)
+- **Zwei Stile (Strg+Super+P):** Glassy oder Windows 11 (Taskleiste + Startmenue unten)
+- Sperrbildschirm, Sitzungsmenue, Lautstaerke-Anzeige, Mediensteuerung, Screenshot mit
+  Fenster-Erkennung, Texterkennung (OCR), Bildschirmaufnahme
+
+### Lag-Fixes
+
+- **Shell frisst nach Stunden immer mehr CPU:** Mitteilungen wurden endlos gespeichert und bei
+  jeder neuen komplett neu sortiert und geschrieben. Jetzt max. 60 (einstellbar), gebuendeltes
+  Speichern, alte Eintraege werden freigegeben.
+- **Ruckeln beim Tippen / Fenster schieben:** Jedes Hyprland-Event (auch Fenstertitel-Aenderungen,
+  die Browser und Terminals dauernd senden) hat 5 hyprctl-Prozesse gestartet. Jetzt wird nur
+  neu geholt, was sich aendern kann, und Events werden gebuendelt.
+- **Uebersicht laggt (vor allem mit hochkant gedrehtem Monitor):** Jedes Fenster hatte einen
+  Live-Videostream. Jetzt Standbild, live nur unter der Maus (einschaltbar).
+- **GPU arbeitet im Leerlauf (240 Hz):** Der rotierende Rahmen zeichnet alle Monitore jeden
+  Frame neu. Jetzt standardmaessig aus.
+- **Blur:** 2 statt 3 Durchgaenge, xray (einmal berechnet und gecacht), keine Schatten fuer
+  gekachelte Fenster.
+- **Jedes Strg+C startete einen zweiten Quickshell-Prozess:** Text erkennt die Shell selbst.
+- **Spiele:** Tearing fuer "immediate"-Fenster, direct scanout, kein Dimmen.
+- **Monitore auf 60 Hz:** alle auf `highrr` (hoechste Hz-Zahl).
+- Zusaetzlich **Performance-Modus** (`glassy --perf` oder SUPER+I -> Glassy).
 
 ### Installieren / Aktualisieren
 
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/main/get.sh)"
 
-Holt (oder aktualisiert hart) das Repo nach `~/.local/share/claudes-glassy` und startet den
-Installer. Der hat ein Menue (Installieren / Backup wiederherstellen / Abbrechen), fragt nach
-einem Backup deiner Configs (Standard: ja) und ob Pakete per pacman installiert werden sollen.
+Test-Stand (Branch `debug`):
 
-Danach gibt es den Befehl `glassy`:
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/femboyss/claudes-glassy/debug/get.sh)" _ debug
 
-| Befehl | Was er macht |
-|--------|--------------|
-| `glassy --update` | Neuesten **stabilen** Stand holen (Branch `main`) und installieren |
-| `glassy --debug` | **Test**-Stand holen (Branch `debug`) und installieren |
-| `glassy --upgrade` | Update fuer deinen aktuellen Kanal (main oder debug) installieren |
-| `glassy --check` | Jetzt nach Updates suchen (`--notify` als Benachrichtigung) |
-| `glassy --whatsnew` | Was ist neu auf GitHub / die letzten Aenderungen |
-| `glassy --status` | Was ist installiert, gibt es auf main/debug etwas Neueres? |
-| `glassy --doctor` / `--repair` | Configs, Dienste, Pakete pruefen / reparieren |
-| `glassy --restore` | Backup von vor der Installation zurueckspielen |
-| `glassy --settings` | Einstellungen oeffnen (wie SUPER+I) |
-| `glassy --reload` | Leiste, Island, Startmenue, Zwischenablage neu starten |
-| `glassy --theme` | Themes anzeigen (`glassy --theme glass` setzt eins) |
+Der Installer fragt nach einem Backup (Standard: ja) und ob Pakete installiert werden sollen.
+Die Pakete kommen aus den Meta-Paketen von illogical-impulse (`deps/arch`) und werden mit `yay`
+installiert (wird bei Bedarf selbst installiert). Beim ersten Mal wird Quickshell gebaut,
+das dauert ein paar Minuten.
 
-### Themes
+Kommst du von den normalen end-4-Dots? Deine `~/.config/illogical-impulse/config.json` bleibt
+(Kopie daneben), Glassy setzt nur einmal seinen Look.
 
-SUPER+I -> Aussehen -> Theme (oder `glassy --theme <name>`). Ein Theme faerbt alles auf einmal:
-Leiste, Flyouts, Startmenue, Island, Zwischenablage, Mitteilungen, rofi, kitty, Fensterrahmen,
-Sperrbildschirm und Qt/KDE-Apps wie Dolphin. Dabei: Tokyo Night, Catppuccin Mocha,
-**Komplett Glas**, **Nur Durchsicht**, Nord, Gruvbox, Rose Pine, Dracula, Schwarz/Weiss.
+Befehle: siehe Tabelle oben (`glassy --update`, `--debug`, `--doctor`, `--theme`, `--perf`,
+`--reload`, `--logs` ...). Fixes kommen zuerst auf `debug`. Mit `glassy --debug` testen;
+wenn alles passt, landen sie auf `main`, und `glassy --update` bringt dich zurueck auf stabil.
 
-Fixes kommen zuerst auf `debug`. Mit `glassy --debug` testen; wenn alles passt, landen sie
-auf `main`, und `glassy --update` bringt dich wieder auf den stabilen Stand.
-
-- Altes Setup zurueck: `bash ~/.local/share/claudes-glassy/install.sh --restore`
-- Etwas kaputt? `bash ~/.local/share/claudes-glassy/doctor.sh` (mit `--repair` reparieren)
-- Eigene Hyprland-Ergaenzungen: `~/.config/hypr/custom.lua` (wird nie ueberschrieben)
-
-### Was drin ist
-
-- **Hyprland:** Lua-Config in abgesicherten Modulen. Ein Fehler zeigt eine Benachrichtigung,
-  statt die Tastenkuerzel lahmzulegen.
-- **Leiste (Waybar):** Glas-Inseln, Start-Knopf, Suchfeld, Workspaces, auf jedem Monitor.
-- **Startmenue:** GTK4, Tokyo Night. Suche (auch Rechner `12*7+3` und Websuche), Kategorien
-  (Wechsel per Klick), Favoriten, Zuletzt verwendet, Orte, Power-Knoepfe mit Bestaetigung.
-  Laeuft als Dienst, oeffnet sofort auf dem Monitor unter der Maus.
-- **Dynamic Island:** Uhr, Musik mit Cover, klappt beim Drueberfahren auf (Spulen per
-  Schieberegler, Steuerung), Lautstaerke-Anzeige, Aufnahme-Anzeige (Klick = Stopp).
-- **Update-Benachrichtigung:** sucht im Hintergrund auf GitHub (beim Login, dann stuendlich /
-  alle 6 Std / taeglich). Benachrichtigung mit "Jetzt installieren / Was ist neu / Spaeter" -
-  oder installiert automatisch. Alles in SUPER+I -> Updates.
-- **Flyouts der Leiste (eingebaut, keine externen Apps):** Schnelleinstellungen (SUPER+A: WLAN,
-  Bluetooth, Nicht stoeren, Nachtlicht, Flugmodus, Energieprofil, Lautstaerke, Mikrofon,
-  Helligkeit, Musik), Sound (Geraete + Lautstaerke pro App), WLAN (verbinden mit Passwort,
-  vergessen), Bluetooth (suchen, koppeln, verbinden, Akku), Kalender (Klick auf die Island).
-  Dieselben Ansichten gibt es in SUPER+I unter Sound, Netzwerk und Bluetooth.
-- **Einstellungen (SUPER+I):** alles an einem Ort: Aussehen, Startmenue, Island, Leiste,
-  Eingabe, Sperren & Energie, Standard-Apps, Hintergrund, Update/Doktor/Backup.
-- **Zwischenablage (SUPER+V):** Suche, Bild-Vorschau, Muelleimer pro Eintrag, "Alles
-  loeschen", oeffnet an der Maus.
-- **Strg+Alt+Entf:** Vollbild-Glas mit Sperren, Abmelden, Energiesparen, Aufnahme,
-  Screenshot, Task-Manager, Neustart, UEFI, Herunterfahren.
-- **Screenshots:** Bildschirm friert beim Auswaehlen ein, wird gespeichert und kopiert.
-- **Bildschirmaufnahme (SUPER+ALT+R):** Bereich oder Monitor, mit/ohne Ton, NVENC wenn moeglich.
-- **Sperrbildschirm:** grosse Uhr, deutsches Datum, laufende Musik, Passwort-Pille. Kein Name,
-  kein Profilbild. In SUPER+I -> Sperrbildschirm anpassbar: Akzentfarbe, Uhrgroesse und -schrift,
-  Helligkeit, Unschaerfe und welche Elemente angezeigt werden.
-  Beispiele: siehe Bilder oben unter "Lock screen".
-- **Wallpaper:** 5 eigene 4K-Wallpaper, Auswahl mit Vorschau, weiche Uebergaenge.
-- **Benachrichtigungen:** SwayNC im Glas-Look (auch Discord mit Bildern/Aktionen).
-
-Alle Tastenkuerzel stehen oben in der Tabelle "Keybinds" (gleiche Tasten).
+- Altes Setup zurueck: `glassy --restore`
+- Etwas kaputt? `glassy --doctor` (mit `glassy --repair` reparieren)
+- Eigene Hyprland-Sachen: `~/.config/hypr/custom/*.lua` oder `~/.config/hypr/custom.lua`
+  (werden nie ueberschrieben)
+- Alle Tastenkuerzel: **SUPER+H**
 
 ### Anima Engine / Desktop-Pets (Windows-Apps ueber Proton)
 
@@ -234,3 +240,9 @@ Schwarzer statt durchsichtiger Hintergrund kommt von Wine/Proton. GE-Proton (ab 
 verwenden und in Steam bei den Startoptionen eintragen:
 
     WINE_LAYERED_OVERLAY_SHAPE=1 %command%
+
+### Lizenz
+
+Die Shell ist illogical-impulse von end-4 (GPL-3.0, siehe `LICENSE-illogical-impulse`).
+Aenderungen von claudes-glassy sind im Code mit `claudes-glassy` markiert.
+(c) 34 & Claude

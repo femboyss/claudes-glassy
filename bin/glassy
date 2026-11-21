@@ -8,12 +8,15 @@
 #    glassy --upgrade     Update fuer deinen aktuellen Kanal (main oder debug) installieren
 #    glassy --check       nach Updates suchen (--notify: als Benachrichtigung, --force: auch "alles aktuell")
 #    glassy --whatsnew    was ist neu / was hat sich geaendert
-#    glassy --watch       im Hintergrund regelmaessig suchen (startet mit Hyprland, Einstellungen: SUPER+I -> Updates)
+#    glassy --watch       im Hintergrund regelmaessig suchen (startet mit Hyprland)
 #    glassy --doctor      pruefen      (glassy --repair: kaputte Dateien reparieren)
 #    glassy --restore     altes Backup zurueckspielen
 #    glassy --settings    Einstellungen oeffnen (wie SUPER+I)
-#    glassy --reload      Leiste, Island, Startmenue, Zwischenablage neu starten
-#    glassy --theme       Themes anzeigen   (glassy --theme glass: Theme setzen)
+#    glassy --reload      Shell (Quickshell) und Hyprland neu laden
+#    glassy --theme       Themes anzeigen   (glassy --theme catppuccin: Theme setzen,
+#                         glassy --theme material: Farben aus dem Wallpaper)
+#    glassy --perf        Performance-Modus an/aus (weniger Blur/Schatten)
+#    glassy --logs        Log der Shell (Quickshell) anzeigen
 #    glassy --help        diese Hilfe
 #
 #  Ablauf bei Fehlern: Fixes kommen zuerst auf "debug" -> mit "glassy --debug"
@@ -83,18 +86,18 @@ status() {
 
 # ------------------------------------------------------------------ Updates
 STATE_DIR="$HOME/.local/state/claudes-glassy"
-SETTINGS_JSON="$HOME/.config/hypr/glassy-settings.json"
+SHELL_CONFIG="$HOME/.config/illogical-impulse/config.json"
+THEME_PY="$HOME/.config/quickshell/ii/scripts/colors/glassy_theme.py"
 GLASSY_BIN="$HOME/.local/bin/glassy"
 
-setting() {   # $1 = Schluessel, $2 = Standardwert
+setting() {   # $1 = Schluessel unter .glassy in der Shell-Config, $2 = Standardwert
     local v
-    v="$(jq -r --arg k "$1" '.[$k] // empty' "$SETTINGS_JSON" 2>/dev/null)"
+    v="$(jq -r --arg k "$1" '.glassy[$k] // empty' "$SHELL_CONFIG" 2>/dev/null)"
     [ -n "$v" ] && echo "$v" || echo "$2"
 }
 
 term_run() {  # Befehl in einem Terminal-Fenster ausfuehren (bleibt offen bis Enter)
-    local t; t="$(setting terminal kitty)"
-    setsid -f "$t" -e bash -c "$1; echo; read -r -p 'Enter zum Schliessen '" >/dev/null 2>&1
+    setsid -f kitty -1 bash -c "$1; echo; read -r -p 'Enter zum Schliessen '" >/dev/null 2>&1
 }
 
 remote_rev() { timeout 10 git ls-remote "$REPO_URL" "refs/heads/$1" 2>/dev/null | cut -c1-40; }
@@ -190,14 +193,15 @@ background_update() {
     bash "$DEST/install.sh" --background >"$STATE_DIR/last-update.log" 2>&1
     after="$(git -C "$DEST" rev-parse --short HEAD 2>/dev/null)"
     # Pakete, die neu dazugekommen sind, brauchen sudo -> nur Bescheid geben
-    for p in $(grep -A12 '^PKGS=(' "$DEST/install.sh" | sed -n '2,/^)/p' | tr -d ')'); do
+    for p in $(sed -n '/^EXTRA_PKGS=(/,/^)/p' "$DEST/install.sh" | sed '1d;$d' | sed 's/#.*//'); do
         pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p")
     done
+    command -v qs >/dev/null 2>&1 || missing+=("quickshell")
     (
         if [ ${#missing[@]} -gt 0 ]; then
             act="$(notify-send -a claudes-glassy -i system-software-update -t 0 -A pkgs="Im Terminal installieren" --wait \
                 "claudes-glassy aktualisiert ($before -> $after)" "Neue Pakete noetig: ${missing[*]}")"
-            [ "$act" = pkgs ] && term_run "sudo pacman -S --needed ${missing[*]}"
+            [ "$act" = pkgs ] && term_run "bash $DEST/install.sh --install"
         else
             act="$(notify-send -a claudes-glassy -i emblem-default -A news="Was ist neu" --wait \
                 "claudes-glassy aktualisiert" "$before -> $after  ($(git -C "$DEST" log -1 --format='%s' | cut -c1-60))")"
@@ -229,15 +233,23 @@ watch_loop() {
 }
 
 reload_all() {
-    pkill -x waybar; setsid -f waybar >/dev/null 2>&1
-    pkill -x swaync; setsid -f swaync >/dev/null 2>&1
-    pkill -f "startmenu.py --daemon"; "$HOME/.config/hypr/scripts/startmenu.sh" --start-daemon
-    pkill -f "clipman.py --daemon";   "$HOME/.config/hypr/scripts/clipboard.sh" --start-daemon
-    pkill -f "panel/panel.py";        "$HOME/.config/hypr/scripts/panel.sh" --start-daemon
-    "$HOME/.config/hypr/scripts/island.sh" restart
-    pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch >/dev/null 2>&1
+    pkill -x qs 2>/dev/null; pkill -x quickshell 2>/dev/null
+    sleep 0.3
     hyprctl reload >/dev/null 2>&1
-    c_ok "neu geladen"
+    setsid -f qs -c ii >/dev/null 2>&1
+    pgrep -x hypridle >/dev/null || setsid -f hypridle >/dev/null 2>&1
+    pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch >/dev/null 2>&1
+    c_ok "neu geladen (Shell + Hyprland)"
+}
+
+toggle_perf() {
+    local now new
+    now="$(jq -r '.glassy.performanceMode // false' "$SHELL_CONFIG" 2>/dev/null)"
+    [ "$now" = true ] && new=false || new=true
+    local tmp; tmp="$(mktemp)"
+    jq ".glassy.performanceMode = $new" "$SHELL_CONFIG" > "$tmp" && mv "$tmp" "$SHELL_CONFIG"
+    python3 "$THEME_PY" sync
+    c_ok "Performance-Modus: $( [ "$new" = true ] && echo an || echo aus)"
 }
 
 case "${1:---help}" in
@@ -247,15 +259,17 @@ case "${1:---help}" in
     --doctor|doctor)      bash "$DEST/doctor.sh" ;;
     --repair|repair)      bash "$DEST/doctor.sh" --repair ;;
     --restore|restore)    bash "$DEST/install.sh" --restore ;;
-    --settings|settings)  "$HOME/.config/hypr/scripts/settings-app.sh" ;;
+    --settings|settings)  setsid -f env XDG_CURRENT_DESKTOP=gnome qs -p "$HOME/.config/quickshell/ii/settings.qml" >/dev/null 2>&1 ;;
     --reload|reload)      reload_all ;;
     --theme|theme)        shift
-                          if [ $# -eq 0 ]; then python3 "$HOME/.config/hypr/theme/theme.py" list
-                          else python3 "$HOME/.config/hypr/theme/theme.py" apply "$1"; fi ;;
+                          if [ $# -eq 0 ]; then python3 "$THEME_PY" list
+                          else python3 "$THEME_PY" apply "$1"; fi ;;
+    --perf|perf)          toggle_perf ;;
+    --logs|logs)          qs -c ii log 2>/dev/null | tail -n 80 || c_warn "Kein Log (laeuft die Shell?)" ;;
     --upgrade|upgrade)    fetch_branch "$(channel)" && install_now ;;
     --background-update)  background_update ;;
     --check|check)        shift; check_updates "$@" ;;
     --whatsnew|whatsnew)  whatsnew ;;
     --watch|watch)        watch_loop ;;
-    --help|-h|help|*)     sed -n '3,21p' "$0" | sed 's/^# \{0,1\}//' ;;
+    --help|-h|help|*)     sed -n '3,24p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

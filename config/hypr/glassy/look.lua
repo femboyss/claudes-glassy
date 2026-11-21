@@ -1,70 +1,109 @@
--- claudes-glassy: Aussehen (Farben kommen vom Theme)
+-- claudes-glassy: Aussehen (Farben kommen vom Theme, SUPER+I -> Glassy)
 -- Variablen: https://wiki.hypr.land/Configuring/Basics/Variables/
 
+local G = GLASSY_GEN or {}
 local c = {
-    mauve    = "rgba(bb9af7ee)",
-    blue     = "rgba(7aa2f7ee)",
-    pink     = "rgba(ff79c6ee)",
-    surface0 = "rgba(292e4288)",
+    a        = G.border_a or "rgba(7aa2f7ee)",
+    b        = G.border_b or "rgba(bb9af7ee)",
+    c        = G.border_c or "rgba(ff79c6ee)",
+    inactive = G.border_inactive or "rgba(292e4288)",
 }
--- Rahmenfarben vom aktiven Theme (SUPER+I -> Aussehen -> Theme)
-do
-    local ok, t = pcall(dofile, os.getenv("HOME") .. "/.config/hypr/glassy-theme.lua")
-    if ok and type(t) == "table" then
-        c.mauve, c.blue, c.pink = t.border_a or c.mauve, t.border_b or c.blue, t.border_c or c.pink
-        c.surface0 = t.border_inactive or c.surface0
-    end
+
+-- Jeder Abschnitt einzeln: eine unbekannte Option (andere Hyprland-Version)
+-- macht nicht gleich das ganze Aussehen kaputt
+local errors = {}
+local function section(name, t)
+    local ok, err = pcall(hl.config, { [name] = t })
+    if not ok then table.insert(errors, name .. ": " .. tostring(err)) end
 end
 
-hl.config({
+local S = {
     general = {
-        gaps_in     = 6,
-        gaps_out    = 14,
-        border_size = 2,
+        gaps_in          = 6,
+        gaps_out         = 14,
+        gaps_workspaces  = 50,
+        border_size      = 2,
         col = {
-            active_border   = { colors = { c.mauve, c.blue, c.pink }, angle = 45 },
-            inactive_border = c.surface0,
+            active_border   = { colors = { c.a, c.b, c.c }, angle = 45 },
+            inactive_border = c.inactive,
         },
-        resize_on_border = true,
-        allow_tearing    = false,
-        layout           = "dwindle",
+        resize_on_border  = true,
+        no_focus_fallback = true,
+        allow_tearing     = true,      -- nur fuer Fenster mit "immediate"-Regel (Spiele), siehe rules.lua
+        layout            = "dwindle",
+        snap = {
+            enabled      = true,
+            window_gap   = 6,
+            monitor_gap  = 14,
+            respect_gaps = true,
+        },
     },
 
     decoration = {
         rounding       = 16,
         rounding_power = 2.5,
         active_opacity     = 1.0,
-        inactive_opacity   = 0.94,
+        inactive_opacity   = 0.95,
         fullscreen_opacity = 1.0,
         dim_inactive   = true,
-        dim_strength   = 0.06,
+        dim_strength   = 0.05,
+        dim_special    = 0.2,
         shadow = {
             enabled      = true,
-            range        = 24,
+            range        = 20,
             render_power = 3,
-            color        = 0x66000000,   -- Lua: Integer ARGB, kein rgba()-String
+            offset       = { 0, 2 },
+            color        = 0x55000000,   -- Lua: Integer ARGB, kein rgba()-String
         },
         blur = {
             enabled           = true,
+            -- Lag-Fix: 2 statt 3 Durchgaenge sieht fast gleich aus, kostet ein Drittel weniger
             size              = 8,
-            passes            = 3,
+            passes            = 2,
             noise             = 0.02,
-            contrast          = 1.0,
+            contrast          = 0.95,
             brightness        = 0.9,
-            vibrancy          = 0.25,
+            vibrancy          = 0.3,
+            vibrancy_darkness = 0.3,
             new_optimizations = true,
             ignore_opacity    = true,
-            xray              = false,
+            -- xray = Glas zeigt das Wallpaper statt der Fenster dahinter. Viel billiger:
+            -- der Blur wird einmal berechnet und gecacht statt bei jedem Frame neu.
+            xray              = true,
+            special           = false,
             popups            = true,
+            popups_ignorealpha = 0.6,
+            input_methods     = true,
+            input_methods_ignorealpha = 0.8,
         },
     },
 
     animations = { enabled = true },
-    dwindle    = { preserve_split = true },
+
+    dwindle = {
+        preserve_split = true,
+        smart_split    = false,
+        smart_resizing = false,
+    },
+
+    gestures = {
+        workspace_swipe_distance = 700,
+        workspace_swipe_cancel_ratio = 0.2,
+        workspace_swipe_min_speed_to_force = 5,
+        workspace_swipe_direction_lock = true,
+        workspace_swipe_direction_lock_threshold = 10,
+        workspace_swipe_create_new = true,
+    },
 
     misc = {
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
+        disable_splash_rendering = true,
+        animate_manual_resizes  = false,
+        animate_mouse_windowdragging = false,
+        enable_swallow          = false,
+        focus_on_activate       = true,
+        middle_click_paste      = false,
     },
 
     input = {
@@ -73,5 +112,34 @@ hl.config({
         sensitivity        = 0,
         accel_profile      = "flat",
         numlock_by_default = true,
+        touchpad = {
+            natural_scroll = true,
+            disable_while_typing = true,
+            clickfinger_behavior = true,
+        },
     },
-})
+
+    binds = {
+        scroll_event_delay = 0,
+        hide_special_on_workspace_change = true,
+    },
+
+    cursor = {
+        zoom_factor = 1,
+        zoom_rigid  = false,
+    },
+}
+for _, name in ipairs({ "general", "decoration", "animations", "dwindle", "gestures", "misc", "input", "binds", "cursor" }) do
+    section(name, S[name])
+end
+if #errors > 0 then glassy_notify("look: " .. table.concat(errors, " | ")) end
+
+-- Touchpad-Gesten (Laptop)
+pcall(function()
+    hl.gesture({ fingers = 3, direction = "swipe", action = "move" })
+    hl.gesture({ fingers = 3, direction = "pinch", action = "fullscreen" })
+    hl.gesture({ fingers = 4, direction = "horizontal", action = "workspace" })
+    hl.gesture({ fingers = 4, direction = "up", action = function()
+        hl.dispatch(hl.dsp.global("quickshell:overviewWorkspacesToggle"))
+    end })
+end)
