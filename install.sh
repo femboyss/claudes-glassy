@@ -104,6 +104,14 @@ install_packages() {
                  microtex-git quickshell-git bibata-modern-classic-bin)
     local m
     for m in "${metas[@]}"; do
+        # Schon installiert und Version gleich -> nicht neu bauen (spart vor allem den Quickshell-Build)
+        local want have
+        want="$(cd "$build/illogical-impulse-$m" && set +u && source ./PKGBUILD && echo "${pkgver}-${pkgrel}")"
+        have="$(pacman -Q "illogical-impulse-$m" 2>/dev/null | awk '{print $2}')"
+        if [ -n "$have" ] && [ "${have#*:}" = "$want" ]; then
+            c_ok "  illogical-impulse-$m schon aktuell"
+            continue
+        fi
         c_info "  illogical-impulse-$m"
         install_metapkg "$build/illogical-impulse-$m" || c_warn "  illogical-impulse-$m: Fehler (weiter mit dem Rest)"
     done
