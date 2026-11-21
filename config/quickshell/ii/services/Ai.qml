@@ -387,6 +387,85 @@ Singleton {
         }
     }
 
+    // ---------------------------------------------------------- claudes-glassy: LM Studio + LU
+    readonly property string lmstudioUrl: (Config.options?.ai?.lmstudioUrl ?? "http://localhost:1234/v1").replace(/\/+$/, "")
+    readonly property string luPromptPath: (Config.options?.ai?.luPromptFile ?? "").replace(/^~/, CF.FileUtils.trimFileProtocol(Directories.home))
+    property bool lmstudioFound: false
+
+    function addLmStudioModels(ids) {
+        if (!ids || ids.length === 0) return;
+        root.lmstudioFound = true;
+        if (Config.options?.ai?.lmstudioModels ?? true) {
+            ids.forEach(id => {
+                root.addModel(root.safeModelName(`lmstudio-${id}`), {
+                    "name": `LM Studio: ${id.split("/").pop()}`,
+                    "icon": "ollama-symbolic",
+                    "description": Translation.tr("Local LM Studio model | %1").arg(id),
+                    "homepage": "https://lmstudio.ai",
+                    "endpoint": `${root.lmstudioUrl}/chat/completions`,
+                    "model": id,
+                    "requires_key": false,
+                    "api_format": "openai",
+                });
+            });
+        }
+        if (Config.options?.ai?.luEnable ?? true) {
+            const luModel = (Config.options?.ai?.luModel ?? "") || ids[0];
+            root.addModel("lu-uncensored", {
+                "name": "LU (Uncensored)",
+                "icon": "ollama-symbolic",
+                "description": `Locally Uncensored | ${luModel} ueber LM Studio, System-Prompt aus ${Config.options?.ai?.luPromptFile ?? ""}`,
+                "homepage": "https://lmstudio.ai",
+                "endpoint": `${root.lmstudioUrl}/chat/completions`,
+                "model": luModel,
+                "requires_key": false,
+                "api_format": "openai",
+                "system_prompt_file": root.luPromptPath,
+            });
+        }
+        root.modelList = Object.keys(root.models);
+    }
+
+    // System-Prompt fuer ein Modell: eigene Datei (LU) oder der normale
+    function systemPromptFor(model) {
+        if (model?.system_prompt_file && luPromptView.loaded) {
+            const custom = luPromptView.text().trim();
+            if (custom.length > 0) return custom;
+        }
+        return root.systemPrompt;
+    }
+
+    FileView {
+        id: luPromptView
+        path: root.luPromptPath.length > 0 ? root.luPromptPath : ""
+        watchChanges: true
+        onFileChanged: reload()
+    }
+
+    Process {
+        id: getLmStudioModels
+        running: true
+        command: ["bash", "-c", `${CF.FileUtils.trimFileProtocol(Directories.scriptPath)}/ai/show-lmstudio-models.sh '${root.lmstudioUrl}'`]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    if (text.trim().length === 0) return;
+                    root.addLmStudioModels(JSON.parse(text));
+                } catch (e) {
+                    console.log("[Ai] Could not parse LM Studio models:", e);
+                }
+            }
+        }
+    }
+
+    // LM Studio wird oft erst spaeter gestartet: alle 2 Minuten nachsehen, bis es da ist
+    Timer {
+        interval: 120000
+        repeat: true
+        running: !root.lmstudioFound && (Config.options?.ai?.lmstudioModels || Config.options?.ai?.luEnable)
+        onTriggered: getLmStudioModels.running = true
+    }
+
     Process {
         id: getDefaultPrompts
         running: true
@@ -609,7 +688,7 @@ Singleton {
             const endpoint = root.currentApiStrategy.buildEndpoint(model);
             const messageArray = root.messageIDs.map(id => root.messageByID[id]);
             const filteredMessageArray = messageArray.filter(message => message.role !== Ai.interfaceRole);
-            const data = root.currentApiStrategy.buildRequestData(model, filteredMessageArray, root.systemPrompt, root.temperature, root.tools[model.api_format][root.currentTool], root.pendingFilePath);
+            const data = root.currentApiStrategy.buildRequestData(model, filteredMessageArray, root.systemPromptFor(model), root.temperature, root.tools[model.api_format][root.currentTool], root.pendingFilePath);
             // console.log("[Ai] Request data: ", JSON.stringify(data, null, 2));
 
             let requestHeaders = {
