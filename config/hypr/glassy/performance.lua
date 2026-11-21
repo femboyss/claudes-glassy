@@ -9,7 +9,7 @@
 local G = GLASSY_GEN or {}
 local skipped = {}
 
-local function opt(path, value)
+local function opt(path, value)  -- nur fuer Optionen, die es sicher gibt
     -- path = "misc.vfr" -> hl.config({ misc = { vfr = value } })
     local t = value
     local parts = {}
@@ -19,11 +19,9 @@ local function opt(path, value)
     if not ok then table.insert(skipped, path) end
 end
 
--- Nur neu zeichnen, wenn sich wirklich etwas aendert (spart GPU im Leerlauf)
-opt("misc.vfr", true)
--- Spiele/Videos im Vollbild direkt an den Monitor geben (weniger Latenz, kein Compositing)
--- 2 = nur fuer Inhalte, die sich als Spiel/Video melden (sicherer als 1)
-opt("render.direct_scanout", 2)
+-- Hinweis: Hyprland meldet unbekannte Optionen als Config-Fehler, auch mit pcall.
+-- Deshalb stehen hier nur Optionen, die es in Hyprland 0.55 sicher gibt.
+-- (misc.vfr gibt es nicht mehr, Hyprland zeichnet inzwischen immer nur bei Aenderungen.)
 -- Fenster-Vorschau beim Ziehen: kein Neuberechnen pro Mausbewegung
 opt("misc.animate_mouse_windowdragging", false)
 opt("misc.animate_manual_resizes", false)

@@ -178,6 +178,7 @@ restart_session() {
     pkill -x qs 2>/dev/null || true
     pkill -x quickshell 2>/dev/null || true
     hyprctl reload >/dev/null 2>&1 || true
+    systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal >/dev/null 2>&1 || true
     sleep 0.5
     setsid -f qs -c ii >/dev/null 2>&1 || true
     setsid -f hypridle >/dev/null 2>&1 || true
@@ -263,6 +264,14 @@ do_install() {
     rm -rf "$CFG/quickshell/ii"
     cp -a "$HERE/config/quickshell/ii" "$CFG/quickshell/ii"
     c_ok "installiert: ~/.config/quickshell/ii (illogical-impulse + Glassy-Patches)"
+    # Portale (Bildschirm teilen) - nur diese eine Datei, Rest von dir bleibt
+    mkdir -p "$CFG/xdg-desktop-portal"
+    if [ -f "$CFG/xdg-desktop-portal/hyprland-portals.conf" ] && [ "$make_backup" = 1 ]; then
+        mkdir -p "$BACKUP/xdg-desktop-portal"
+        cp -a "$CFG/xdg-desktop-portal/hyprland-portals.conf" "$BACKUP/xdg-desktop-portal/"
+    fi
+    cp "$HERE/config/xdg-desktop-portal/hyprland-portals.conf" "$CFG/xdg-desktop-portal/"
+    c_ok "installiert: ~/.config/xdg-desktop-portal/hyprland-portals.conf (Bildschirm teilen)"
     rm -rf "$CFG/hypr/custom-defaults"
 
     # eigene Dateien zurueck
@@ -372,7 +381,7 @@ do_restore() {
     }
 
     local d
-    for d in "${DIRS[@]}" "${OLD_DIRS[@]}" quickshell illogical-impulse gtk-3.0/gtk.css gtk-4.0/gtk.css; do
+    for d in "${DIRS[@]}" "${OLD_DIRS[@]}" quickshell illogical-impulse gtk-3.0/gtk.css gtk-4.0/gtk.css xdg-desktop-portal/hyprland-portals.conf; do
         if [ -e "$src/$d" ]; then
             rm -rf "${CFG:?}/$d"
             mkdir -p "$(dirname "$CFG/$d")"

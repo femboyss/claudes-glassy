@@ -103,7 +103,16 @@ local S = {
         animate_mouse_windowdragging = false,
         enable_swallow          = false,
         focus_on_activate       = true,
-        middle_click_paste      = false,
+        on_focus_under_fullscreen = 2,
+        -- Quickshell-Sperrbildschirm: nach einem Shell-Absturz wieder entsperren koennen
+        allow_session_lock_restore = true,
+        session_lock_xray       = true,
+        mouse_move_enables_dpms = true,
+        key_press_enables_dpms  = true,
+    },
+
+    xwayland = {
+        force_zero_scaling = true,
     },
 
     input = {
@@ -129,7 +138,7 @@ local S = {
         zoom_rigid  = false,
     },
 }
-for _, name in ipairs({ "general", "decoration", "animations", "dwindle", "gestures", "misc", "input", "binds", "cursor" }) do
+for _, name in ipairs({ "general", "decoration", "animations", "dwindle", "gestures", "misc", "xwayland", "input", "binds", "cursor" }) do
     section(name, S[name])
 end
 if #errors > 0 then glassy_notify("look: " .. table.concat(errors, " | ")) end

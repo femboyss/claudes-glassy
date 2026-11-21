@@ -12,6 +12,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hypridle")
     hl.exec_cmd("dbus-update-activation-environment --all")
     hl.exec_cmd("sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+    -- Bildschirm teilen (Discord, OBS, Browser): Portale mit der Hyprland-Umgebung neu starten.
+    -- Sonst haengt oft noch das KDE-Portal aus der Plasma-Sitzung dran und die Auswahl kommt nie.
+    hl.exec_cmd("sleep 2 && systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal")
 
     -- Zwischenablage. Lag-Fix: Text meldet Quickshell selbst (onClipboardTextChanged),
     -- nur Bilder brauchen den IPC-Aufruf. Vorher startete JEDES Strg+C einen kompletten
