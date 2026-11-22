@@ -29,6 +29,9 @@ MouseArea {
             forceFieldFocus();
         }
     }
+    // claudes-glassy: Glas-Leisten statt voll deckender Flaechen
+    readonly property color colGlass: ColorUtils.transparentize(Appearance.m3colors.m3surfaceContainer, 0.3)
+
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton
     onPressed: mouse => {
@@ -102,7 +105,7 @@ MouseArea {
         anchors {
             horizontalCenter: parent.horizontalCenter
             bottom: parent.bottom
-            bottomMargin: 20
+            bottomMargin: 48
         }
         Behavior on anchors.bottomMargin {
             animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
@@ -110,6 +113,7 @@ MouseArea {
 
         scale: root.toolbarScale
         opacity: root.toolbarOpacity
+        colBackground: root.colGlass
 
         // Fingerprint
         Loader {
@@ -239,6 +243,7 @@ MouseArea {
         }
         scale: root.toolbarScale
         opacity: root.toolbarOpacity
+        colBackground: root.colGlass
 
         // Username
         IconAndTextPair {
@@ -300,12 +305,30 @@ MouseArea {
 
         scale: root.toolbarScale
         opacity: root.toolbarOpacity
+        colBackground: root.colGlass
 
         IconAndTextPair {
             visible: Battery.available
             icon: Battery.isCharging ? "bolt" : "battery_android_full"
             text: Math.round(Battery.percentage * 100)
             color: (Battery.isLow && !Battery.isCharging) ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
+        }
+
+        // claudes-glassy: Musik steuern direkt am Sperrbildschirm
+        IconToolbarButton {
+            visible: MprisController.activePlayer !== null && MprisController.canGoPrevious
+            onClicked: MprisController.previous()
+            text: "skip_previous"
+        }
+        IconToolbarButton {
+            visible: MprisController.activePlayer !== null && MprisController.canTogglePlaying
+            onClicked: MprisController.togglePlaying()
+            text: MprisController.isPlaying ? "pause" : "play_arrow"
+        }
+        IconToolbarButton {
+            visible: MprisController.activePlayer !== null && MprisController.canGoNext
+            onClicked: MprisController.next()
+            text: "skip_next"
         }
 
         IconToolbarButton {

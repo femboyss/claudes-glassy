@@ -288,6 +288,10 @@ switch() {
     if [ -f "$SHELL_CONFIG_FILE" ]; then
         enable_apps_shell=$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell' "$SHELL_CONFIG_FILE")
         if [ "$enable_apps_shell" == "false" ]; then
+            # claudes-glassy: Miku-Theme holt sich die Blautoene aus dem neuen Wallpaper
+            if [ "$(jq -r '.glassy.theme // empty' "$SHELL_CONFIG_FILE")" == "miku" ]; then
+                python3 "$SCRIPT_DIR/glassy_theme.py" apply miku >/dev/null 2>&1 &
+            fi
             echo "App and shell theming disabled, skipping matugen and color generation"
             return
         fi

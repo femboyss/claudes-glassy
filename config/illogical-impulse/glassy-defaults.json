@@ -22,7 +22,13 @@
         "floatStyleShadow": true
     },
     "background": {
-        "wallpaperPath": "@HOME@/Pictures/Wallpapers/claudes-glassy/01-aurora.jpg"
+        "wallpaperPath": "@HOME@/Pictures/Wallpapers/claudes-glassy/01-aurora.jpg",
+        "widgets": {
+            "clock": {
+                "style": "glassy",
+                "styleLocked": "glassy"
+            }
+        }
     },
     "language": {
         "ui": "de_DE"

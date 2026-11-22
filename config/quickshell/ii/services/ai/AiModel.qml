@@ -13,6 +13,7 @@ import QtQuick;
  * - key_get_description: Description of pricing and how to get an API key
  * - api_format: The API format of the model. Can be "openai" or "gemini". Default is "openai".
  * - extraParams: Extra parameters to be passed to the model. This is a JSON object.
+ * - system_prompt_file: (claudes-glassy) Datei mit eigenem System-Prompt nur fuer dieses Modell
  */
 
 QtObject {
@@ -29,4 +30,5 @@ QtObject {
     property string api_format: "openai"
     property var tools
     property var extraParams: ({})
+    property string system_prompt_file: ""
 }

@@ -9,6 +9,7 @@ import qs.modules.common.functions as CF
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -211,10 +212,18 @@ Variants {
                         easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
                     }
                 }
-                sourceComponent: GaussianBlur {
+                // claudes-glassy: MultiEffect statt GaussianBlur (Radius 100 = 201 Samples pro Pixel
+                // war auf 3 Monitoren richtig teuer). Sieht gleich aus, kostet einen Bruchteil.
+                sourceComponent: MultiEffect {
                     source: wallpaper
-                    radius: GlobalStates.screenLocked ? Config.options.lock.blur.radius : 0
-                    samples: radius * 2 + 1
+                    autoPaddingEnabled: false
+                    blurEnabled: true
+                    blurMax: 64
+                    blur: GlobalStates.screenLocked ? Math.min(1, Config.options.lock.blur.radius / 100) : 0
+                    saturation: GlobalStates.screenLocked ? 0.15 : 0
+                    Behavior on blur {
+                        NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
+                    }
 
                     Rectangle {
                         opacity: GlobalStates.screenLocked ? 1 : 0

@@ -20,7 +20,7 @@ in `vendor/ii-upstream-commit`) and puts the glassy look and fixes on top:
 |---|---|
 | **Overview** (SUPER+Tab) | All workspaces with window previews, drag windows between workspaces |
 | **Search / start menu** (tap SUPER) | Apps, calculator, commands, web search, clipboard, emoji |
-| **AI sidebar** (SUPER+K) | Chat with Gemini, Ollama (local) or any OpenAI-compatible API, translator |
+| **AI sidebar** (SUPER+K) | Chat with Gemini, Ollama, **LM Studio** (models detected automatically), **LU (Locally Uncensored)** (LM Studio model + own system prompt file), translator |
 | **Right sidebar** (SUPER+A / SUPER+N) | Notifications, quick toggles (Wi-Fi, Bluetooth, night light, game mode ...), calendar, to-do, timer |
 | **Themes** (SUPER+I -> Glassy) | Tokyo Night, Catppuccin Mocha, Full glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, **Hatsune Miku**, Black/White, **Material You** (colors from the wallpaper) |
 | **Miku wallpapers** (SUPER+I -> Glassy) | Optional: a new random Hatsune Miku wallpaper from wallhaven.cc on every start, SFW only, in exactly your screen resolution (no up- or downscaling). Turned on automatically with the Miku theme |
@@ -184,7 +184,7 @@ Quickshell-Shell von illogical-impulse (liegt in `config/quickshell/ii`) mit Gla
 
 - **Uebersicht (SUPER+Tab):** alle Workspaces mit Fenster-Vorschau, Fenster per Ziehen verschieben
 - **Suche / Startmenue (Super antippen):** Apps, Rechner, Befehle, Websuche, Zwischenablage, Emojis
-- **KI-Seitenleiste (SUPER+K):** Gemini, Ollama (lokal) oder jede OpenAI-kompatible API, Uebersetzer
+- **KI-Seitenleiste (SUPER+K):** Gemini, Ollama, **LM Studio** (Modelle werden automatisch gefunden), **LU (Locally Uncensored)** (LM-Studio-Modell mit eigenem System-Prompt aus `~/uncensored/system_prompt.txt`), jede OpenAI-kompatible API, Uebersetzer. Einstellungen: SUPER+I -> Glassy -> KI
 - **Seitenleiste rechts (SUPER+A / SUPER+N):** Mitteilungen, Schnellschalter (WLAN, Bluetooth,
   Nachtlicht, Spielmodus ...), Kalender, To-do, Timer
 - **Themes (SUPER+I -> Glassy):** Tokyo Night, Catppuccin Mocha, Komplett Glas, Nur Durchsicht,

@@ -20,7 +20,7 @@ AbstractBackgroundWidget {
     readonly property bool forceCenter: (GlobalStates.screenLocked && Config.options.lock.centerClock)
     readonly property bool shouldShow: (!Config.options.background.widgets.clock.showOnlyWhenLocked || GlobalStates.screenLocked)
     property bool wallpaperSafetyTriggered: false
-    needsColText: clockStyle === "digital"
+    needsColText: clockStyle === "digital" || clockStyle === "glassy"
     x: forceCenter ? ((root.screenWidth - root.width) / 2) : targetX
     y: forceCenter ? ((root.screenHeight - root.height) / 2) : targetY
     visibleWhenLocked: true
@@ -55,6 +55,21 @@ AbstractBackgroundWidget {
                     shown: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text !== ""
                     sourceComponent: CookieQuote {}
                 }
+            }
+        }
+
+        FadeLoader {
+            id: glassyClockLoader
+            anchors.horizontalCenter: parent.horizontalCenter
+            shown: root.clockStyle === "glassy" && (root.shouldShow)
+            fade: false
+            sourceComponent: GlassyClock {
+                id: glassyClock
+                darkBackground: (GlobalStates.screenLocked && Config.options.lock.blur.enable) ? true : root.dominantColorIsDark
+                // Schrift in der Wallpaper-Farbe: hell auf dunklem, tiefes Blau auf hellem Bild (kein Grau/Schwarz)
+                colText: Qt.hsla(Appearance.m3colors.m3primary.hslHue, Math.max(0.6, Appearance.m3colors.m3primary.hslSaturation), glassyClock.darkBackground ? 0.93 : 0.24, 1)
+                screenWidth: root.scaledScreenWidth
+                screenHeight: root.scaledScreenHeight
             }
         }
 
@@ -119,7 +134,7 @@ AbstractBackgroundWidget {
                 }
                 ClockStatusText {
                     id: lockStatusText
-                    shown: GlobalStates.screenLocked && Config.options.lock.showLockedText
+                    shown: GlobalStates.screenLocked && Config.options.lock.showLockedText && root.clockStyle !== "glassy"
                     statusIcon: "lock"
                     statusText: Translation.tr("Locked")
                 }

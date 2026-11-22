@@ -17,9 +17,11 @@
 #
 #  Nur Python-Standardbibliothek, laeuft ohne venv.
 # ==================================================================
+import colorsys
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -102,7 +104,7 @@ THEMES = {
         "roles": ("purple", "pink", "cyan"),
     },
     "miku": {
-        "label": "Hatsune Miku", "desc": "Teal/Tuerkis mit Pink, dunkles Grau",
+        "label": "Hatsune Miku", "desc": "Blautoene aus dem Wallpaper",
         "bg": "12181b", "bg_dark": "0d1214", "hl": "1f2d2e", "fg": "e2f5f3", "fg_dark": "b3cdcb",
         "comment": "5d7a78", "blue": "5ab4e5", "cyan": "86cecb", "purple": "b28ddb", "pink": "e12885",
         "green": "7fdca8", "red": "f0607a", "yellow": "f2d677", "orange": "f5a26b", "teal": "39c5bb",
@@ -139,6 +141,64 @@ def mix(a, b, t):
     ra, ga, ba = rgb(a)
     rb, gb, bb = rgb(b)
     return hexc(ra + (rb - ra) * t, ga + (gb - ga) * t, ba + (bb - ba) * t)
+
+
+# ------------------------------------------------------------------ Miku: Blautoene aus dem Wallpaper
+def _hls(h, l, s):
+    r, g, b = colorsys.hls_to_rgb(h % 1.0, max(0.0, min(1.0, l)), max(0.0, min(1.0, s)))
+    return hexc(r * 255, g * 255, b * 255).lstrip("#")
+
+
+def wallpaper_blue(path):
+    """Haeufigsten kraeftigen Blau-/Tuerkiston im Bild finden -> (hue, saturation) oder None.
+    Nutzt ImageMagick (magick/convert), kein Python-Modul noetig."""
+    tool = shutil.which("magick") or shutil.which("convert")
+    if not tool or not path or not os.path.isfile(path):
+        return None
+    try:
+        out = subprocess.run([tool, f"{path}[0]", "-resize", "96x96", "-colors", "24", "-format", "%c", "histogram:info:-"],
+                             capture_output=True, text=True, timeout=20).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    best, best_score = None, 0.0
+    for line in out.splitlines():
+        m = re.match(r"\s*(\d+):\s*\(\s*([\d.]+),\s*([\d.]+),\s*([\d.]+)", line)
+        if not m:
+            continue
+        n, r, g, b = int(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
+        if max(r, g, b) > 255:  # 16-bit Ausgabe
+            r, g, b = r / 257, g / 257, b / 257
+        h, l, sat = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+        # nur Tuerkis bis Blau (ca. 165-250 Grad), nicht grau, nicht fast schwarz/weiss
+        if not (0.46 <= h <= 0.70) or sat < 0.22 or l < 0.15 or l > 0.92:
+            continue
+        score = n * sat * (1.0 - abs(l - 0.55))
+        if score > best_score:
+            best, best_score = (h, sat), score
+    return best
+
+
+def miku_palette(path):
+    """Miku-Theme: komplette Palette nur aus dem Blauton des Wallpapers (kein Grau, kein Pink).
+    Faellt auf die feste Miku-Palette zurueck, wenn im Bild kein Blau ist."""
+    base = dict(THEMES["miku"])
+    found = wallpaper_blue(path)
+    if not found:
+        return base
+    h, sat = found
+    sat = max(0.55, min(0.9, sat))
+    h2 = max(0.45, h - 0.035)   # etwas tuerkiser
+    h3 = min(0.72, h + 0.055)   # etwas tiefer blau
+    base.update({
+        "desc": "Blautoene aus dem Wallpaper",
+        "bg": _hls(h, 0.085, 0.42), "bg_dark": _hls(h, 0.06, 0.45), "hl": _hls(h, 0.17, 0.38),
+        "fg": _hls(h, 0.94, 0.55), "fg_dark": _hls(h, 0.80, 0.35), "comment": _hls(h, 0.50, 0.22),
+        "blue": _hls(h, 0.68, sat), "cyan": _hls(h2, 0.76, sat), "purple": _hls(h3, 0.74, sat * 0.9),
+        "teal": _hls(h2, 0.62, sat), "pink": _hls(h3, 0.80, sat * 0.7),
+        "on_accent": _hls(h, 0.07, 0.5),
+        "roles": ("blue", "cyan", "purple"),
+    })
+    return base
 
 
 # ------------------------------------------------------------------ Config
@@ -421,14 +481,16 @@ def apply(name, reload_hypr=True):
         return 0
 
     t = THEMES[name]
-    colors = m3_from_palette(t)
-
-    # Miku-Theme: "bei jedem Start neues Miku-Wallpaper" einschalten und gleich eins holen
     miku_fetch = False
     if name == "miku":
-        deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], True)
         cur_wall = deep_get(cfg, ["background", "wallpaperPath"], "") or ""
-        miku_fetch = "/miku-" not in cur_wall
+        # Farben: nur die Blautoene des aktuellen Wallpapers
+        t = miku_palette(cur_wall)
+        # beim ersten Umschalten auf Miku: "neues Miku-Wallpaper bei jedem Start" an + gleich eins holen
+        if previous != "miku":
+            deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], True)
+            miku_fetch = "/miku-" not in cur_wall
+    colors = m3_from_palette(t)
     term = term_from_palette(t)
 
     # Statisches Theme: matugen soll beim Wallpaper-Wechsel NICHT drueberschreiben
@@ -479,7 +541,8 @@ def sync(reload_hypr=True):
     if name == MATERIAL:
         border = border_from_m3(read_generated_colors())
     else:
-        c = m3_from_palette(THEMES[name])
+        t = miku_palette(deep_get(cfg, ["background", "wallpaperPath"], "") or "") if name == "miku" else THEMES[name]
+        c = m3_from_palette(t)
         border = (c["primary"], c["secondary"], c["tertiary"], c["surface_container_high"])
     hypr_values(cfg, border)
     if reload_hypr and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):

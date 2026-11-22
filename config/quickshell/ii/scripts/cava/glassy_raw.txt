@@ -1,0 +1,16 @@
+# claudes-glassy: cava fuer die Musik-Uhr (Desktop + Sperrbildschirm)
+[general]
+framerate = 40
+autosens = 1
+bars = 36
+
+[output]
+method = raw
+raw_target = /dev/stdout
+data_format = ascii
+ascii_max_range = 1000
+channels = mono
+mono_option = average
+
+[smoothing]
+noise_reduction = 55

@@ -209,6 +209,65 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "neurology"
+        title: "KI (SUPER+K): LM Studio und LU"
+
+        StyledText {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            color: Appearance.colors.colSubtext
+            text: "In LM Studio unter Developer den Server starten (Port 1234) und \"Just-in-Time Model Loading\" einschalten. Dann tauchen deine Modelle in der KI-Seitenleiste auf, oben ueber das Modell-Symbol oder /model. \"LU (Uncensored)\" nimmt dasselbe Modell mit dem System-Prompt aus deiner LU-Datei. Nach Aenderungen hier: Shell neu starten."
+        }
+
+        ConfigSwitch {
+            buttonIcon: "dns"
+            text: "Modelle aus LM Studio anzeigen"
+            checked: Config.options.ai.lmstudioModels
+            onCheckedChanged: Config.options.ai.lmstudioModels = checked
+        }
+
+        ConfigSwitch {
+            buttonIcon: "lock_open"
+            text: "LU (Locally Uncensored) anzeigen"
+            checked: Config.options.ai.luEnable
+            onCheckedChanged: Config.options.ai.luEnable = checked
+        }
+
+        ContentSubsection {
+            title: "LU: Datei mit dem System-Prompt"
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: "~/uncensored/system_prompt.txt"
+                text: Config.options.ai.luPromptFile
+                wrapMode: TextEdit.Wrap
+                onTextChanged: Config.options.ai.luPromptFile = text
+            }
+        }
+
+        ContentSubsection {
+            title: "LU: Modell (leer = erstes Modell in LM Studio)"
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: "z. B. qwen3-coder-30b-a3b-instruct-abliterated"
+                text: Config.options.ai.luModel
+                wrapMode: TextEdit.Wrap
+                onTextChanged: Config.options.ai.luModel = text
+            }
+        }
+
+        ContentSubsection {
+            title: "LM Studio Adresse"
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: "http://localhost:1234/v1"
+                text: Config.options.ai.lmstudioUrl
+                wrapMode: TextEdit.Wrap
+                onTextChanged: Config.options.ai.lmstudioUrl = text
+            }
+        }
+    }
+
+    ContentSection {
         icon: "system_update_alt"
         title: "claudes-glassy"
 
