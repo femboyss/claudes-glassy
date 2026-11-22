@@ -103,7 +103,7 @@ AbstractBackgroundWidget {
                 }
             }
             StyledText {
-                text: String(Weather.data?.city ?? "").toUpperCase()
+                text: typeof Weather.data?.city === "string" ? Weather.data.city.toUpperCase() : ""
                 color: ColorUtils.transparentize(root.colText, 0.3)
                 style: Text.Raised
                 styleColor: root.colShadowText
