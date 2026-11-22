@@ -81,8 +81,20 @@ apply_anyterm() {
 
   sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR/user/generated/terminal/sequences.txt"
 
+  # claudes-glassy: Terminals von KDE-Diensten auslassen. kwrited (laeuft in kded6) haelt
+  # ein eigenes pts offen und zeigt alles, was dort ankommt, als Benachrichtigung
+  # "Dienst fuer lokale Systemnachrichten" an - voller Escape-Sequenzen.
+  local skip=" "
+  for pid in $(pgrep -x 'kded6|kded5|kwrited' 2>/dev/null); do
+    for fd in /proc/"$pid"/fd/*; do
+      t="$(readlink "$fd" 2>/dev/null)"
+      [[ $t =~ ^/dev/pts/[0-9]+$ ]] && skip+="$t "
+    done
+  done
+
   for file in /dev/pts/*; do
-    if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then
+    [[ "$skip" == *" $file "* ]] && continue
+    if [[ $file =~ ^/dev/pts/[0-9]+$ ]] && [ -w "$file" ]; then
       {
       cat "$STATE_DIR"/user/generated/terminal/sequences.txt >"$file"
       } & disown || true
