@@ -25,6 +25,26 @@ AbstractBackgroundWidget {
     y: forceCenter ? ((root.screenHeight - root.height) / 2) : targetY
     visibleWhenLocked: true
 
+    // claudes-glassy: Uhr immer verschiebbar (ausser auf dem Sperrbildschirm, da ist sie zentriert).
+    // Einmal ziehen -> Platzierung wird "frei", die Position bleibt gespeichert.
+    draggable: !forceCenter
+    Connections {
+        target: root
+        function onReleased() {
+            const nx = root.x;
+            const ny = root.y;
+            root.targetX = nx;
+            root.targetY = ny;
+            root.configEntry.x = nx;
+            root.configEntry.y = ny;
+            if (root.configEntry.placementStrategy !== "free")
+                root.configEntry.placementStrategy = "free";
+            // Bindung wiederherstellen, damit die Uhr beim Sperren wieder in die Mitte springt
+            root.x = Qt.binding(() => root.forceCenter ? ((root.screenWidth - root.width) / 2) : root.targetX);
+            root.y = Qt.binding(() => root.forceCenter ? ((root.screenHeight - root.height) / 2) : root.targetY);
+        }
+    }
+
     property var textHorizontalAlignment: {
         if (!Config.options.background.widgets.clock.digital.adaptiveAlignment || root.forceCenter || Config.options.background.widgets.clock.digital.vertical) 
             return Text.AlignHCenter;
