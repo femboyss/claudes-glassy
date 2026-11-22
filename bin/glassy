@@ -15,6 +15,9 @@
 #    glassy --reload      Shell (Quickshell) und Hyprland neu laden
 #    glassy --theme       Themes anzeigen   (glassy --theme catppuccin: Theme setzen,
 #                         glassy --theme material: Farben aus dem Wallpaper)
+#    glassy --miku-wall   neues Hatsune-Miku-Wallpaper in deiner Aufloesung (--startup: nur wenn eingeschaltet)
+#    glassy --miku-res    Aufloesung fuer Miku-Wallpaper (glassy --miku-res 1920x1080, ohne Wert: auto)
+#    glassy --miku-start  Miku-Wallpaper bei jedem Start an/aus
 #    glassy --perf        Performance-Modus an/aus (weniger Blur/Schatten)
 #    glassy --logs        Log der Shell (Quickshell) anzeigen
 #    glassy --fix-venv    Python-Umgebung neu bauen (wenn Material You nicht geht)
@@ -253,6 +256,30 @@ fix_venv() {   # Python-Umgebung fuer Material You / Farb-Erzeugung neu bauen
     "$venv/bin/python" -c "import materialyoucolor, PIL" && c_ok "Python-Umgebung ok - Material You geht jetzt (glassy --theme material)"
 }
 
+MIKU_SH="$HOME/.config/quickshell/ii/scripts/colors/random/random_miku_wall.sh"
+
+set_glassy() {   # $1 = Schluessel, $2 = JSON-Wert
+    local tmp; tmp="$(mktemp)"
+    jq --arg k "$1" --argjson v "$2" '.glassy[$k] = $v' "$SHELL_CONFIG" > "$tmp" && mv "$tmp" "$SHELL_CONFIG"
+}
+
+miku_res() {
+    local r="${1:-auto}"
+    if [ "$r" != auto ] && ! [[ "$r" =~ ^[0-9]+x[0-9]+$ ]]; then
+        c_err "Format: BREITExHOEHE, z.B. 1920x1080 (oder auto)"; return 1
+    fi
+    set_glassy mikuResolution "\"$r\""
+    c_ok "Miku-Wallpaper-Aufloesung: $r"
+}
+
+miku_start() {
+    local now new
+    now="$(jq -r '.glassy.mikuWallpaperOnStart // false' "$SHELL_CONFIG" 2>/dev/null)"
+    [ "$now" = true ] && new=false || new=true
+    set_glassy mikuWallpaperOnStart "$new"
+    c_ok "Neues Miku-Wallpaper bei jedem Start: $( [ "$new" = true ] && echo an || echo aus)"
+}
+
 toggle_perf() {
     local now new
     now="$(jq -r '.glassy.performanceMode // false' "$SHELL_CONFIG" 2>/dev/null)"
@@ -276,6 +303,9 @@ case "${1:---help}" in
                           if [ $# -eq 0 ]; then python3 "$THEME_PY" list
                           else python3 "$THEME_PY" apply "$1"; fi ;;
     --perf|perf)          toggle_perf ;;
+    --miku-wall|miku-wall) shift; bash "$MIKU_SH" "$@" ;;
+    --miku-res|miku-res)  shift; miku_res "${1:-auto}" ;;
+    --miku-start|miku-start) miku_start ;;
     --fix-venv|fix-venv)  fix_venv ;;
     --logs|logs)          qs -c ii log 2>/dev/null | tail -n 80 || c_warn "Kein Log (laeuft die Shell?)" ;;
     --upgrade|upgrade)    fetch_branch "$(channel)" && install_now ;;
@@ -283,5 +313,5 @@ case "${1:---help}" in
     --check|check)        shift; check_updates "$@" ;;
     --whatsnew|whatsnew)  whatsnew ;;
     --watch|watch)        watch_loop ;;
-    --help|-h|help|*)     sed -n '3,25p' "$0" | sed 's/^# \{0,1\}//' ;;
+    --help|-h|help|*)     sed -n '3,28p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

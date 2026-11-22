@@ -101,6 +101,14 @@ THEMES = {
         "on_accent": "21222c", "glass": 1.0, "term": 0.75,
         "roles": ("purple", "pink", "cyan"),
     },
+    "miku": {
+        "label": "Hatsune Miku", "desc": "Teal/Tuerkis mit Pink, dunkles Grau",
+        "bg": "12181b", "bg_dark": "0d1214", "hl": "1f2d2e", "fg": "e2f5f3", "fg_dark": "b3cdcb",
+        "comment": "5d7a78", "blue": "5ab4e5", "cyan": "86cecb", "purple": "b28ddb", "pink": "e12885",
+        "green": "7fdca8", "red": "f0607a", "yellow": "f2d677", "orange": "f5a26b", "teal": "39c5bb",
+        "on_accent": "0d1214", "glass": 1.0, "term": 0.72,
+        "roles": ("teal", "cyan", "pink"),
+    },
     "mono": {
         "label": "Schwarz/Weiss", "desc": "Minimal, keine Farben",
         "bg": "141414", "bg_dark": "0e0e0e", "hl": "2a2a2a", "fg": "f2f2f2", "fg_dark": "cfcfcf",
@@ -414,6 +422,13 @@ def apply(name, reload_hypr=True):
 
     t = THEMES[name]
     colors = m3_from_palette(t)
+
+    # Miku-Theme: "bei jedem Start neues Miku-Wallpaper" einschalten und gleich eins holen
+    miku_fetch = False
+    if name == "miku":
+        deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], True)
+        cur_wall = deep_get(cfg, ["background", "wallpaperPath"], "") or ""
+        miku_fetch = "/miku-" not in cur_wall
     term = term_from_palette(t)
 
     # Statisches Theme: matugen soll beim Wallpaper-Wechsel NICHT drueberschreiben
@@ -449,6 +464,11 @@ def apply(name, reload_hypr=True):
     hypr_values(cfg, (colors["primary"], colors["secondary"], colors["tertiary"], colors["surface_container_high"]))
     kitty_theme(colors, term, t["term"])
     reload_apps(reload_hypr)
+    if miku_fetch:
+        miku = os.path.join(SCRIPT_DIR, "random", "random_miku_wall.sh")
+        if os.path.exists(miku):
+            subprocess.Popen(["bash", miku], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
     print(f"Theme: {t['label']}")
     return 0
 

@@ -22,7 +22,8 @@ in `vendor/ii-upstream-commit`) and puts the glassy look and fixes on top:
 | **Search / start menu** (tap SUPER) | Apps, calculator, commands, web search, clipboard, emoji |
 | **AI sidebar** (SUPER+K) | Chat with Gemini, Ollama (local) or any OpenAI-compatible API, translator |
 | **Right sidebar** (SUPER+A / SUPER+N) | Notifications, quick toggles (Wi-Fi, Bluetooth, night light, game mode ...), calendar, to-do, timer |
-| **Themes** (SUPER+I -> Glassy) | Tokyo Night, Catppuccin Mocha, Full glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, Black/White, **Material You** (colors from the wallpaper) |
+| **Themes** (SUPER+I -> Glassy) | Tokyo Night, Catppuccin Mocha, Full glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, **Hatsune Miku**, Black/White, **Material You** (colors from the wallpaper) |
+| **Miku wallpapers** (SUPER+I -> Glassy) | Optional: a new random Hatsune Miku wallpaper from wallhaven.cc on every start, SFW only, in exactly your screen resolution (no up- or downscaling). Turned on automatically with the Miku theme |
 | **Two styles** (CTRL+SUPER+P) | Glassy (illogical-impulse) or Windows 11 (taskbar + start menu at the bottom) |
 | **Lock screen, session menu, OSD, media controls, screen snip, OCR, recording** | From the shell |
 
@@ -74,6 +75,9 @@ After the first install you have the `glassy` command:
 | `glassy --settings` | Open the settings app (same as SUPER+I) |
 | `glassy --reload` | Restart the shell and reload Hyprland |
 | `glassy --theme [name]` | List themes / set one (`glassy --theme catppuccin`, `glassy --theme material`) |
+| `glassy --miku-wall` | Get a new Miku wallpaper now |
+| `glassy --miku-start` | Toggle a new Miku wallpaper on every start |
+| `glassy --miku-res [WxH]` | Force a resolution (`glassy --miku-res 2560x1440`), no value = auto (largest monitor) |
 | `glassy --perf` | Toggle performance mode |
 | `glassy --logs` | Show the shell log |
 
@@ -184,7 +188,11 @@ Quickshell-Shell von illogical-impulse (liegt in `config/quickshell/ii`) mit Gla
 - **Seitenleiste rechts (SUPER+A / SUPER+N):** Mitteilungen, Schnellschalter (WLAN, Bluetooth,
   Nachtlicht, Spielmodus ...), Kalender, To-do, Timer
 - **Themes (SUPER+I -> Glassy):** Tokyo Night, Catppuccin Mocha, Komplett Glas, Nur Durchsicht,
-  Nord, Gruvbox, Rose Pine, Dracula, Schwarz/Weiss und **Material You** (Farben aus dem Wallpaper)
+  Nord, Gruvbox, Rose Pine, Dracula, **Hatsune Miku**, Schwarz/Weiss und **Material You** (Farben aus dem Wallpaper)
+- **Miku-Wallpaper (SUPER+I -> Glassy):** auf Wunsch bei jedem Start ein neues, zufaelliges
+  Hatsune-Miku-Wallpaper von wallhaven.cc (nur SFW), exakt in deiner Bildschirm-Aufloesung, kein
+  Hoch- oder Runterskalieren. Geht beim Miku-Theme automatisch an. Befehle: `glassy --miku-wall`
+  (jetzt ein neues), `glassy --miku-start` (an/aus), `glassy --miku-res 1920x1080` (Aufloesung festlegen)
 - **Zwei Stile (Strg+Super+P):** Glassy oder Windows 11 (Taskleiste + Startmenue unten)
 - Sperrbildschirm, Sitzungsmenue, Lautstaerke-Anzeige, Mediensteuerung, Screenshot mit
   Fenster-Erkennung, Texterkennung (OCR), Bildschirmaufnahme

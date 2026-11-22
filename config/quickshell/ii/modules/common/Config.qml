@@ -82,7 +82,10 @@ Singleton {
 
             // claudes-glassy: Theme + Performance (SUPER+I -> Glassy)
             property JsonObject glassy: JsonObject {
-                property string theme: "tokyo" // tokyo, catppuccin, glass, clear, nord, gruvbox, rosepine, dracula, mono, material
+                property string theme: "tokyo" // tokyo, catppuccin, glass, clear, nord, gruvbox, rosepine, dracula, miku, mono, material
+                property bool mikuWallpaperOnStart: false // bei jedem Hyprland-Start neues Miku-Wallpaper (wallhaven.cc)
+                property string mikuResolution: "auto" // "auto" = groesster Monitor, sonst z.B. "1920x1080"
+                property int mikuKeep: 15 // so viele alte Miku-Wallpaper behalten
                 property bool borderAnimation: false // rotierender Rahmen-Verlauf (kostet GPU bei hoher Hz-Zahl)
                 property bool performanceMode: false // weniger Blur, keine Schatten, kuerzere Animationen
             }

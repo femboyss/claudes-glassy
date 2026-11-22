@@ -66,6 +66,7 @@ ContentPage {
                 { value: "gruvbox", displayName: "Gruvbox", icon: "local_fire_department" },
                 { value: "rosepine", displayName: "Rose Pine", icon: "local_florist" },
                 { value: "dracula", displayName: "Dracula", icon: "bedtime" },
+                { value: "miku", displayName: "Hatsune Miku", icon: "music_note" },
                 { value: "mono", displayName: "Schwarz/Weiss", icon: "contrast" },
                 { value: "material", displayName: "Material You", icon: "wallpaper" }
             ]
@@ -98,6 +99,39 @@ ContentPage {
             usePercentTooltip: true
             textWidth: 200
             onValueChanged: Config.options.appearance.transparency.contentTransparency = value
+        }
+
+        ContentSubsection {
+            title: "Miku-Wallpaper"
+
+            StyledText {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Appearance.colors.colSubtext
+                text: "Holt bei jedem Start ein zufaelliges Hatsune-Miku-Wallpaper von wallhaven.cc (nur SFW), exakt in deiner Bildschirm-Aufloesung - kein Hoch- oder Runterskalieren. Wird beim Miku-Theme automatisch eingeschaltet."
+            }
+
+            ConfigSwitch {
+                buttonIcon: "wallpaper_slideshow"
+                text: "Bei jedem Start neues Miku-Wallpaper"
+                checked: Config.options.glassy.mikuWallpaperOnStart
+                onCheckedChanged: Config.options.glassy.mikuWallpaperOnStart = checked
+            }
+
+            MaterialTextArea {
+                Layout.fillWidth: true
+                placeholderText: "Aufloesung: auto oder z.B. 1920x1080"
+                text: Config.options.glassy.mikuResolution
+                wrapMode: TextEdit.NoWrap
+                onTextChanged: Config.options.glassy.mikuResolution = text.trim().length > 0 ? text.trim() : "auto"
+            }
+
+            RippleButtonWithIcon {
+                Layout.fillWidth: true
+                materialIcon: "shuffle"
+                mainText: "Jetzt neues Miku-Wallpaper"
+                onClicked: Quickshell.execDetached([page.glassyBin, "--miku-wall"])
+            }
         }
 
         ContentSubsection {
