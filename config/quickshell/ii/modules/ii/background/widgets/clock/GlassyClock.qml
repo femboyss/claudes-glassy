@@ -15,7 +15,7 @@ Item {
     id: root
 
     readonly property bool locked: GlobalStates.screenLocked
-    readonly property real sizeFactor: locked ? 1.3 : 1.0
+    property real sizeFactor: locked ? 1.3 : 1.0
     Behavior on sizeFactor {
         animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
     }
