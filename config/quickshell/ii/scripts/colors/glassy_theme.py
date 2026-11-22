@@ -431,6 +431,115 @@ def glass_levels(glass):
     return round(bg_t, 3), round(content_t, 3)
 
 
+# ------------------------------------------------------------------ Qt/KDE-Apps (Dolphin, Kate, Ark ...)
+KDEGLOBALS = os.path.join(XDG_CONFIG, "kdeglobals")
+DARKLYRC = os.path.join(XDG_CONFIG, "darklyrc")
+SCHEME_DIR = os.path.join(HOME, ".local", "share", "color-schemes")
+
+
+def _kde_rgb(c):
+    r, g, b = rgb(c)
+    return f"{r},{g},{b}"
+
+
+def _ini_set(path, group, values):
+    """Einfache INI-Aenderung ohne die restliche Datei anzufassen (Gross-/Kleinschreibung bleibt)."""
+    try:
+        lines = open(path, encoding="utf-8").read().splitlines()
+    except OSError:
+        lines = []
+    header = f"[{group}]"
+    try:
+        start = lines.index(header)
+        end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("[")), len(lines))
+    except ValueError:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.append(header)
+        start, end = len(lines) - 1, len(lines)
+    done = set()
+    for i in range(start + 1, end):
+        key = lines[i].split("=", 1)[0]
+        if key in values:
+            lines[i] = f"{key}={values[key]}"
+            done.add(key)
+    extra = [f"{k}={v}" for k, v in values.items() if k not in done]
+    lines[end:end] = extra
+    write(path, "\n".join(lines) + "\n")
+
+
+def kde_scheme_text(c, name):
+    """KDE-Farbschema aus den Material-3-Rollen."""
+    view = {
+        "BackgroundNormal": c["surface_container_low"], "BackgroundAlternate": c["surface_container"],
+        "ForegroundNormal": c["on_surface"], "ForegroundInactive": c["on_surface_variant"],
+        "ForegroundActive": c["primary"], "ForegroundLink": c["primary"], "ForegroundVisited": c["tertiary"],
+        "ForegroundNegative": c["error"], "ForegroundNeutral": c["tertiary"], "ForegroundPositive": c["success"],
+        "DecorationFocus": c["primary"], "DecorationHover": c["secondary"],
+    }
+    groups = {
+        "View": view,
+        "Window": {**view, "BackgroundNormal": c["surface"], "BackgroundAlternate": c["surface_container_low"]},
+        "Header": {**view, "BackgroundNormal": c["surface"], "BackgroundAlternate": c["surface_container_low"]},
+        "Button": {**view, "BackgroundNormal": c["surface_container_high"], "BackgroundAlternate": c["surface_container_highest"]},
+        "Tooltip": {**view, "BackgroundNormal": c["surface_container_highest"]},
+        "Complementary": {**view, "BackgroundNormal": c["surface_dim"]},
+        "Selection": {**view, "BackgroundNormal": c["primary"], "BackgroundAlternate": c["primary_container"],
+                      "ForegroundNormal": c["on_primary"], "ForegroundInactive": c["on_primary_container"],
+                      "ForegroundActive": c["on_primary"]},
+    }
+    out = [f"[General]", f"ColorScheme={name}", f"Name={name}", "shadeSortColumn=true", ""]
+    for g, vals in groups.items():
+        out.append(f"[Colors:{g}]")
+        out += [f"{k}={_kde_rgb(v)}" for k, v in vals.items()]
+        out.append("")
+    out += ["[WM]", f"activeBackground={_kde_rgb(c['surface'])}", f"activeForeground={_kde_rgb(c['on_surface'])}",
+            f"inactiveBackground={_kde_rgb(c['surface_dim'])}", f"inactiveForeground={_kde_rgb(c['on_surface_variant'])}", ""]
+    return "\n".join(out)
+
+
+def qt_apps(cfg, colors, glass):
+    """Dolphin & Co.: Darkly-Stil mit durchsichtigem Hintergrund (Blur macht Hyprland) + Theme-Farben.
+    Abschaltbar: glassy.qtApps = false."""
+    if not deep_get(cfg, ["glassy", "qtApps"], True):
+        return
+    # 1) Farbschema - zwei Namen im Wechsel, sonst wendet plasma-apply-colorscheme "gleiches Schema" nicht neu an
+    cur = ""
+    try:
+        m = re.search(r"^ColorScheme=(.*)$", open(KDEGLOBALS, encoding="utf-8").read(), re.M)
+        cur = m.group(1).strip() if m else ""
+    except OSError:
+        pass
+    name = "GlassyB" if cur == "GlassyA" else "GlassyA"
+    text = kde_scheme_text(colors, name)
+    write(os.path.join(SCHEME_DIR, f"{name}.colors"), text)
+    if shutil.which("plasma-apply-colorscheme"):
+        subprocess.run(["plasma-apply-colorscheme", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        group = None
+        for line in text.splitlines():
+            if line.startswith("["):
+                group = line[1:-1]
+            elif "=" in line and group and not (group == "General" and line.startswith("Name=")):
+                k, v = line.split("=", 1)
+                _ini_set(KDEGLOBALS, group, {k: v})
+    # 2) Stil: Darkly (falls installiert) + Deckkraft der Flaechen
+    has_darkly = any(os.path.exists(p) for p in (
+        "/usr/lib/qt6/plugins/styles/darkly6.so", "/usr/lib/qt6/plugins/styles/darkly.so"))
+    if has_darkly:
+        _ini_set(KDEGLOBALS, "KDE", {"widgetStyle": "Darkly"})
+        # glass 1.0 -> leicht durchsichtig, kleiner -> mehr Durchsicht
+        view = max(25, min(80, round(62 - (1.0 - glass) * 50)))
+        _ini_set(DARKLYRC, "Style", {
+            "DolphinViewOpacity": view,
+            "DolphinSidebarOpacity": max(20, view - 15),
+            "ToolBarOpacity": view,
+            "TabBarOpacity": view,
+            "MenuBarOpacity": view,
+            "MenuOpacity": max(60, view + 20),
+        })
+
+
 # ------------------------------------------------------------------ Befehle
 def apply(name, reload_hypr=True):
     if name not in ALL_NAMES:
@@ -525,6 +634,7 @@ def apply(name, reload_hypr=True):
 
     hypr_values(cfg, (colors["primary"], colors["secondary"], colors["tertiary"], colors["surface_container_high"]))
     kitty_theme(colors, term, t["term"])
+    qt_apps(cfg, colors, t["glass"])
     reload_apps(reload_hypr)
     if miku_fetch:
         miku = os.path.join(SCRIPT_DIR, "random", "random_miku_wall.sh")

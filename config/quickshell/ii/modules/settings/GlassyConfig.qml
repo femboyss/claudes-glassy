@@ -101,6 +101,20 @@ ContentPage {
             onValueChanged: Config.options.appearance.transparency.contentTransparency = value
         }
 
+        ConfigSwitch {
+            buttonIcon: "folder_open"
+            text: "Qt-Apps (Dolphin, Kate, Ark) im Glas-Look + Theme-Farben"
+            checked: Config.options.glassy.qtApps
+            onCheckedChanged: {
+                if (Config.options.glassy.qtApps === checked) return;
+                Config.options.glassy.qtApps = checked;
+                if (checked) page.runTheme(["apply", Config.options.glassy.theme]);
+            }
+            StyledToolTip {
+                text: "Braucht den Qt-Stil Darkly (installiert glassy --update automatisch). Dolphin einmal neu starten."
+            }
+        }
+
         ContentSubsection {
             title: "Miku-Wallpaper"
 

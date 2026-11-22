@@ -117,6 +117,13 @@ install_packages() {
     done
     rm -rf "$build"
 
+    # Darkly (Qt-Stil): Dolphin & Co. durchsichtig mit Blur. Fehlt manchmal trotz Metapaket.
+    if ! pacman -Q darkly-bin >/dev/null 2>&1 && ! pacman -Q darkly >/dev/null 2>&1; then
+        c_info "  darkly-bin (Glas-Look fuer Dolphin, Kate, Ark ...)"
+        if [ "$AUTO" = 1 ]; then yay -S --needed --noconfirm darkly-bin; else yay -S --needed darkly-bin; fi \
+            || c_warn "  darkly-bin: Fehler (Qt-Apps bleiben deckend)"
+    fi
+
     if [ "$AUTO" = 1 ]; then
         sudo pacman -S --needed --noconfirm "${EXTRA_PKGS[@]}"
     else
