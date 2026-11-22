@@ -29,6 +29,9 @@ MouseArea {
             forceFieldFocus();
         }
     }
+    // claudes-glassy: Glas-Leisten statt voll deckender Flaechen
+    readonly property color colGlass: ColorUtils.transparentize(Appearance.m3colors.m3surfaceContainer, 0.3)
+
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton
     onPressed: mouse => {
@@ -102,7 +105,7 @@ MouseArea {
         anchors {
             horizontalCenter: parent.horizontalCenter
             bottom: parent.bottom
-            bottomMargin: 20
+            bottomMargin: 48
         }
         Behavior on anchors.bottomMargin {
             animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
@@ -110,6 +113,7 @@ MouseArea {
 
         scale: root.toolbarScale
         opacity: root.toolbarOpacity
+        colBackground: root.colGlass
 
         // Fingerprint
         Loader {
@@ -239,6 +243,7 @@ MouseArea {
         }
         scale: root.toolbarScale
         opacity: root.toolbarOpacity
+        colBackground: root.colGlass
 
         // Username
         IconAndTextPair {
@@ -300,6 +305,7 @@ MouseArea {
 
         scale: root.toolbarScale
         opacity: root.toolbarOpacity
+        colBackground: root.colGlass
 
         IconAndTextPair {
             visible: Battery.available

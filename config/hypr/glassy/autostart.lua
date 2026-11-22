@@ -25,6 +25,9 @@ hl.on("hyprland.start", function()
     -- Cursor
     hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 24")
 
+    -- claudes-glassy: neues Miku-Wallpaper (nur wenn SUPER+I -> Glassy -> Miku-Wallpaper an ist)
+    hl.exec_cmd("sleep 3 && " .. HOME .. "/.local/bin/glassy --miku-wall --startup")
+
     -- claudes-glassy: Update-Benachrichtigung (SUPER+I -> Glassy)
     hl.exec_cmd(HOME .. "/.local/bin/glassy --watch")
 end)

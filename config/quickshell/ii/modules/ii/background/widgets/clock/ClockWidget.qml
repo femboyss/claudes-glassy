@@ -59,6 +59,14 @@ AbstractBackgroundWidget {
         }
 
         FadeLoader {
+            id: glassyClockLoader
+            anchors.horizontalCenter: parent.horizontalCenter
+            shown: root.clockStyle === "glassy" && (root.shouldShow)
+            fade: false
+            sourceComponent: GlassyClock {}
+        }
+
+        FadeLoader {
             id: digitalClockLoader
             anchors.horizontalCenter: parent.horizontalCenter
             shown: root.clockStyle === "digital" && (root.shouldShow)
@@ -119,7 +127,7 @@ AbstractBackgroundWidget {
                 }
                 ClockStatusText {
                     id: lockStatusText
-                    shown: GlobalStates.screenLocked && Config.options.lock.showLockedText
+                    shown: GlobalStates.screenLocked && Config.options.lock.showLockedText && root.clockStyle !== "glassy"
                     statusIcon: "lock"
                     statusText: Translation.tr("Locked")
                 }

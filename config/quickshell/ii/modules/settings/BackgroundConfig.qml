@@ -140,6 +140,11 @@ ContentPage {
                             displayName: Translation.tr("Cookie"),
                             icon: "cookie",
                             value: "cookie"
+                        },
+                        {
+                            displayName: "Glassy",
+                            icon: "blur_on",
+                            value: "glassy"
                         }
                     ]
                 }
@@ -163,6 +168,11 @@ ContentPage {
                             displayName: Translation.tr("Cookie"),
                             icon: "cookie",
                             value: "cookie"
+                        },
+                        {
+                            displayName: "Glassy",
+                            icon: "blur_on",
+                            value: "glassy"
                         }
                     ]
                 }
