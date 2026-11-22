@@ -26,8 +26,8 @@ Item {
     readonly property bool locked: GlobalStates.screenLocked
 
     // Akzentfarben, lesbar auf hellem wie dunklem Hintergrund
-    readonly property color colAccent: ColorUtils.colorWithLightness(Appearance.m3colors.m3primary, darkBackground ? 0.68 : 0.32)
-    readonly property color colAccent2: ColorUtils.colorWithLightness(Appearance.m3colors.m3tertiary, darkBackground ? 0.7 : 0.4)
+    readonly property color colAccent: ColorUtils.colorWithLightness(Appearance.m3colors.m3primary, darkBackground ? 0.68 : 0.36)
+    readonly property color colAccent2: ColorUtils.colorWithLightness(Appearance.m3colors.m3tertiary, darkBackground ? 0.72 : 0.34)
     readonly property color colSoft: ColorUtils.transparentize(colText, 0.32)
     readonly property color colFaint: ColorUtils.transparentize(colText, 0.8)
     readonly property color colShadow: darkBackground ? "#66000000" : "#55ffffff"
@@ -85,8 +85,8 @@ Item {
 
         Label {
             text: root.greeting
-            color: root.colAccent
-            font.pixelSize: 15
+            color: root.colAccent2
+            font.pixelSize: 16
             font.weight: Font.Bold
             font.letterSpacing: 4
             font.capitalization: Font.AllUppercase

@@ -64,8 +64,10 @@ AbstractBackgroundWidget {
             shown: root.clockStyle === "glassy" && (root.shouldShow)
             fade: false
             sourceComponent: GlassyClock {
-                colText: root.colText
+                id: glassyClock
                 darkBackground: (GlobalStates.screenLocked && Config.options.lock.blur.enable) ? true : root.dominantColorIsDark
+                // Schrift in der Wallpaper-Farbe: hell auf dunklem, tiefes Blau auf hellem Bild (kein Grau/Schwarz)
+                colText: Qt.hsla(Appearance.m3colors.m3primary.hslHue, Math.max(0.6, Appearance.m3colors.m3primary.hslSaturation), glassyClock.darkBackground ? 0.93 : 0.24, 1)
                 screenWidth: root.scaledScreenWidth
                 screenHeight: root.scaledScreenHeight
             }

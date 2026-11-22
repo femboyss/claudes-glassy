@@ -69,6 +69,7 @@ AbstractBackgroundWidget {
     readonly property bool darkBg: root.dominantColorIsDark
     readonly property color colAccent: ColorUtils.colorWithLightness(Appearance.m3colors.m3primary, darkBg ? 0.68 : 0.32)
     readonly property color colShadowText: darkBg ? "#66000000" : "#55ffffff"
+    readonly property color colTemp: ColorUtils.colorWithLightness(Appearance.m3colors.m3primary, darkBg ? 0.93 : 0.24)
 
     Row {
         id: glassCard
@@ -91,7 +92,7 @@ AbstractBackgroundWidget {
             spacing: -4
             StyledText {
                 text: root.tempText
-                color: root.colText
+                color: root.colTemp
                 style: Text.Raised
                 styleColor: root.colShadowText
                 font {
@@ -104,7 +105,7 @@ AbstractBackgroundWidget {
             }
             StyledText {
                 text: typeof Weather.data?.city === "string" ? Weather.data.city.toUpperCase() : ""
-                color: ColorUtils.transparentize(root.colText, 0.3)
+                color: ColorUtils.transparentize(root.colTemp, 0.3)
                 style: Text.Raised
                 styleColor: root.colShadowText
                 font {
