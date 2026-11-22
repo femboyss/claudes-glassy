@@ -314,6 +314,23 @@ MouseArea {
             color: (Battery.isLow && !Battery.isCharging) ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
         }
 
+        // claudes-glassy: Musik steuern direkt am Sperrbildschirm
+        IconToolbarButton {
+            visible: MprisController.activePlayer !== null && MprisController.canGoPrevious
+            onClicked: MprisController.previous()
+            text: "skip_previous"
+        }
+        IconToolbarButton {
+            visible: MprisController.activePlayer !== null && MprisController.canTogglePlaying
+            onClicked: MprisController.togglePlaying()
+            text: MprisController.isPlaying ? "pause" : "play_arrow"
+        }
+        IconToolbarButton {
+            visible: MprisController.activePlayer !== null && MprisController.canGoNext
+            onClicked: MprisController.next()
+            text: "skip_next"
+        }
+
         IconToolbarButton {
             id: sleepButton
             onClicked: Session.suspend()

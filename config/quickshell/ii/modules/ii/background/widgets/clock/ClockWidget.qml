@@ -20,7 +20,7 @@ AbstractBackgroundWidget {
     readonly property bool forceCenter: (GlobalStates.screenLocked && Config.options.lock.centerClock)
     readonly property bool shouldShow: (!Config.options.background.widgets.clock.showOnlyWhenLocked || GlobalStates.screenLocked)
     property bool wallpaperSafetyTriggered: false
-    needsColText: clockStyle === "digital"
+    needsColText: clockStyle === "digital" || clockStyle === "glassy"
     x: forceCenter ? ((root.screenWidth - root.width) / 2) : targetX
     y: forceCenter ? ((root.screenHeight - root.height) / 2) : targetY
     visibleWhenLocked: true
@@ -63,7 +63,12 @@ AbstractBackgroundWidget {
             anchors.horizontalCenter: parent.horizontalCenter
             shown: root.clockStyle === "glassy" && (root.shouldShow)
             fade: false
-            sourceComponent: GlassyClock {}
+            sourceComponent: GlassyClock {
+                colText: root.colText
+                darkBackground: (GlobalStates.screenLocked && Config.options.lock.blur.enable) ? true : root.dominantColorIsDark
+                screenWidth: root.scaledScreenWidth
+                screenHeight: root.scaledScreenHeight
+            }
         }
 
         FadeLoader {

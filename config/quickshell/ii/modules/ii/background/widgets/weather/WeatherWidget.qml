@@ -64,72 +64,54 @@ AbstractBackgroundWidget {
         }
     }
 
-    // ---------------------------------------------------------- Glassy
-    StyledRectangularShadow {
-        target: glassCard
-        visible: root.glassy
-    }
+    // ---------------------------------------------------------- Glassy (ohne Karte, passend zur Musik-Uhr)
+    needsColText: root.glassy
+    readonly property bool darkBg: root.dominantColorIsDark
+    readonly property color colAccent: ColorUtils.colorWithLightness(Appearance.m3colors.m3primary, darkBg ? 0.68 : 0.32)
+    readonly property color colShadowText: darkBg ? "#66000000" : "#55ffffff"
 
-    Rectangle {
+    Row {
         id: glassCard
         visible: root.glassy
-        anchors.fill: parent
-        implicitWidth: glassRow.implicitWidth + 44
-        implicitHeight: glassRow.implicitHeight + 32
-        radius: 26
-        color: ColorUtils.transparentize(Appearance.m3colors.m3background, 0.42)
-        border.width: 1
-        border.color: ColorUtils.transparentize(Appearance.m3colors.m3onBackground, 0.86)
+        anchors.centerIn: parent
+        spacing: 12
 
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: parent.radius - 1
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: ColorUtils.transparentize("#ffffff", 0.92) }
-                GradientStop { position: 0.5; color: "transparent" }
-            }
+        MaterialSymbol {
+            anchors.verticalCenter: parent.verticalCenter
+            fill: 1
+            iconSize: 54
+            color: root.colAccent
+            text: Icons.getWeatherIcon(Weather.data?.wCode) ?? "cloud"
+            style: Text.Raised
+            styleColor: root.colShadowText
         }
 
-        Row {
-            id: glassRow
-            anchors.centerIn: parent
-            spacing: 14
-
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 56
-                height: 56
-                radius: 18
-                color: ColorUtils.transparentize(Appearance.m3colors.m3primary, 0.8)
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    fill: 1
-                    iconSize: 34
-                    color: Appearance.m3colors.m3primary
-                    text: Icons.getWeatherIcon(Weather.data?.wCode) ?? "cloud"
+        Column {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: -4
+            StyledText {
+                text: root.tempText
+                color: root.colText
+                style: Text.Raised
+                styleColor: root.colShadowText
+                font {
+                    family: Config.options.background.widgets.clock.digital.font.family
+                    pixelSize: 52
+                    weight: 680
+                    styleName: ""
+                    variableAxes: ({ "wdth": 110, "ROND": 100 })
                 }
             }
-
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: -2
-                StyledText {
-                    text: root.tempText
-                    color: Appearance.m3colors.m3onBackground
-                    font {
-                        family: Config.options.background.widgets.clock.digital.font.family
-                        pixelSize: 40
-                        weight: 620
-                    }
-                }
-                StyledText {
-                    text: `${Weather.data?.city ?? ""}  -  ${Weather.data?.humidity ?? ""} Luftfeuchte`
-                    color: ColorUtils.transparentize(Appearance.m3colors.m3onBackground, 0.3)
-                    font {
-                        family: Appearance.font.family.main
-                        pixelSize: 14
-                    }
+            StyledText {
+                text: (Weather.data?.city ?? "").toUpperCase()
+                color: ColorUtils.transparentize(root.colText, 0.3)
+                style: Text.Raised
+                styleColor: root.colShadowText
+                font {
+                    family: Appearance.font.family.main
+                    pixelSize: 13
+                    weight: Font.Bold
+                    letterSpacing: 3
                 }
             }
         }
