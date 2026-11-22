@@ -101,7 +101,7 @@ setting() {   # $1 = Schluessel unter .glassy in der Shell-Config, $2 = Standard
 }
 
 term_run() {  # Befehl in einem Terminal-Fenster ausfuehren (bleibt offen bis Enter)
-    setsid -f kitty -1 bash -c "$1; echo; read -r -p 'Enter zum Schliessen '" >/dev/null 2>&1
+    setsid -f kitty -1 bash -c "$1; echo; read -r -p 'Enter zum Schliessen '" </dev/null >/dev/null 2>&1
 }
 
 remote_rev() { timeout 10 git ls-remote "$REPO_URL" "refs/heads/$1" 2>/dev/null | cut -c1-40; }
@@ -240,9 +240,9 @@ reload_all() {
     pkill -x qs 2>/dev/null; pkill -x quickshell 2>/dev/null
     sleep 0.3
     hyprctl reload >/dev/null 2>&1
-    setsid -f qs -c ii >/dev/null 2>&1
-    pgrep -x hypridle >/dev/null || setsid -f hypridle >/dev/null 2>&1
-    pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch >/dev/null 2>&1
+    setsid -f qs -c ii </dev/null >/dev/null 2>&1
+    pgrep -x hypridle >/dev/null || setsid -f hypridle </dev/null >/dev/null 2>&1
+    pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch </dev/null >/dev/null 2>&1
     c_ok "neu geladen (Shell + Hyprland)"
 }
 
@@ -297,7 +297,7 @@ case "${1:---help}" in
     --doctor|doctor)      bash "$DEST/doctor.sh" ;;
     --repair|repair)      bash "$DEST/doctor.sh" --repair ;;
     --restore|restore)    bash "$DEST/install.sh" --restore ;;
-    --settings|settings)  setsid -f env XDG_CURRENT_DESKTOP=gnome qs -p "$HOME/.config/quickshell/ii/settings.qml" >/dev/null 2>&1 ;;
+    --settings|settings)  setsid -f env XDG_CURRENT_DESKTOP=gnome qs -p "$HOME/.config/quickshell/ii/settings.qml" </dev/null >/dev/null 2>&1 ;;
     --reload|reload)      reload_all ;;
     --theme|theme)        shift
                           if [ $# -eq 0 ]; then python3 "$THEME_PY" list
