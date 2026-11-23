@@ -102,6 +102,17 @@ ContentPage {
         }
 
         ConfigSwitch {
+            buttonIcon: "bedtime"
+            text: "Automatisch sperren (10 min) + Bildschirm aus (12 min)"
+            checked: Config.options.glassy.autoIdle
+            onCheckedChanged: {
+                if (Config.options.glassy.autoIdle === checked) return;
+                Config.options.glassy.autoIdle = checked;
+                Quickshell.execDetached([page.glassyBin, "--idle", checked ? "on" : "off"]);
+            }
+        }
+
+        ConfigSwitch {
             buttonIcon: "folder_open"
             text: "Qt-Apps (Dolphin, Kate, Ark) im Glas-Look + Theme-Farben"
             checked: Config.options.glassy.qtApps

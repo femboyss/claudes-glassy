@@ -9,7 +9,7 @@ hl.on("hyprland.start", function()
 
     -- Kern-Dienste
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
-    hl.exec_cmd("hypridle")
+    hl.exec_cmd(HOME .. "/.local/bin/glassy --idle-start")   -- hypridle nur, wenn "Automatisch sperren" an ist
     hl.exec_cmd("dbus-update-activation-environment --all")
     hl.exec_cmd("sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     -- Bildschirm teilen (Discord, OBS, Browser): Portale mit der Hyprland-Umgebung neu starten.

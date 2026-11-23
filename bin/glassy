@@ -18,6 +18,7 @@
 #    glassy --miku-wall   neues Hatsune-Miku-Wallpaper in deiner Aufloesung (--startup: nur wenn eingeschaltet)
 #    glassy --miku-res    Aufloesung fuer Miku-Wallpaper (glassy --miku-res 1920x1080, ohne Wert: auto)
 #    glassy --miku-start  Miku-Wallpaper bei jedem Start an/aus
+#    glassy --idle [on|off]  automatisch sperren + Bildschirm aus (hypridle) an/aus
 #    glassy --perf        Performance-Modus an/aus (weniger Blur/Schatten)
 #    glassy --logs        Log der Shell (Quickshell) anzeigen
 #    glassy --fix-venv    Python-Umgebung neu bauen (wenn Material You nicht geht)
@@ -241,7 +242,7 @@ reload_all() {
     sleep 0.3
     hyprctl reload >/dev/null 2>&1
     setsid -f qs -c ii </dev/null >/dev/null 2>&1
-    pgrep -x hypridle >/dev/null || setsid -f hypridle </dev/null >/dev/null 2>&1
+    idle_start
     pgrep -f "glassy --watch" >/dev/null || setsid -f "$GLASSY_BIN" --watch </dev/null >/dev/null 2>&1
     c_ok "neu geladen (Shell + Hyprland)"
 }
@@ -280,6 +281,35 @@ miku_start() {
     c_ok "Neues Miku-Wallpaper bei jedem Start: $( [ "$new" = true ] && echo an || echo aus)"
 }
 
+# hypridle (nach 10 min sperren, nach 12 min Bildschirme aus) nur wenn glassy.autoIdle an ist
+idle_enabled() {
+    [ "$(jq -r '.glassy.autoIdle // true' "$SHELL_CONFIG" 2>/dev/null)" != false ]
+}
+
+idle_start() {
+    if idle_enabled; then
+        pgrep -x hypridle >/dev/null || setsid -f hypridle </dev/null >/dev/null 2>&1
+    else
+        pkill -x hypridle 2>/dev/null || true
+    fi
+}
+
+idle_set() {
+    local want="${1:-}"
+    if [ -z "$want" ]; then idle_enabled && want=off || want=on; fi
+    case "$want" in
+        on)  set_glassy autoIdle true ;;
+        off) set_glassy autoIdle false ;;
+        *)   c_err "glassy --idle on|off"; return 1 ;;
+    esac
+    idle_start
+    if [ "$want" = on ]; then
+        c_ok "Automatisch sperren (10 min) + Bildschirm aus (12 min): an"
+    else
+        c_ok "Automatisch sperren / Bildschirm aus: aus - der PC bleibt an, bis du selbst sperrst (SUPER+L)"
+    fi
+}
+
 toggle_perf() {
     local now new
     now="$(jq -r '.glassy.performanceMode // false' "$SHELL_CONFIG" 2>/dev/null)"
@@ -303,6 +333,8 @@ case "${1:---help}" in
                           if [ $# -eq 0 ]; then python3 "$THEME_PY" list
                           else python3 "$THEME_PY" apply "$1"; fi ;;
     --perf|perf)          toggle_perf ;;
+    --idle|idle)          shift; idle_set "${1:-}" ;;
+    --idle-start)         idle_start ;;
     --miku-wall|miku-wall) shift; bash "$MIKU_SH" "$@" ;;
     --miku-res|miku-res)  shift; miku_res "${1:-auto}" ;;
     --miku-start|miku-start) miku_start ;;
@@ -313,5 +345,5 @@ case "${1:---help}" in
     --check|check)        shift; check_updates "$@" ;;
     --whatsnew|whatsnew)  whatsnew ;;
     --watch|watch)        watch_loop ;;
-    --help|-h|help|*)     sed -n '3,28p' "$0" | sed 's/^# \{0,1\}//' ;;
+    --help|-h|help|*)     sed -n '3,29p' "$0" | sed 's/^# \{0,1\}//' ;;
 esac

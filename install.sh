@@ -196,7 +196,7 @@ restart_session() {
     systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal >/dev/null 2>&1 || true
     sleep 0.5
     setsid -f qs -c ii </dev/null >/dev/null 2>&1 || true
-    setsid -f hypridle </dev/null >/dev/null 2>&1 || true
+    "$HOME/.local/bin/glassy" --idle-start >/dev/null 2>&1 || true   # hypridle nur, wenn autoIdle an ist
     pkill -f "wl-paste --type" 2>/dev/null || true
     setsid -f bash -c 'wl-paste --type text --watch cliphist -max-items 400 store' </dev/null >/dev/null 2>&1
     setsid -f bash -c "wl-paste --type image --watch bash -c 'cliphist -max-items 400 store && qs -c ii ipc call cliphistService update'" </dev/null >/dev/null 2>&1
