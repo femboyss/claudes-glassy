@@ -62,8 +62,8 @@ Singleton {
             temp.precip = (data?.current?.precipInches || 0) + " in";
             temp.visib = (data?.current?.visibilityMiles || 0) + " m";
             temp.press = (data?.current?.pressureInches || 0) + " psi";
-            temp.temp += (data?.current?.temp_F || 0);
-            temp.tempFeelsLike += (data?.current?.FeelsLikeF || 0);
+            temp.temp += root.formatTemp(data?.current?.temp_F, data?.precise?.temperature_2m);
+            temp.tempFeelsLike += root.formatTemp(data?.current?.FeelsLikeF, data?.precise?.apparent_temperature);
             temp.temp += "°F";
             temp.tempFeelsLike += "°F";
         } else {
@@ -71,8 +71,8 @@ Singleton {
             temp.precip = (data?.current?.precipMM || 0) + " mm";
             temp.visib = (data?.current?.visibility || 0) + " km";
             temp.press = (data?.current?.pressure || 0) + " hPa";
-            temp.temp += (data?.current?.temp_C || 0);
-            temp.tempFeelsLike += (data?.current?.FeelsLikeC || 0);
+            temp.temp += root.formatTemp(data?.current?.temp_C, data?.precise?.temperature_2m);
+            temp.tempFeelsLike += root.formatTemp(data?.current?.FeelsLikeC, data?.precise?.apparent_temperature);
             temp.temp += "°C";
             temp.tempFeelsLike += "°C";
         }
@@ -80,20 +80,43 @@ Singleton {
         root.data = temp;
     }
 
+    // Rundet auf ganze Grad. Nur wenn dabei 0 rauskommt, wird eine
+    // Nachkommastelle angezeigt (z. B. -0.3), Wert von Open-Meteo.
+    // Nie mehr "-0".
+    function formatTemp(raw, precise) {
+        const r = Math.round(Number(raw)) || 0;
+        const p = Number(precise);
+        if (r === 0 && precise !== undefined && precise !== null && !isNaN(p)) {
+            return ((Math.round(p * 10) / 10) || 0).toFixed(1);
+        }
+        return String(r);
+    }
+
     function getData() {
-        let command = "curl -s wttr.in";
+        let url = "wttr.in";
 
         if (root.gpsActive && root.location.valid) {
-            command += `/${root.location.lat},${root.location.long}`;
+            url += `/${root.location.lat},${root.location.long}`;
         } else {
-            command += `/${formatCityName(root.city)}`;
+            url += `/${formatCityName(root.city)}`;
         }
+        url += "?format=j1";
 
-        // format as json
-        command += "?format=j1";
-        command += " | ";
-        // only take the current weather, location, asytronmy data
-        command += "jq '{current: .current_condition[0], location: .nearest_area[0], astronomy: .weather[0].astronomy[0]}'";
+        const keys = root.useUSCS ? "[.temp_F, .FeelsLikeF]" : "[.temp_C, .FeelsLikeC]";
+        const unit = root.useUSCS ? "&temperature_unit=fahrenheit" : "";
+
+        // wttr.in liefert nur ganze Grad. Steht dort 0 (oder "-0"), holen wir
+        // uns den genauen Wert mit Nachkommastelle von Open-Meteo.
+        let command = `w=$(curl -s '${url}'); `;
+        command += `p=null; `;
+        command += `if printf '%s' "$w" | jq -e '.current_condition[0] | ${keys} | map(tonumber) | any(. == 0)' >/dev/null 2>&1; then `;
+        command += `lat=$(printf '%s' "$w" | jq -r '.nearest_area[0].latitude'); `;
+        command += `lon=$(printf '%s' "$w" | jq -r '.nearest_area[0].longitude'); `;
+        command += `p=$(curl -s --max-time 5 "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,apparent_temperature${unit}" | jq -c '.current // null' 2>/dev/null); `;
+        command += `[ -n "$p" ] || p=null; `;
+        command += `fi; `;
+        // only take the current weather, location, astronomy data (+ precise temp)
+        command += `printf '%s' "$w" | jq --argjson p "$p" '{current: .current_condition[0], location: .nearest_area[0], astronomy: .weather[0].astronomy[0], precise: $p}'`;
         fetcher.command[2] = command;
         fetcher.running = true;
     }
