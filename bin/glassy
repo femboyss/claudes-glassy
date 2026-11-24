@@ -22,15 +22,20 @@
 #    glassy --perf        Performance-Modus an/aus (weniger Blur/Schatten)
 #    glassy --logs        Log der Shell (Quickshell) anzeigen
 #    glassy --fix-venv    Python-Umgebung neu bauen (wenn Material You nicht geht)
+#    glassy --deploy      (Vitra) Paket in dein ~/.config uebernehmen (macht vtx sonst von selbst)
 #    glassy --help        diese Hilfe
 #
 #  Ablauf bei Fehlern: Fixes kommen zuerst auf "debug" -> mit "glassy --debug"
 #  testen -> wenn alles passt, landet es auf "main" -> "glassy --update".
+#
+#  Vitra: kommt glassy als Paket (glassy-shell aus [vitra]), holt "glassy --update"
+#  das Paket ueber vtx/pacman. "glassy --debug" geht weiter direkt von GitHub.
 # ==================================================================
 set -uo pipefail
 
 REPO_URL="https://github.com/femboyss/claudes-glassy"
 DEST="$HOME/.local/share/claudes-glassy"
+GIT_DEST="$DEST"   # Repo-Kopie fuer --debug (auch wenn glassy als Paket kommt)
 CHANNEL_FILE="$HOME/.local/state/claudes-glassy/channel"
 
 c_ok()   { printf '\033[38;2;158;206;106m[ok]\033[0m %s\n' "$*"; }
@@ -38,10 +43,38 @@ c_info() { printf '\033[38;2;122;162;247m[..]\033[0m %s\n' "$*"; }
 c_warn() { printf '\033[38;2;224;175;104m[!!]\033[0m %s\n' "$*"; }
 c_err()  { printf '\033[38;2;247;118;142m[xx]\033[0m %s\n' "$*"; }
 
-channel() { cat "$CHANNEL_FILE" 2>/dev/null || echo main; }
+# Vitra-Paket (glassy-shell): Dateien liegen in /usr/share/glassy
+PKG_HOME="/usr/share/glassy"
+PKG_NAME="glassy-shell"
+is_package() { [ -f "$PKG_HOME/install.sh" ] && pacman -Q "$PKG_NAME" >/dev/null 2>&1; }
+
+channel() {
+    local c; c="$(cat "$CHANNEL_FILE" 2>/dev/null)"
+    if [ -z "$c" ]; then is_package && c=package || c=main; fi
+    echo "$c"
+}
+# im Paket-Modus (nicht auf debug) kommen alle Dateien aus dem Paket
+if [ "$(channel)" = package ] && is_package; then DEST="$PKG_HOME"; fi
+
+set_channel() { mkdir -p "$(dirname "$CHANNEL_FILE")"; echo "$1" > "$CHANNEL_FILE"; }
+
+package_update() {   # glassy-shell ueber vtx (oder pacman) aktualisieren
+    set_channel package
+    if command -v vtx >/dev/null 2>&1; then
+        vtx -S "$PKG_NAME" && vtx deploy "$PKG_NAME"
+    else
+        sudo pacman -S "$PKG_NAME" && bash "$PKG_HOME/install.sh" --deploy fix
+    fi
+}
+
+deploy_now() {   # $1 = install | upgrade | fix
+    is_package || { c_err "glassy-shell ist nicht als Paket installiert (vtx -S glassy-shell)"; return 1; }
+    bash "$PKG_HOME/install.sh" --deploy "${1:-fix}"
+}
 
 fetch_branch() {   # $1 = main | debug
     local b="$1"
+    DEST="$GIT_DEST"
     command -v git >/dev/null 2>&1 || sudo pacman -S --needed git
     if [ ! -d "$DEST/.git" ]; then
         rm -rf "$DEST"
@@ -70,6 +103,13 @@ install_now() {
 status() {
     local b local_rev remote_rev
     b="$(channel)"
+    if [ "$b" = package ]; then
+        echo "Kanal:      package   (Vitra-Paket aus [vitra])"
+        echo "Installiert: $(pacman -Q "$PKG_NAME" 2>/dev/null)"
+        echo "Updates:     vtx   (oder: glassy --update)"
+        echo "Test-Stand:  glassy --debug   (zurueck zum Paket: glassy --update)"
+        return 0
+    fi
     echo "Kanal:      $b   ($( [ "$b" = debug ] && echo 'Test-Stand' || echo 'stabil'))"
     if [ -d "$DEST/.git" ]; then
         local_rev="$(git -C "$DEST" rev-parse --short HEAD 2>/dev/null)"
@@ -138,6 +178,8 @@ check_updates() {   # [--notify] [--force]
         case "$a" in --notify) notify=1 ;; --force) force=1 ;; esac
     done
     b="$(channel)"
+    # Paket-Modus: Updates kommen ueber vtx/pacman, nicht von GitHub
+    [ "$b" = package ] && { c_ok "Updates kommen ueber vtx (Paket $PKG_NAME)"; return 1; }
     [ -d "$DEST/.git" ] || { c_warn "Noch nicht installiert:  glassy --update"; return 2; }
     local_rev="$(git -C "$DEST" rev-parse HEAD 2>/dev/null)"
     rr="$(remote_rev "$b")"
@@ -321,7 +363,8 @@ toggle_perf() {
 }
 
 case "${1:---help}" in
-    --update|-u|update)   fetch_branch main  && install_now ;;
+    --update|-u|update)   if is_package; then package_update
+                          else fetch_branch main && install_now; fi ;;
     --debug|-d|debug)     fetch_branch debug && install_now ;;
     --status|-s|status)   status ;;
     --doctor|doctor)      bash "$DEST/doctor.sh" ;;
@@ -340,7 +383,9 @@ case "${1:---help}" in
     --miku-start|miku-start) miku_start ;;
     --fix-venv|fix-venv)  fix_venv ;;
     --logs|logs)          qs -c ii log 2>/dev/null | tail -n 80 || c_warn "Kein Log (laeuft die Shell?)" ;;
-    --upgrade|upgrade)    fetch_branch "$(channel)" && install_now ;;
+    --upgrade|upgrade)    if [ "$(channel)" = package ]; then package_update
+                          else fetch_branch "$(channel)" && install_now; fi ;;
+    --deploy|deploy)      shift; deploy_now "${1:-fix}" ;;
     --background-update)  background_update ;;
     --check|check)        shift; check_updates "$@" ;;
     --whatsnew|whatsnew)  whatsnew ;;

@@ -10,6 +10,9 @@
 #    bash install.sh --auto       -> ohne Fragen (fuer "glassy --update" / "glassy --debug")
 #    bash install.sh --background -> ohne Fragen, ohne Pakete/sudo (Auto-Update)
 #    bash install.sh --restore    -> Backup wiederherstellen
+#    bash install.sh --deploy [install|upgrade|fix]
+#                                 -> aus dem Vitra-Paket (/usr/share/glassy) in dein ~/.config
+#                                    kopieren, ohne Pakete/sudo. Ruft vtx nach Installation/Update auf.
 # ==================================================================
 set -euo pipefail
 
@@ -44,6 +47,7 @@ c_err()  { printf '\033[38;2;247;118;142m[xx]\033[0m %s\n' "$*"; }
 
 AUTO=0
 SKIP_PKGS=0     # --background: Pakete auslassen (kein sudo moeglich)
+DEPLOY=""       # --deploy: install | upgrade | fix  (Vitra-Paket, Pakete kommen von pacman)
 ask() {         # ja/nein-Frage; $2 = Standard (j oder n)
     local q="$1" def="${2:-n}" hint ans
     if [ "$AUTO" = 1 ]; then
@@ -207,7 +211,12 @@ restart_session() {
 # ------------------------------------------------------------------ "glassy"-Befehl
 install_cli() {
     mkdir -p "$HOME/.local/bin"
-    install -m 755 "$HERE/bin/glassy" "$HOME/.local/bin/glassy"
+    if [ -n "$DEPLOY" ] && [ -x /usr/bin/glassy ]; then
+        # Vitra-Paket: der Befehl kommt von pacman, ~/.local/bin/glassy zeigt nur darauf
+        ln -sfn /usr/bin/glassy "$HOME/.local/bin/glassy"
+    else
+        install -m 755 "$HERE/bin/glassy" "$HOME/.local/bin/glassy"
+    fi
     if command -v fish >/dev/null 2>&1; then
         fish -c 'contains $HOME/.local/bin $fish_user_paths; or fish_add_path -U $HOME/.local/bin' 2>/dev/null || true
     fi
@@ -226,7 +235,11 @@ do_install() {
     echo
 
     local make_backup=0
-    if ask "Backup deiner aktuellen Configs anlegen? (empfohlen)" j; then
+    if [ -n "$DEPLOY" ] && [ "$DEPLOY" != install ]; then
+        # Update/Reparatur aus dem Paket: deine Dateien (custom/, Monitore ...) bleiben eh,
+        # sonst entstuende bei jedem Update ein neuer Backup-Ordner
+        c_info "Paket-Update ($DEPLOY): kein Backup noetig, deine eigenen Dateien bleiben"
+    elif ask "Backup deiner aktuellen Configs anlegen? (empfohlen)" j; then
         make_backup=1
         c_info "Backup-Ordner: $BACKUP"
     else
@@ -338,6 +351,10 @@ do_install() {
         install_fonts
         # Python-Umgebung: bei automatischen Updates nur, wenn sie noch fehlt
         if [ "$AUTO" = 0 ] || [ ! -x "$VENV/bin/python" ]; then setup_venv; fi
+    elif [ -n "$DEPLOY" ]; then
+        # Vitra-Paket: Schrift und Python-Umgebung sind pro Benutzer, nur wenn sie fehlen
+        install_fonts
+        if [ "$DEPLOY" = fix ] || [ ! -x "$VENV/bin/python" ]; then setup_venv; fi
     fi
 
     install_cli
@@ -420,6 +437,9 @@ case "${1:-}" in
     --install|-i) do_install ;;
     --auto)       AUTO=1; do_install ;;
     --background) AUTO=1; SKIP_PKGS=1; do_install ;;
+    --deploy)     AUTO=1; SKIP_PKGS=1; DEPLOY="${2:-upgrade}"
+                  case "$DEPLOY" in install|upgrade|fix) ;; *) c_err "--deploy install|upgrade|fix"; exit 1 ;; esac
+                  do_install ;;
     --restore|-r) do_restore ;;
     "")
         echo
@@ -437,7 +457,7 @@ case "${1:-}" in
         esac
         ;;
     *)
-        echo "Benutzung: bash install.sh [--install | --auto | --restore]"
+        echo "Benutzung: bash install.sh [--install | --auto | --restore | --deploy [install|upgrade|fix]]"
         exit 1
         ;;
 esac

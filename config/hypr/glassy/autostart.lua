@@ -9,6 +9,8 @@ hl.on("hyprland.start", function()
 
     -- Kern-Dienste
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
+    -- Vitra: Einrichtung von Paketen nachholen, die nur mit pacman aktualisiert wurden
+    hl.exec_cmd("sleep 5 && command -v vtx >/dev/null && vtx deploy --quiet")
     hl.exec_cmd(HOME .. "/.local/bin/glassy --idle-start")   -- hypridle nur, wenn "Automatisch sperren" an ist
     hl.exec_cmd("dbus-update-activation-environment --all")
     hl.exec_cmd("sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
