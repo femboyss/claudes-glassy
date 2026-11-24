@@ -50,7 +50,8 @@ is_package() { [ -f "$PKG_HOME/install.sh" ] && pacman -Q "$PKG_NAME" >/dev/null
 
 channel() {
     local c; c="$(cat "$CHANNEL_FILE" 2>/dev/null)"
-    if [ -z "$c" ]; then is_package && c=package || c=main; fi
+    # Paket installiert: "main" (von frueher) heisst jetzt "package"; nur "debug" bleibt Git
+    if [ -z "$c" ] || [ "$c" = main ]; then is_package && c=package || c=main; fi
     echo "$c"
 }
 # im Paket-Modus (nicht auf debug) kommen alle Dateien aus dem Paket
