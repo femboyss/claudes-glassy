@@ -36,6 +36,7 @@ USER_FILES=(
     hypr/workspaces.lua
     hypr/hyprland/shellOverrides/main.lua
     hypr/avatar.png
+    hypr/xdph.conf
 )
 SHELL_CONFIG="$CFG/illogical-impulse/config.json"
 THEME_PY="$CFG/quickshell/ii/scripts/colors/glassy_theme.py"
