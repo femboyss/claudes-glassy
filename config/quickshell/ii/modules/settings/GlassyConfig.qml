@@ -78,6 +78,7 @@ ContentPage {
                 { value: "rosepine", displayName: "Rose Pine", icon: "local_florist" },
                 { value: "dracula", displayName: "Dracula", icon: "bedtime" },
                 { value: "miku", displayName: "Hatsune Miku", icon: "music_note" },
+                { value: "alya", displayName: "Alya", icon: "diamond" },
                 { value: "mono", displayName: Translation.tr("Black/White"), icon: "contrast" },
                 { value: "material", displayName: "Material You", icon: "wallpaper" }
             ]
