@@ -111,6 +111,14 @@ THEMES = {
         "on_accent": "0d1214", "glass": 1.0, "term": 0.72,
         "roles": ("teal", "cyan", "pink"),
     },
+    "alya": {
+        "label": "Alya", "desc": "Nachtblau, Silber, Eisblau, Schleifen-Rot",
+        "bg": "10131f", "bg_dark": "0b0d16", "hl": "1e2436", "fg": "e8ecf8", "fg_dark": "b8c0d8",
+        "comment": "5d6787", "blue": "8fb4ff", "cyan": "d6dcef", "purple": "b4a6f0", "pink": "e0566a",
+        "green": "8fd6b0", "red": "e0455a", "yellow": "f0d9a0", "orange": "f2a27a", "teal": "9ec9e8",
+        "on_accent": "0b0d16", "glass": 1.0, "term": 0.72,
+        "roles": ("blue", "cyan", "pink"),
+    },
     "mono": {
         "label": "Schwarz/Weiss", "desc": "Minimal, keine Farben",
         "bg": "141414", "bg_dark": "0e0e0e", "hl": "2a2a2a", "fg": "f2f2f2", "fg_dark": "cfcfcf",
@@ -176,6 +184,34 @@ def wallpaper_blue(path):
         if score > best_score:
             best, best_score = (h, sat), score
     return best
+
+
+# Alya-Theme: ein Alya-Wallpaper, das schon auf dem PC liegt (wird NICHT mitgeliefert, die Bilder
+# gehoeren ihren Erstellern). Gesucht in den Bilder-Ordnern; das erste Treffer-Bild gewinnt.
+ALYA_NAMES = ("alyanormale.png", "alya.png", "alya.jpg", "alya.webp")
+
+
+def find_alya_wallpaper():
+    home = os.path.expanduser("~")
+    pics = []
+    try:
+        out = subprocess.run(["xdg-user-dir", "PICTURES"], capture_output=True, text=True).stdout.strip()
+        if out:
+            pics.append(out)
+    except OSError:
+        pass
+    pics += [os.path.join(home, "Bilder"), os.path.join(home, "Pictures")]
+    for base in dict.fromkeys(pics):
+        if not os.path.isdir(base):
+            continue
+        for root, _dirs, files in os.walk(base):
+            if root[len(base):].count(os.sep) > 3:
+                continue
+            low = {f.lower(): f for f in files}
+            for name in ALYA_NAMES:
+                if name in low:
+                    return os.path.join(root, low[name])
+    return ""
 
 
 def miku_palette(path):
@@ -615,6 +651,13 @@ def apply(name, reload_hypr=True):
         if previous != "miku":
             deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], True)
             miku_fetch = "/miku-" not in cur_wall
+    if name == "alya":
+        # Miku-Wallpaper beim Start wuerde Alya sofort wieder ersetzen
+        deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], False)
+        cur_wall = deep_get(cfg, ["background", "wallpaperPath"], "") or ""
+        alya_wall = find_alya_wallpaper()
+        if alya_wall and "alya" not in os.path.basename(cur_wall).lower():
+            deep_set(cfg, ["background", "wallpaperPath"], alya_wall)
     colors = m3_from_palette(t)
     term = term_from_palette(t)
 

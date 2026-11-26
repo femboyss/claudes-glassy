@@ -22,7 +22,7 @@ in `vendor/ii-upstream-commit`) and puts the glassy look and fixes on top:
 | **Search / start menu** (tap SUPER) | Apps, calculator, commands, web search, clipboard, emoji |
 | **AI sidebar** (SUPER+K) | Chat with Gemini, Ollama, **LM Studio** (models detected automatically), **LU (Locally Uncensored)** (LM Studio model + own system prompt file), translator |
 | **Right sidebar** (SUPER+A / SUPER+N) | Notifications, quick toggles (Wi-Fi, Bluetooth, night light, game mode ...), calendar, to-do, timer |
-| **Themes** (SUPER+I -> Glassy) | Tokyo Night, Catppuccin Mocha, Full glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, **Hatsune Miku**, Black/White, **Material You** (colors from the wallpaper) |
+| **Themes** (SUPER+I -> Glassy) | Tokyo Night, Catppuccin Mocha, Full glass, See-through, Nord, Gruvbox, Rose Pine, Dracula, **Hatsune Miku**, **Alya** (uses an Alya wallpaper from your Pictures folder if there is one), Black/White, **Material You** (colors from the wallpaper) |
 | **Miku wallpapers** (SUPER+I -> Glassy) | Optional: a new random Hatsune Miku wallpaper from wallhaven.cc on every start, SFW only, in exactly your screen resolution (no up- or downscaling). Turned on automatically with the Miku theme |
 | **Two styles** (CTRL+SUPER+P) | Glassy (illogical-impulse) or Windows 11 (taskbar + start menu at the bottom) |
 | **Lock screen, session menu, OSD, media controls, screen snip, OCR, recording** | From the shell |
