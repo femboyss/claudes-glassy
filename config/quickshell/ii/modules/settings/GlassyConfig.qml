@@ -29,6 +29,7 @@ ContentPage {
                                            : p === "mac" ? String.fromCodePoint(0x2318)
                                            : String.fromCodePoint(0xE8E5);
         Config.options.cheatsheet.useMacSymbol = p === "mac";
+        Config.options.panelFamily = p === "windows" ? "waffle" : "ii";
         syncTimer.restart();
     }
 
@@ -139,6 +140,7 @@ ContentPage {
         }
 
         ContentSubsection {
+            visible: Config.options.glassy.theme === "miku"
             title: Translation.tr("Miku wallpaper")
 
             StyledText {
@@ -171,17 +173,6 @@ ContentPage {
             }
         }
 
-        ContentSubsection {
-            title: Translation.tr("Bar style")
-            ConfigSelectionArray {
-                currentValue: Config.options.panelFamily
-                onSelected: newValue => Config.options.panelFamily = newValue
-                options: [
-                    { value: "ii", displayName: "Glassy (illogical-impulse)", icon: "auto_awesome" },
-                    { value: "waffle", displayName: Translation.tr("Windows 11 (start menu at the bottom)"), icon: "grid_view" }
-                ]
-            }
-        }
 
         StyledText {
             visible: page.status.length > 0
@@ -199,7 +190,7 @@ ContentPage {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Appearance.colors.colSubtext
-            text: Translation.tr("Changes the shortcuts and the key symbols in the cheatsheet (SUPER+H). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.")
+            text: Translation.tr("Decides the whole desktop: panel, shortcuts and key symbols. Windows: Windows taskbar and start menu. Linux: the glassy bar (end-4). Mac: Mac dock (coming soon). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.")
         }
 
         ConfigSelectionArray {

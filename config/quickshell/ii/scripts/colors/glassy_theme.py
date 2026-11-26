@@ -606,6 +606,7 @@ def apply(name, reload_hypr=True):
     if name == MATERIAL:
         deep_set(cfg, ["appearance", "wallpaperTheming", "enableAppsAndShell"], True)
         deep_set(cfg, ["appearance", "wallpaperTheming", "enableTerminal"], True)
+        deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], False)
         bg_t, content_t = glass_levels(0.9)
         deep_set(cfg, ["appearance", "transparency", "backgroundTransparency"], bg_t)
         deep_set(cfg, ["appearance", "transparency", "contentTransparency"], content_t)
@@ -651,9 +652,10 @@ def apply(name, reload_hypr=True):
         if previous != "miku":
             deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], True)
             miku_fetch = "/miku-" not in cur_wall
-    if name == "alya":
-        # Miku-Wallpaper beim Start wuerde Alya sofort wieder ersetzen
+    if name != "miku":
+        # Miku-Wallpaper beim Start gehoert nur zum Miku-Theme
         deep_set(cfg, ["glassy", "mikuWallpaperOnStart"], False)
+    if name == "alya":
         cur_wall = deep_get(cfg, ["background", "wallpaperPath"], "") or ""
         alya_wall = find_alya_wallpaper()
         if alya_wall and "alya" not in os.path.basename(cur_wall).lower():
