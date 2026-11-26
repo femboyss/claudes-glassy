@@ -79,66 +79,97 @@ install_yay() {
     rm -rf "$tmp"
 }
 
-# Wie bei illogical-impulse: Meta-PKGBUILDs bauen, deren Abhaengigkeiten per yay holen
-install_metapkg() {
-    local dir="$1" flags=(--needed --asdeps --sudoloop)
-    [ "$AUTO" = 1 ] && flags+=(--noconfirm)
-    (
-        set +u
-        cd "$dir"
-        # shellcheck disable=SC1091
-        source ./PKGBUILD
-        if [ "${#depends[@]}" -gt 0 ]; then
-            yay -S "${flags[@]}" "${depends[@]}"
-        fi
-        makepkg -Afsi --noconfirm --needed
-    )
+# ------------------------------------------------------------------ sudo nur EINMAL
+# Fragt das Passwort ein einziges Mal und haelt sudo am Leben, bis der Installer fertig ist
+# (vorher kam die Abfrage bei jedem Paket und nach jedem langen Build erneut).
+SUDO_KEEPALIVE_PID=""
+sudo_once() {
+    [ -n "$SUDO_KEEPALIVE_PID" ] && return 0
+    c_info "Einmal dein Passwort, danach fragt der Installer nicht mehr nach:"
+    sudo -v || { c_err "sudo hat nicht geklappt"; return 1; }
+    ( while kill -0 "$$" 2>/dev/null; do sudo -n -v 2>/dev/null || true; sleep 45; done ) &
+    SUDO_KEEPALIVE_PID=$!
+    trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
 }
+
+# Paketname ohne Versionsangabe: "qt6-base>=6.8" -> "qt6-base"
+_pkgname() { local d="$1"; d="${d%%[<>=]*}"; printf '%s\n' "$d"; }
 
 install_packages() {
     command -v pacman >/dev/null 2>&1 || { c_err "Kein pacman - claudes-glassy ist fuer Arch Linux."; return 1; }
-    command -v yay >/dev/null 2>&1 || install_yay
-
-    c_info "System aktualisieren (Hyprland und Quickshell muessen zusammenpassen) ..."
-    if [ "$AUTO" = 1 ]; then sudo pacman -Syu --noconfirm; else sudo pacman -Syu; fi
-
-    c_info "Installiere Pakete der Shell (das dauert beim ersten Mal, Quickshell wird gebaut) ..."
-    local build; build="$(mktemp -d)"
-    cp -a "$HERE/deps/arch/." "$build/"
+    sudo_once || return 1
+    local yes=(); [ "$AUTO" = 1 ] && yes=(--noconfirm)
     local metas=(audio backlight basic fonts-themes kde portal python screencapture toolkit widgets hyprland
                  microtex-git quickshell-git bibata-modern-classic-bin)
     local m
+
+    # Vitra bzw. [vitra]-Repo eingetragen: alles fertig gebaut, ein einziger pacman-Lauf
+    if pacman -Sl vitra >/dev/null 2>&1; then
+        c_info "Pakete aus [vitra] (fertig gebaut) - System-Update und alles in einem Durchgang ..."
+        local all=(); for m in "${metas[@]}"; do all+=("illogical-impulse-$m"); done
+        pacman -Q darkly >/dev/null 2>&1 || all+=(darkly-bin)
+        sudo pacman -Syu --needed "${yes[@]}" "${all[@]}" "${EXTRA_PKGS[@]}" \
+            || { c_err "pacman ist fehlgeschlagen (siehe oben)"; return 1; }
+        c_ok "Pakete fertig"
+        return 0
+    fi
+
+    command -v yay >/dev/null 2>&1 || install_yay
+
+    # 1) Welche Metapakete fehlen oder sind veraltet, und was brauchen sie zusammen?
+    local build; build="$(mktemp -d)"
+    cp -a "$HERE/deps/arch/." "$build/"
+    local todo=() deps=() list=() want have d
     for m in "${metas[@]}"; do
-        # Schon installiert und Version gleich -> nicht neu bauen (spart vor allem den Quickshell-Build)
-        local want have
         want="$(cd "$build/illogical-impulse-$m" && set +u && source ./PKGBUILD && echo "${pkgver}-${pkgrel}")"
-        have="$(pacman -Q "illogical-impulse-$m" 2>/dev/null | awk '{print $2}')"
+        # "|| true": nicht installiert ist kein Fehler (mit pipefail brach das Skript hier frueher ab)
+        have="$(pacman -Q "illogical-impulse-$m" 2>/dev/null | awk '{print $2}' || true)"
         if [ -n "$have" ] && [ "${have#*:}" = "$want" ]; then
             c_ok "  illogical-impulse-$m schon aktuell"
             continue
         fi
-        c_info "  illogical-impulse-$m"
-        install_metapkg "$build/illogical-impulse-$m" || c_warn "  illogical-impulse-$m: Fehler (weiter mit dem Rest)"
+        todo+=("$m")
+        mapfile -t list < <(cd "$build/illogical-impulse-$m" && set +u && source ./PKGBUILD \
+            && printf '%s\n' "${depends[@]}" "${makedepends[@]}")
+        deps+=("${list[@]}")
     done
+    mapfile -t deps < <(printf '%s\n' "${deps[@]}" | awk 'NF && !s[$0]++')
+    local names=(); for d in "${deps[@]}"; do names+=("$(_pkgname "$d")"); done
+    # neue Abhaengigkeiten merken: die werden danach als "Abhaengigkeit" markiert (wie vorher --asdeps)
+    local new_deps=()
+    for d in "${deps[@]}"; do pacman -T "$d" >/dev/null 2>&1 || new_deps+=("$(_pkgname "$d")"); done
+    local extra=("${EXTRA_PKGS[@]}")
+    pacman -Q darkly-bin >/dev/null 2>&1 || pacman -Q darkly >/dev/null 2>&1 || extra+=(darkly-bin)
+
+    # 2) EIN Durchgang: System-Update + alle Abhaengigkeiten (Repos und AUR) + Extras
+    c_info "System-Update und ${#deps[@]} Abhaengigkeiten + ${#extra[@]} Extras in einem Durchgang ..."
+    yay -Syu --needed --sudoloop "${yes[@]}" "${names[@]}" "${extra[@]}" \
+        || c_warn "yay meldete einen Fehler (siehe oben) - weiter mit dem Rest"
+    if [ "${#new_deps[@]}" -gt 0 ]; then
+        sudo pacman -D --asdeps "${new_deps[@]}" >/dev/null 2>&1 || true
+    fi
+
+    # 3) Metapakete bauen (Quickshell und MicroTeX werden kompiliert) und mit EINEM pacman -U installieren
+    if [ "${#todo[@]}" -gt 0 ]; then
+        mkdir -p "$build/out"
+        for m in "${todo[@]}"; do
+            c_info "  baue illogical-impulse-$m"
+            (cd "$build/illogical-impulse-$m" && PKGDEST="$build/out" makepkg -Af --noconfirm) \
+                || c_warn "  illogical-impulse-$m: Fehler beim Bauen (weiter mit dem Rest)"
+        done
+        local files=("$build"/out/*.pkg.tar.*)
+        if [ -e "${files[0]}" ]; then
+            c_info "Installiere ${#files[@]} Shell-Pakete auf einmal ..."
+            sudo pacman -U --needed --noconfirm "${files[@]}" || c_warn "pacman -U: Fehler (siehe oben)"
+        fi
+    fi
     rm -rf "$build"
-
-    # Darkly (Qt-Stil): Dolphin & Co. durchsichtig mit Blur. Fehlt manchmal trotz Metapaket.
-    if ! pacman -Q darkly-bin >/dev/null 2>&1 && ! pacman -Q darkly >/dev/null 2>&1; then
-        c_info "  darkly-bin (Glas-Look fuer Dolphin, Kate, Ark ...)"
-        if [ "$AUTO" = 1 ]; then yay -S --needed --noconfirm darkly-bin; else yay -S --needed darkly-bin; fi \
-            || c_warn "  darkly-bin: Fehler (Qt-Apps bleiben deckend)"
-    fi
-
-    if [ "$AUTO" = 1 ]; then
-        sudo pacman -S --needed --noconfirm "${EXTRA_PKGS[@]}"
-    else
-        sudo pacman -S --needed "${EXTRA_PKGS[@]}"
-    fi
     c_ok "Pakete fertig"
 }
 
 # Einmalige System-Einstellungen (brauchen sudo)
 setup_system() {
+    sudo_once || return 1
     c_info "System-Einstellungen (Gruppen, Dienste) ..."
     getent group i2c >/dev/null || sudo groupadd i2c
     sudo usermod -aG video,i2c,input "$(whoami)" || true
