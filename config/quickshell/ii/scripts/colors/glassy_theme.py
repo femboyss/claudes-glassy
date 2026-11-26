@@ -359,9 +359,23 @@ def write(path, text):
 
 
 # ------------------------------------------------------------------ Hyprland + Kitty
+def ui_lang(cfg):
+    """'de' or 'en' for the Hyprland side (cheatsheet texts), following end-4's language setting."""
+    lang = deep_get(cfg, ["language", "ui"], "auto") or "auto"
+    if lang == "auto":
+        lang = os.environ.get("LC_ALL") or os.environ.get("LC_MESSAGES") or os.environ.get("LANG") or "en"
+    return "de" if lang.lower().startswith("de") else "en"
+
+
+PLATFORMS = ("linux", "windows", "mac")
+
+
 def hypr_values(cfg, border):
     """glassy-generated.lua: Rahmenfarben + Schalter aus den Einstellungen."""
     g = deep_get(cfg, ["glassy"], {}) or {}
+    platform = g.get("platform", "linux")
+    if platform not in PLATFORMS:
+        platform = "linux"
     a, b, c, inactive = border
     lua = (
         "-- claudes-glassy: automatisch erzeugt von glassy_theme.py - nicht von Hand aendern.\n"
@@ -373,6 +387,8 @@ def hypr_values(cfg, border):
         f'    border_inactive = "rgba({inactive.lstrip("#")}88)",\n'
         f"    border_anim = {'true' if g.get('borderAnimation', False) else 'false'},\n"
         f"    performance = {'true' if g.get('performanceMode', False) else 'false'},\n"
+        f'    platform = "{platform}",\n'
+        f'    lang = "{ui_lang(cfg)}",\n'
         "}\n"
     )
     write(HYPR_GEN, lua)

@@ -20,6 +20,7 @@
 #    glassy --miku-start  Miku-Wallpaper bei jedem Start an/aus
 #    glassy --idle [on|off]  automatisch sperren + Bildschirm aus (hypridle) an/aus
 #    glassy --perf        Performance-Modus an/aus (weniger Blur/Schatten)
+#    glassy --platform    Look: linux | windows | mac (Tastenkuerzel + Tastensymbole)
 #    glassy --logs        Log der Shell (Quickshell) anzeigen
 #    glassy --fix-venv    Python-Umgebung neu bauen (wenn Material You nicht geht)
 #    glassy --deploy      (Vitra) Paket in dein ~/.config uebernehmen (macht vtx sonst von selbst)
@@ -353,6 +354,32 @@ idle_set() {
     fi
 }
 
+# Look: Linux / Windows / Mac (Tastenkuerzel + Tastensymbole im Spickzettel)
+set_platform() {
+    local p="${1:-}"
+    if [ -z "$p" ]; then
+        echo "Look: $(jq -r '.glassy.platform // "linux"' "$SHELL_CONFIG" 2>/dev/null)   (glassy --platform linux|windows|mac)"
+        return 0
+    fi
+    local key mac=false
+    case "$p" in
+        linux)   key=$'\ue8e5' ;;
+        windows) key=$'\U000f05b3' ;;
+        mac)     key=$'\u2318'; mac=true ;;
+        *) c_err "glassy --platform linux|windows|mac"; return 1 ;;
+    esac
+    local tmp; tmp="$(mktemp)"
+    jq --arg p "$p" --arg k "$key" --argjson m "$mac" \
+       '.glassy.platform = $p | .cheatsheet.superKey = $k | .cheatsheet.useMacSymbol = $m' \
+       "$SHELL_CONFIG" > "$tmp" && mv "$tmp" "$SHELL_CONFIG"
+    python3 "$THEME_PY" sync
+    case "$p" in
+        linux)   c_ok "Look: Linux - Super antippen = Startmenue / Suche" ;;
+        windows) c_ok "Look: Windows - Strg+Esc = Startmenue, Strg+Super = Uebersicht, Super alleine macht nichts" ;;
+        mac)     c_ok "Look: Mac - Cmd(Super)+Leertaste = Suche, Strg+Pfeil hoch = Uebersicht, Cmd+Shift+3/4 = Screenshot" ;;
+    esac
+}
+
 toggle_perf() {
     local now new
     now="$(jq -r '.glassy.performanceMode // false' "$SHELL_CONFIG" 2>/dev/null)"
@@ -377,6 +404,7 @@ case "${1:---help}" in
                           if [ $# -eq 0 ]; then python3 "$THEME_PY" list
                           else python3 "$THEME_PY" apply "$1"; fi ;;
     --perf|perf)          toggle_perf ;;
+    --platform|platform|--look) set_platform "${2:-}" ;;
     --idle|idle)          shift; idle_set "${1:-}" ;;
     --idle-start)         idle_start ;;
     --miku-wall|miku-wall) shift; bash "$MIKU_SH" "$@" ;;

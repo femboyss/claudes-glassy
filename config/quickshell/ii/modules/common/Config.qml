@@ -90,6 +90,7 @@ Singleton {
                 property bool qtApps: true // Dolphin, Kate, Ark ...: Theme-Farben + durchsichtiger Darkly-Stil
                 property bool borderAnimation: false // rotierender Rahmen-Verlauf (kostet GPU bei hoher Hz-Zahl)
                 property bool performanceMode: false // weniger Blur, keine Schatten, kuerzere Animationen
+                property string platform: "linux" // linux | windows | mac: Tastenkuerzel + Tastensymbole (glassy --platform)
             }
 
             property JsonObject policies: JsonObject {

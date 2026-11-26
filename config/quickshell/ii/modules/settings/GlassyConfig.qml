@@ -21,8 +21,19 @@ ContentPage {
         themeProc.running = true;
     }
 
+    // Look: shortcuts (Hyprland, via glassy-generated.lua) + key symbols in the cheatsheet
+    function setPlatform(p) {
+        if (["linux", "windows", "mac"].indexOf(p) < 0) return;
+        Config.options.glassy.platform = p;
+        Config.options.cheatsheet.superKey = p === "windows" ? String.fromCodePoint(0xF05B3)
+                                           : p === "mac" ? String.fromCodePoint(0x2318)
+                                           : String.fromCodePoint(0xE8E5);
+        Config.options.cheatsheet.useMacSymbol = p === "mac";
+        syncTimer.restart();
+    }
+
     function inTerminal(cmd) {
-        Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} bash -c '${cmd}; echo; read -r -p "Enter zum Schliessen "'`]);
+        Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} bash -c '${cmd}; echo; read -r -p "${Translation.tr("Press Enter to close")} "'`]);
     }
 
     Process {
@@ -41,46 +52,46 @@ ContentPage {
 
     ContentSection {
         icon: "palette"
-        title: "Theme"
+        title: Translation.tr("Theme")
 
         StyledText {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Appearance.colors.colSubtext
-            text: "Faerbt Leiste, Seitenleisten, Overview, Benachrichtigungen, Sperrbildschirm, Terminal, GTK-Apps und die Fensterrahmen auf einmal. \"Material You\" nimmt die Farben automatisch aus dem Wallpaper."
+            text: Translation.tr("Colors the bar, sidebars, overview, notifications, lock screen, terminal, GTK apps and the window borders all at once. \"Material You\" takes the colors from your wallpaper.")
         }
 
         ConfigSelectionArray {
             currentValue: Config.options.glassy.theme
             onSelected: newValue => {
                 Config.options.glassy.theme = newValue;
-                page.status = "Wende Theme an ...";
+                page.status = Translation.tr("Applying theme ...");
                 page.runTheme(["apply", newValue]);
             }
             options: [
                 { value: "tokyo", displayName: "Tokyo Night", icon: "nightlight" },
                 { value: "catppuccin", displayName: "Catppuccin", icon: "pets" },
-                { value: "glass", displayName: "Komplett Glas", icon: "blur_on" },
-                { value: "clear", displayName: "Durchsicht", icon: "visibility" },
+                { value: "glass", displayName: Translation.tr("Full glass"), icon: "blur_on" },
+                { value: "clear", displayName: Translation.tr("See-through"), icon: "visibility" },
                 { value: "nord", displayName: "Nord", icon: "ac_unit" },
                 { value: "gruvbox", displayName: "Gruvbox", icon: "local_fire_department" },
                 { value: "rosepine", displayName: "Rose Pine", icon: "local_florist" },
                 { value: "dracula", displayName: "Dracula", icon: "bedtime" },
                 { value: "miku", displayName: "Hatsune Miku", icon: "music_note" },
-                { value: "mono", displayName: "Schwarz/Weiss", icon: "contrast" },
+                { value: "mono", displayName: Translation.tr("Black/White"), icon: "contrast" },
                 { value: "material", displayName: "Material You", icon: "wallpaper" }
             ]
         }
 
         ConfigSwitch {
             buttonIcon: "ev_shadow"
-            text: "Glas (Transparenz + Blur)"
+            text: Translation.tr("Glass (transparency + blur)")
             checked: Config.options.appearance.transparency.enable
             onCheckedChanged: Config.options.appearance.transparency.enable = checked
         }
 
         ConfigSlider {
-            text: "Durchsicht Hintergrund"
+            text: Translation.tr("Background see-through")
             buttonIcon: "opacity"
             value: Config.options.appearance.transparency.backgroundTransparency
             from: 0
@@ -91,7 +102,7 @@ ContentPage {
         }
 
         ConfigSlider {
-            text: "Durchsicht Inhalte"
+            text: Translation.tr("Content see-through")
             buttonIcon: "layers"
             value: Config.options.appearance.transparency.contentTransparency
             from: 0
@@ -103,7 +114,7 @@ ContentPage {
 
         ConfigSwitch {
             buttonIcon: "bedtime"
-            text: "Automatisch sperren (10 min) + Bildschirm aus (12 min)"
+            text: Translation.tr("Lock automatically (10 min) + screen off (12 min)")
             checked: Config.options.glassy.autoIdle
             onCheckedChanged: {
                 if (Config.options.glassy.autoIdle === checked) return;
@@ -114,7 +125,7 @@ ContentPage {
 
         ConfigSwitch {
             buttonIcon: "folder_open"
-            text: "Qt-Apps (Dolphin, Kate, Ark) im Glas-Look + Theme-Farben"
+            text: Translation.tr("Qt apps (Dolphin, Kate, Ark) in the glass look + theme colors")
             checked: Config.options.glassy.qtApps
             onCheckedChanged: {
                 if (Config.options.glassy.qtApps === checked) return;
@@ -122,30 +133,30 @@ ContentPage {
                 if (checked) page.runTheme(["apply", Config.options.glassy.theme]);
             }
             StyledToolTip {
-                text: "Braucht den Qt-Stil Darkly (installiert glassy --update automatisch). Dolphin einmal neu starten."
+                text: Translation.tr("Needs the Qt style Darkly (glassy --update installs it). Restart Dolphin once.")
             }
         }
 
         ContentSubsection {
-            title: "Miku-Wallpaper"
+            title: Translation.tr("Miku wallpaper")
 
             StyledText {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
                 color: Appearance.colors.colSubtext
-                text: "Holt bei jedem Start ein zufaelliges Hatsune-Miku-Wallpaper von wallhaven.cc (nur SFW), exakt in deiner Bildschirm-Aufloesung - kein Hoch- oder Runterskalieren. Wird beim Miku-Theme automatisch eingeschaltet."
+                text: Translation.tr("Fetches a random Hatsune Miku wallpaper from wallhaven.cc (SFW only) on every start, in exactly your screen resolution - no up- or downscaling. Turned on automatically with the Miku theme.")
             }
 
             ConfigSwitch {
                 buttonIcon: "wallpaper_slideshow"
-                text: "Bei jedem Start neues Miku-Wallpaper"
+                text: Translation.tr("New Miku wallpaper on every start")
                 checked: Config.options.glassy.mikuWallpaperOnStart
                 onCheckedChanged: Config.options.glassy.mikuWallpaperOnStart = checked
             }
 
             MaterialTextArea {
                 Layout.fillWidth: true
-                placeholderText: "Aufloesung: auto oder z.B. 1920x1080"
+                placeholderText: Translation.tr("Resolution: auto or e.g. 1920x1080")
                 text: Config.options.glassy.mikuResolution
                 wrapMode: TextEdit.NoWrap
                 onTextChanged: Config.options.glassy.mikuResolution = text.trim().length > 0 ? text.trim() : "auto"
@@ -154,19 +165,19 @@ ContentPage {
             RippleButtonWithIcon {
                 Layout.fillWidth: true
                 materialIcon: "shuffle"
-                mainText: "Jetzt neues Miku-Wallpaper"
+                mainText: Translation.tr("New Miku wallpaper now")
                 onClicked: Quickshell.execDetached([page.glassyBin, "--miku-wall"])
             }
         }
 
         ContentSubsection {
-            title: "Stil der Leiste"
+            title: Translation.tr("Bar style")
             ConfigSelectionArray {
                 currentValue: Config.options.panelFamily
                 onSelected: newValue => Config.options.panelFamily = newValue
                 options: [
                     { value: "ii", displayName: "Glassy (illogical-impulse)", icon: "auto_awesome" },
-                    { value: "waffle", displayName: "Windows 11 (Startmenue unten)", icon: "grid_view" }
+                    { value: "waffle", displayName: Translation.tr("Windows 11 (start menu at the bottom)"), icon: "grid_view" }
                 ]
             }
         }
@@ -180,19 +191,41 @@ ContentPage {
     }
 
     ContentSection {
-        icon: "speed"
-        title: "Performance"
+        icon: "keyboard"
+        title: Translation.tr("Look: Linux, Windows or Mac")
 
         StyledText {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Appearance.colors.colSubtext
-            text: "Bei mehreren Monitoren mit hoher Hz-Zahl lohnt sich das. Der rotierende Rahmen zwingt Hyprland, jeden Frame neu zu zeichnen."
+            text: Translation.tr("Changes the shortcuts and the key symbols in the cheatsheet (SUPER+H). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.")
+        }
+
+        ConfigSelectionArray {
+            currentValue: Config.options.glassy.platform
+            onSelected: newValue => page.setPlatform(newValue)
+            options: [
+                { value: "linux", displayName: "Linux", icon: "terminal" },
+                { value: "windows", displayName: "Windows", icon: "window" },
+                { value: "mac", displayName: "Mac", icon: "laptop_mac" }
+            ]
+        }
+    }
+
+    ContentSection {
+        icon: "speed"
+        title: Translation.tr("Performance")
+
+        StyledText {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            color: Appearance.colors.colSubtext
+            text: Translation.tr("Worth it with several high refresh rate monitors. The rotating border makes Hyprland redraw every frame.")
         }
 
         ConfigSwitch {
             buttonIcon: "animation"
-            text: "Rotierender Rahmen-Verlauf"
+            text: Translation.tr("Rotating border gradient")
             checked: Config.options.glassy.borderAnimation
             onCheckedChanged: {
                 if (Config.options.glassy.borderAnimation === checked) return;
@@ -203,7 +236,7 @@ ContentPage {
 
         ConfigSwitch {
             buttonIcon: "bolt"
-            text: "Performance-Modus (weniger Blur, keine Schatten, schnellere Animationen)"
+            text: Translation.tr("Performance mode (less blur, no shadows, faster animations)")
             checked: Config.options.glassy.performanceMode
             onCheckedChanged: {
                 if (Config.options.glassy.performanceMode === checked) return;
@@ -214,17 +247,17 @@ ContentPage {
 
         ConfigSwitch {
             buttonIcon: "live_tv"
-            text: "Live-Vorschau in der Uebersicht (SUPER+Tab)"
+            text: Translation.tr("Live previews in the overview (SUPER+Tab)")
             checked: Config.options.overview.livePreviews
             onCheckedChanged: Config.options.overview.livePreviews = checked
             StyledToolTip {
-                text: "Aus = Standbild, live nur fuer das Fenster unter der Maus (spart viel GPU)"
+                text: Translation.tr("Off = still image, live only for the window under the mouse (saves a lot of GPU)")
             }
         }
 
         ConfigSpinBox {
             icon: "notifications"
-            text: "Gespeicherte Benachrichtigungen (max.)"
+            text: Translation.tr("Stored notifications (max.)")
             value: Config.options.notifications.maxStored
             from: 10
             to: 500
@@ -235,31 +268,31 @@ ContentPage {
 
     ContentSection {
         icon: "neurology"
-        title: "KI (SUPER+K): LM Studio und LU"
+        title: Translation.tr("AI (SUPER+K): LM Studio and LU")
 
         StyledText {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Appearance.colors.colSubtext
-            text: "In LM Studio unter Developer den Server starten (Port 1234) und \"Just-in-Time Model Loading\" einschalten. Dann tauchen deine Modelle in der KI-Seitenleiste auf, oben ueber das Modell-Symbol oder /model. \"LU (Uncensored)\" nimmt dasselbe Modell mit dem System-Prompt aus deiner LU-Datei. Nach Aenderungen hier: Shell neu starten."
+            text: Translation.tr("In LM Studio, start the server under Developer (port 1234) and turn on \"Just-in-Time Model Loading\". Your models then show up in the AI sidebar, at the top via the model icon or /model. \"LU (Uncensored)\" uses the same model with the system prompt from your LU file. After changes here: restart the shell.")
         }
 
         ConfigSwitch {
             buttonIcon: "dns"
-            text: "Modelle aus LM Studio anzeigen"
+            text: Translation.tr("Show models from LM Studio")
             checked: Config.options.ai.lmstudioModels
             onCheckedChanged: Config.options.ai.lmstudioModels = checked
         }
 
         ConfigSwitch {
             buttonIcon: "lock_open"
-            text: "LU (Locally Uncensored) anzeigen"
+            text: Translation.tr("Show LU (Locally Uncensored)")
             checked: Config.options.ai.luEnable
             onCheckedChanged: Config.options.ai.luEnable = checked
         }
 
         ContentSubsection {
-            title: "LU: Datei mit dem System-Prompt"
+            title: Translation.tr("LU: file with the system prompt")
             MaterialTextArea {
                 Layout.fillWidth: true
                 placeholderText: "~/uncensored/system_prompt.txt"
@@ -270,10 +303,10 @@ ContentPage {
         }
 
         ContentSubsection {
-            title: "LU: Modell (leer = erstes Modell in LM Studio)"
+            title: Translation.tr("LU: model (empty = first model in LM Studio)")
             MaterialTextArea {
                 Layout.fillWidth: true
-                placeholderText: "z. B. qwen3-coder-30b-a3b-instruct-abliterated"
+                placeholderText: Translation.tr("e.g. qwen3-coder-30b-a3b-instruct-abliterated")
                 text: Config.options.ai.luModel
                 wrapMode: TextEdit.Wrap
                 onTextChanged: Config.options.ai.luModel = text
@@ -281,7 +314,7 @@ ContentPage {
         }
 
         ContentSubsection {
-            title: "LM Studio Adresse"
+            title: Translation.tr("LM Studio address")
             MaterialTextArea {
                 Layout.fillWidth: true
                 placeholderText: "http://localhost:1234/v1"
@@ -302,13 +335,13 @@ ContentPage {
             RippleButtonWithIcon {
                 Layout.fillWidth: true
                 materialIcon: "update"
-                mainText: "Nach Updates suchen"
+                mainText: Translation.tr("Check for updates")
                 onClicked: Quickshell.execDetached([page.glassyBin, "--check", "--notify", "--force"])
             }
             RippleButtonWithIcon {
                 Layout.fillWidth: true
                 materialIcon: "new_releases"
-                mainText: "Was ist neu"
+                mainText: Translation.tr("What's new")
                 onClicked: page.inTerminal(`${page.glassyBin} --whatsnew`)
             }
         }
@@ -318,13 +351,13 @@ ContentPage {
             RippleButtonWithIcon {
                 Layout.fillWidth: true
                 materialIcon: "medical_services"
-                mainText: "Doktor"
+                mainText: Translation.tr("Doctor")
                 onClicked: page.inTerminal(`${page.glassyBin} --doctor`)
             }
             RippleButtonWithIcon {
                 Layout.fillWidth: true
                 materialIcon: "restart_alt"
-                mainText: "Shell neu starten"
+                mainText: Translation.tr("Restart the shell")
                 onClicked: Quickshell.execDetached([page.glassyBin, "--reload"])
             }
         }

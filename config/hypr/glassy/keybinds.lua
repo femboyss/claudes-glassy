@@ -9,6 +9,21 @@ local M   = G.mainMod
 local HOME = os.getenv("HOME")
 local errors = {}
 
+-- Look (SUPER+I -> Glassy -> Look, or: glassy --platform linux|windows|mac)
+--   linux:   tap Super = start menu/search (default)
+--   windows: tap Super does nothing, Ctrl+Esc = start menu, Ctrl+Super = overview
+--   mac:     tap Super does nothing, Super+Space = search (Spotlight), Ctrl+Up = overview,
+--            Super+Shift+3 / +4 = screenshots
+local GEN = GLASSY_GEN or {}
+local PLATFORM = GEN.platform or "linux"
+-- Cheatsheet language follows end-4's language setting (written by glassy_theme.py sync)
+local EN = {}
+if GEN.lang == "en" then
+    local ok, t = pcall(dofile, HOME .. "/.config/hypr/glassy/i18n.lua")
+    if ok and type(t) == "table" then EN = t end
+end
+local function tr(text) return EN[text] or text end
+
 local qs        = "qs -c $qsConfig"
 local qsIpc     = qs .. " ipc call"
 local qsAlive   = qsIpc .. " TEST_ALIVE"
@@ -24,6 +39,7 @@ local function try(label, fn)
     if not ok then table.insert(errors, label .. ": " .. tostring(err)) end
 end
 local function bind(keys, action, opts)
+    if opts and opts.description then opts.description = tr(opts.description) end
     local ok, err = pcall(hl.bind, keys, action, opts)
     if not ok then table.insert(errors, keys .. ": " .. tostring(err)) end
 end
@@ -78,10 +94,23 @@ end)
 -- Shell (Quickshell / illogical-impulse)
 -------------------------------------------------
 try("shell", function()
-    -- Super alleine antippen = Startmenue/Suche (feuert nur, wenn Super ohne andere Taste losgelassen wird)
     local search = sh(qsIpc .. " search toggle || pkill fuzzel || fuzzel")
-    bind(M .. " + SUPER_L", search, { release = true, description = "Shell: Startmenue / Suche (Super antippen)" })
-    bind(M .. " + SUPER_R", search, { release = true })
+    local overview = global("overviewWorkspacesToggle")
+    if PLATFORM == "windows" then
+        -- Super alleine macht nichts; Strg+Esc = Start (wie bei Windows), Strg+Super = Uebersicht
+        bind("CTRL + Escape", search, { description = "Shell: Startmenue / Suche (Strg+Esc)" })
+        bind("CTRL + " .. M .. " + SUPER_L", overview, { release = true, description = "Shell: Uebersicht (Strg+Super)" })
+        bind("CTRL + " .. M .. " + SUPER_R", overview, { release = true })
+        bind(M .. " + CTRL + Control_L", overview, { release = true })
+        bind(M .. " + CTRL + Control_R", overview, { release = true })
+    elseif PLATFORM == "mac" then
+        -- Super (= Cmd) alleine macht nichts; Cmd+Space = Spotlight, Strg+Pfeil hoch = Mission Control
+        bind("CTRL + up", overview, { description = "Shell: Uebersicht (Strg+Pfeil hoch, wie Mission Control)" })
+    else
+        -- Super alleine antippen = Startmenue/Suche (feuert nur, wenn Super ohne andere Taste losgelassen wird)
+        bind(M .. " + SUPER_L", search, { release = true, description = "Shell: Startmenue / Suche (Super antippen)" })
+        bind(M .. " + SUPER_R", search, { release = true })
+    end
     bind(M .. " + Space", search, { description = "Shell: Suche (Apps, Rechner, Befehle, Web)" })
     bind(M .. " + R", search)
     -- Workspace-Nummern einblenden, solange Super gehalten wird
@@ -192,8 +221,14 @@ try("tools", function()
     bind(M .. " + SHIFT + S", snip)
     bind(M .. " + SHIFT + S", snipFallback)
     local grimMon = "grim -o \"$(hyprctl activeworkspace -j | jq -r '.monitor')\""
-    bind("SHIFT + Print", sh("mkdir -p \"$(xdg-user-dir PICTURES)/Screenshots\" && f=\"$(xdg-user-dir PICTURES)/Screenshots/Screenshot_$(date '+%Y-%m-%d_%H.%M.%S').png\" && " .. grimMon .. " \"$f\" && wl-copy < \"$f\" && notify-send -a Screenshot -i \"$f\" 'Screenshot gespeichert' \"$f\""),
+    local fullShot = sh("mkdir -p \"$(xdg-user-dir PICTURES)/Screenshots\" && f=\"$(xdg-user-dir PICTURES)/Screenshots/Screenshot_$(date '+%Y-%m-%d_%H.%M.%S').png\" && " .. grimMon .. " \"$f\" && wl-copy < \"$f\" && notify-send -a Screenshot -i \"$f\" '" .. tr("Screenshot gespeichert") .. "' \"$f\"")
+    bind("SHIFT + Print", fullShot,
         { locked = true, description = "Werkzeug: Screenshot ganzer Monitor (gespeichert + kopiert)" })
+    if PLATFORM == "mac" then
+        bind(M .. " + SHIFT + 3", fullShot, { description = "Werkzeug: Screenshot ganzer Monitor (wie Cmd+Shift+3)" })
+        bind(M .. " + SHIFT + 4", snip, { description = "Werkzeug: Screenshot Bereich (wie Cmd+Shift+4)" })
+        bind(M .. " + SHIFT + 4", snipFallback)
+    end
     bind(M .. " + SHIFT + A", global("regionSearch"), { description = "Werkzeug: Bereich mit Google Lens suchen" })
     bind(M .. " + SHIFT + X", global("regionOcr"), { description = "Werkzeug: Text aus Bereich erkennen (OCR)" })
     bind(M .. " + SHIFT + T", global("screenTranslate"), { description = "Werkzeug: Bildschirm uebersetzen" })
@@ -238,10 +273,10 @@ try("vm submap", function()
     hl.define_submap("virtual-machine", function()
         hl.bind(M .. " + ALT + F1", function()
             if hl.get_current_submap() == "virtual-machine" then
-                hl.dispatch(hl.dsp.exec_cmd("notify-send -a Hyprland 'VM-Modus aus' 'Tastenkuerzel wieder an'"))
+                hl.dispatch(hl.dsp.exec_cmd("notify-send -a Hyprland '" .. tr("VM-Modus aus") .. "' '" .. tr("Tastenkuerzel wieder an") .. "'"))
                 hl.dispatch(hl.dsp.submap("reset"))
             else
-                hl.dispatch(hl.dsp.exec_cmd("notify-send -a Hyprland 'VM-Modus an' 'Alle Kuerzel aus, SUPER+ALT+F1 = zurueck'"))
+                hl.dispatch(hl.dsp.exec_cmd("notify-send -a Hyprland '" .. tr("VM-Modus an") .. "' '" .. tr("Alle Kuerzel aus, SUPER+ALT+F1 = zurueck") .. "'"))
                 hl.dispatch(hl.dsp.submap("virtual-machine"))
             end
         end, { submap_universal = true, description = "Sitzung: VM-Modus (alle Kuerzel aus/an)" })

@@ -28,7 +28,17 @@ Singleton {
         if (configLang !== "auto")
             return configLang;
 
-        return Qt.locale().name;
+        // claudes-glassy: de_AT / de_CH have no own file -> use de_DE (same for other languages)
+        var loc = Qt.locale().name;
+        var langs = root.allAvailableLanguages;
+        if (langs.indexOf(loc) >= 0)
+            return loc;
+        var prefix = loc.split("_")[0] + "_";
+        for (var i = 0; i < langs.length; i++) {
+            if (langs[i].startsWith(prefix))
+                return langs[i];
+        }
+        return loc;
     }
 
     TranslationScanner {
