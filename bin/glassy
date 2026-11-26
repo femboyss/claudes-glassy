@@ -370,7 +370,7 @@ set_platform() {
     esac
     local tmp; tmp="$(mktemp)"
     jq --arg p "$p" --arg k "$key" --argjson m "$mac" \
-       '.glassy.platform = $p | .cheatsheet.superKey = $k | .cheatsheet.useMacSymbol = $m' \
+       '.glassy.platform = $p | .cheatsheet.superKey = $k | .cheatsheet.useMacSymbol = $m | .panelFamily = (if $p == "windows" then "waffle" else "ii" end)' \
        "$SHELL_CONFIG" > "$tmp" && mv "$tmp" "$SHELL_CONFIG"
     python3 "$THEME_PY" sync
     case "$p" in

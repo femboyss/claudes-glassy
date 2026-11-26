@@ -642,7 +642,7 @@
   "Restart the shell": "Shell neu starten",
   "Press Enter to close": "Enter zum Schliessen",
   "Look: Linux, Windows or Mac": "Look: Linux, Windows oder Mac",
-  "Changes the shortcuts and the key symbols in the cheatsheet (SUPER+H). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.": "Aendert die Tastenkuerzel und die Tastensymbole im Spickzettel (SUPER+H). Linux: Super antippen fuer das Startmenue. Windows: Strg+Esc fuer das Startmenue, Strg+Super fuer die Uebersicht, Super alleine macht nichts. Mac: Super ist Cmd, Cmd+Leertaste fuer die Suche, Strg+Pfeil hoch fuer die Uebersicht, Cmd+Shift+3 / 4 fuer Screenshots.",
   "Theme": "Theme",
-  "Performance": "Performance"
+  "Performance": "Performance",
+  "Decides the whole desktop: panel, shortcuts and key symbols. Windows: Windows taskbar and start menu. Linux: the glassy bar (end-4). Mac: Mac dock (coming soon). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.": "Bestimmt den ganzen Desktop: Leiste, Tastenkuerzel und Tastensymbole. Windows: Windows-Taskleiste und Startmenue. Linux: die glassy-Leiste (end-4). Mac: Mac-Dock (kommt bald). Linux: Super antippen fuer das Startmenue. Windows: Strg+Esc fuer das Startmenue, Strg+Super fuer die Uebersicht, Super alleine macht nichts. Mac: Super ist Cmd, Cmd+Leertaste fuer die Suche, Strg+Pfeil hoch fuer die Uebersicht, Cmd+Shift+3 / 4 fuer Screenshots."
 }
