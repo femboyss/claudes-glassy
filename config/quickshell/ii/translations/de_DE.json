@@ -644,5 +644,20 @@
   "Look: Linux, Windows or Mac": "Look: Linux, Windows oder Mac",
   "Theme": "Theme",
   "Performance": "Performance",
-  "Decides the whole desktop: panel, shortcuts and key symbols. Windows: Windows taskbar and start menu. Linux: the glassy bar (end-4). Mac: Mac dock (coming soon). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.": "Bestimmt den ganzen Desktop: Leiste, Tastenkuerzel und Tastensymbole. Windows: Windows-Taskleiste und Startmenue. Linux: die glassy-Leiste (end-4). Mac: Mac-Dock (kommt bald). Linux: Super antippen fuer das Startmenue. Windows: Strg+Esc fuer das Startmenue, Strg+Super fuer die Uebersicht, Super alleine macht nichts. Mac: Super ist Cmd, Cmd+Leertaste fuer die Suche, Strg+Pfeil hoch fuer die Uebersicht, Cmd+Shift+3 / 4 fuer Screenshots."
+  "Decides the whole desktop: panel, window buttons, shortcuts and key symbols. Windows: Windows taskbar and start menu. Linux: the glassy bar (end-4). Mac: menu bar at the top and a dock. Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.": "Bestimmt den ganzen Desktop: Leiste, Fensterknoepfe, Tastenkuerzel und Tastensymbole. Windows: Windows-Taskleiste und Startmenue. Linux: die glassy-Leiste (end-4). Mac: Menueleiste oben und ein Dock. Linux: Super antippen fuer das Startmenue. Windows: Strg+Esc fuer das Startmenue, Strg+Super fuer die Uebersicht, Super alleine macht nichts. Mac: Super ist Cmd, Cmd+Leertaste fuer die Suche, Strg+Pfeil hoch fuer die Uebersicht, Cmd+Shift+3 / 4 fuer Screenshots.",
+  "Window": "Fenster",
+  "About this computer": "Ueber diesen Computer",
+  "System settings...": "Systemeinstellungen ...",
+  "Restart...": "Neustart ...",
+  "Shut down...": "Ausschalten ...",
+  "Log out...": "Abmelden ...",
+  "Hide": "Ausblenden",
+  "Quit %1": "%1 beenden",
+  "Minimize": "Im Dock ablegen",
+  "Zoom": "Zoomen",
+  "Full screen": "Vollbild",
+  "Show all windows": "Alle Fenster anzeigen",
+  "Close window": "Fenster schliessen",
+  "Launchpad": "Launchpad",
+  "Trash": "Papierkorb"
 }

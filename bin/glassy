@@ -370,13 +370,17 @@ set_platform() {
     esac
     local tmp; tmp="$(mktemp)"
     jq --arg p "$p" --arg k "$key" --argjson m "$mac" \
-       '.glassy.platform = $p | .cheatsheet.superKey = $k | .cheatsheet.useMacSymbol = $m | .panelFamily = (if $p == "windows" then "waffle" else "ii" end)' \
+       '.glassy.platform = $p | .cheatsheet.superKey = $k | .cheatsheet.useMacSymbol = $m | .panelFamily = (if $p == "windows" then "waffle" elif $p == "mac" then "mac" else "ii" end)' \
        "$SHELL_CONFIG" > "$tmp" && mv "$tmp" "$SHELL_CONFIG"
     python3 "$THEME_PY" sync
+    local layout="appmenu:close"
+    [ "$p" = windows ] && layout=":minimize,maximize,close"
+    [ "$p" = mac ] && layout="close,minimize,maximize:"
+    gsettings set org.gnome.desktop.wm.preferences button-layout "$layout" 2>/dev/null || true
     case "$p" in
         linux)   c_ok "Look: Linux - Super antippen = Startmenue / Suche" ;;
         windows) c_ok "Look: Windows - Strg+Esc = Startmenue, Strg+Super = Uebersicht, Super alleine macht nichts" ;;
-        mac)     c_ok "Look: Mac - Cmd(Super)+Leertaste = Suche, Strg+Pfeil hoch = Uebersicht, Cmd+Shift+3/4 = Screenshot" ;;
+        mac)     c_ok "Look: Mac - Menueleiste + Dock, Ampel-Knoepfe, Cmd(Super)+Leertaste = Suche, Strg+Pfeil hoch = Uebersicht, Cmd+Shift+3/4 = Screenshot" ;;
     esac
 }
 
