@@ -19,6 +19,15 @@ Scope {
 
     function hypr(lua) { Quickshell.execDetached(["hyprctl", "dispatch", lua]); }
     function sh(cmd) { Quickshell.execDetached(["bash", "-c", cmd]); }
+    // Erst das Menue zumachen, dann (kurz danach) das naechste Panel oeffnen.
+    // Sonst kaempfen Menue und Uebersicht/Sitzungsbildschirm um den Fokus und es flackert.
+    function later(fn) { deferTimer.fn = fn; deferTimer.restart(); }
+    Timer {
+        id: deferTimer
+        property var fn: null
+        interval: 200
+        onTriggered: if (fn) { const f = fn; fn = null; f(); }
+    }
 
     Variants {
         model: Quickshell.screens
@@ -144,11 +153,11 @@ Scope {
                 MacMenuItem { text: Translation.tr("System settings..."); shortcut: "⌘ I"; onTriggered: { bar.openMenu = ""; root.sh(`XDG_CURRENT_DESKTOP=gnome qs -p ${FileUtils.trimFileProtocol(Directories.config)}/quickshell/ii/settings.qml`) } }
                 MacMenuItem { separator: true }
                 MacMenuItem { text: Translation.tr("Sleep"); onTriggered: { bar.openMenu = ""; root.sh("systemctl suspend || loginctl suspend") } }
-                MacMenuItem { text: Translation.tr("Restart..."); onTriggered: { bar.openMenu = ""; GlobalStates.sessionOpen = true } }
-                MacMenuItem { text: Translation.tr("Shut down..."); onTriggered: { bar.openMenu = ""; GlobalStates.sessionOpen = true } }
+                MacMenuItem { text: Translation.tr("Restart..."); onTriggered: { bar.openMenu = ""; root.later(() => GlobalStates.sessionOpen = true) } }
+                MacMenuItem { text: Translation.tr("Shut down..."); onTriggered: { bar.openMenu = ""; root.later(() => GlobalStates.sessionOpen = true) } }
                 MacMenuItem { separator: true }
                 MacMenuItem { text: Translation.tr("Lock screen"); shortcut: "⌘ L"; onTriggered: { bar.openMenu = ""; root.sh("loginctl lock-session") } }
-                MacMenuItem { text: Translation.tr("Log out..."); onTriggered: { bar.openMenu = ""; GlobalStates.sessionOpen = true } }
+                MacMenuItem { text: Translation.tr("Log out..."); onTriggered: { bar.openMenu = ""; root.later(() => GlobalStates.sessionOpen = true) } }
             }
             MacMenu {
                 anchorItem: appButton
@@ -164,7 +173,7 @@ Scope {
                 MacMenuItem { text: Translation.tr("Zoom"); onTriggered: { bar.openMenu = ""; root.hypr('hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })') } }
                 MacMenuItem { text: Translation.tr("Full screen"); onTriggered: { bar.openMenu = ""; root.hypr('hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })') } }
                 MacMenuItem { separator: true }
-                MacMenuItem { text: Translation.tr("Show all windows"); shortcut: "⌃ ↑"; onTriggered: { bar.openMenu = ""; GlobalStates.overviewOpen = true } }
+                MacMenuItem { text: Translation.tr("Show all windows"); shortcut: "⌃ ↑"; onTriggered: { bar.openMenu = ""; root.later(() => GlobalStates.overviewOpen = true) } }
                 MacMenuItem { text: Translation.tr("Close window"); onTriggered: { bar.openMenu = ""; root.hypr("hl.dsp.window.close()") } }
             }
         }
