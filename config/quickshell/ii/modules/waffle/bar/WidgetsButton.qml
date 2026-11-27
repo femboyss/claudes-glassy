@@ -4,19 +4,35 @@ import org.kde.kirigami as Kirigami
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.widgets
 import qs.modules.waffle.looks
 
 AppButton {
     id: root
 
-    readonly property bool expandedForm: Config.options.waffles.bar.leftAlignApps
-    leftInset: Config.options.waffles.bar.leftAlignApps ? 0 : 12
-    implicitWidth: expandedForm ? 148 : (height - topInset - bottomInset + leftInset + rightInset)
+    // claudes-glassy: wie Windows 11 immer Wetter (Symbol + Temperatur + Zustand) und
+    // oeffnet das Widgets-Brett (nicht die Schnelleinstellungen)
+    readonly property bool expandedForm: true
+    readonly property string weatherSymbol: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+    readonly property string weatherText: ({
+        "clear_day": Translation.tr("Sunny"),
+        "partly_cloudy_day": Translation.tr("Partly cloudy"),
+        "cloud": Translation.tr("Cloudy"),
+        "foggy": Translation.tr("Fog"),
+        "rainy": Translation.tr("Rain"),
+        "thunderstorm": Translation.tr("Thunderstorm"),
+        "snowing": Translation.tr("Snow"),
+        "snowing_heavy": Translation.tr("Heavy snow"),
+        "cloudy_snowing": Translation.tr("Snow showers"),
+        "weather_hail": Translation.tr("Hail"),
+    })[weatherSymbol] ?? ""
+    leftInset: 4
+    implicitWidth: 150
     iconName: "widgets"
 
-    checked: GlobalStates.sidebarLeftOpen
+    checked: GlobalStates.widgetsOpen
     onClicked: {
-        GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen
+        GlobalStates.widgetsOpen = !GlobalStates.widgetsOpen
     }
     onDownChanged: {
         scaleAnim.duration = root.down ? 150 : 200
@@ -42,10 +58,12 @@ AppButton {
             }
             spacing: 6
 
-            WAppIcon {
+            MaterialSymbol {
                 id: iconWidget
                 anchors.verticalCenter: parent.verticalCenter
-                iconName: root.iconName
+                text: root.weatherSymbol
+                iconSize: 26
+                color: root.weatherSymbol === "clear_day" ? "#FFC83D" : Looks.colors.fg
 
                 Behavior on scale {
                     NumberAnimation {
@@ -59,7 +77,11 @@ AppButton {
                 visible: root.expandedForm
                 anchors.verticalCenter: parent.verticalCenter
                 WText {
-                    text: Translation.tr("Widgets")
+                    text: Weather.data.temp || "--"
+                }
+                WText {
+                    text: root.weatherText
+                    color: Looks.colors.fg1
                 }
             }
         }

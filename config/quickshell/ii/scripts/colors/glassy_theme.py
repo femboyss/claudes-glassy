@@ -706,6 +706,214 @@ def apply(name, reload_hypr=True):
     return 0
 
 
+# ==== Look-Extras (Windows): Terminal wie cmd, Symbole/Mauszeiger/Schrift wie Windows ==========
+KITTY_LOOK = os.path.join(XDG_CONFIG, "kitty", "glassy-look.conf")
+KITTY_CONF = os.path.join(XDG_CONFIG, "kitty", "kitty.conf")
+FISH_LOOK = os.path.join(XDG_CONFIG, "fish", "conf.d", "glassy-look.fish")
+LOOK_STATE = os.path.join(HOME, ".local", "state", "glassy", "look-backup.json")
+
+KITTY_WINDOWS = """# claudes-glassy: automatisch erzeugt (Look: Windows) - Terminal wie die Eingabeaufforderung
+font_family      Cascadia Mono
+font_size        12.0
+background_opacity 1.0
+window_padding_width 6
+cursor_shape underline
+cursor_blink_interval 0.5
+cursor_trail 0
+foreground #CCCCCC
+background #0C0C0C
+cursor #FFFFFF
+selection_foreground #0C0C0C
+selection_background #FFFFFF
+color0  #0C0C0C
+color1  #C50F1F
+color2  #13A10E
+color3  #C19C00
+color4  #0037DA
+color5  #881798
+color6  #3A96DD
+color7  #CCCCCC
+color8  #767676
+color9  #E74856
+color10 #16C60C
+color11 #F9F1A5
+color12 #3B78FF
+color13 #B4009E
+color14 #61D6D6
+color15 #F2F2F2
+tab_bar_edge top
+tab_bar_style separator
+tab_separator ""
+active_tab_background #0C0C0C
+active_tab_foreground #FFFFFF
+inactive_tab_background #1F1F1F
+inactive_tab_foreground #A0A0A0
+env GLASSY_LOOK=windows
+"""
+
+FISH_LOOK_FILE = r"""# claudes-glassy: automatisch erzeugt - im Windows-Look sieht das Terminal aus wie cmd.exe
+# (nur in kitty-Fenstern, die im Windows-Look geoeffnet wurden: GLASSY_LOOK=windows)
+status is-interactive; or exit
+test "$GLASSY_LOOK" = windows; or exit
+set -g fish_greeting
+
+if string match -q 'de*' -- "$LANG"
+    set -g __glassy_cmd_title Eingabeaufforderung
+    set -g __glassy_cmd_rights 'Alle Rechte vorbehalten.'
+else
+    set -g __glassy_cmd_title 'Command Prompt'
+    set -g __glassy_cmd_rights 'All rights reserved.'
+end
+printf 'Microsoft Windows [Version 10.0.26100.4652]\n(c) Microsoft Corporation. %s\n\n' $__glassy_cmd_rights
+
+function __glassy_cmd_path
+    set -l p (string replace -r "^$HOME" "C:\\\\Users\\\\$USER" -- $PWD)
+    if not string match -q 'C:*' -- $p
+        set p "C:$p"
+    end
+    string replace -a / '\\' -- $p
+end
+
+# Erst beim ersten Prompt umschalten (config.fish laedt danach noch starship + Farben)
+function __glassy_cmd_init --on-event fish_prompt
+    functions -e __glassy_cmd_init
+    # Farben der Eingabeaufforderung (end-4 setzt sonst seine eigenen per Escape-Code)
+    printf '\e]10;#CCCCCC\a\e]11;#0C0C0C\a\e]12;#FFFFFF\a'
+    set -l pal 0C0C0C C50F1F 13A10E C19C00 0037DA 881798 3A96DD CCCCCC 767676 E74856 16C60C F9F1A5 3B78FF B4009E 61D6D6 F2F2F2
+    for i in (seq 0 15)
+        printf '\e]4;%d;#%s\a' $i $pal[(math $i + 1)]
+    end
+    function fish_prompt
+        printf '%s>' (__glassy_cmd_path)
+    end
+    function fish_right_prompt; end
+    function fish_mode_prompt; end
+    function fish_title
+        echo $__glassy_cmd_title
+    end
+    set -g fish_color_command normal
+    set -g fish_color_param normal
+    set -g fish_color_autosuggestion 767676
+    alias cls 'printf "\033[2J\033[3J\033[1;1H"'
+    alias dir 'ls -la'
+end
+"""
+
+FONTS_DIR = os.path.join(HOME, ".local", "share", "fonts", "glassy-windows")
+
+
+def _gs(key, value=None):
+    schema, k = key.rsplit(".", 1)
+    if value is None:
+        r = subprocess.run(["gsettings", "get", schema, k], capture_output=True, text=True)
+        return r.stdout.strip().strip("'") if r.returncode == 0 else None
+    subprocess.run(["gsettings", "set", schema, k, value], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _icon_theme_exists(name):
+    for base in (os.path.join(HOME, ".local", "share", "icons"), os.path.join(HOME, ".icons"), "/usr/share/icons"):
+        if os.path.isdir(os.path.join(base, name)):
+            return True
+    return False
+
+
+def _font_installed(family):
+    r = subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True)
+    return family.lower() in r.stdout.lower()
+
+
+def _ensure_windows_fonts():
+    """Cascadia Mono (Terminal) + Selawik (frei, wie Segoe UI) von Microsofts GitHub holen, im Hintergrund."""
+    if _font_installed("Cascadia Mono") and _font_installed("Selawik"):
+        return
+    script = (
+        f'set -e; d="{FONTS_DIR}"; t=$(mktemp -d); mkdir -p "$d"; cd "$t"; '
+        'curl -fsSL -o c.zip https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip; '
+        'unzip -qo c.zip "ttf/*" -d c; cp c/ttf/CascadiaMono*.ttf c/ttf/CascadiaCode.ttf "$d"/ 2>/dev/null || cp c/ttf/*.ttf "$d"/; '
+        'curl -fsSL -o s.zip https://github.com/microsoft/Selawik/releases/download/1.01/Selawik_Release.zip; '
+        'unzip -qo s.zip -d s; find s -iname "*.ttf" -exec cp {} "$d"/ \\;; '
+        'fc-cache -f "$d"; rm -rf "$t"; pkill -SIGUSR1 -x kitty || true'
+    )
+    subprocess.Popen(["bash", "-c", script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True)
+
+
+def _set_cursor(theme, size):
+    _gs("org.gnome.desktop.interface.cursor-theme", theme)
+    _gs("org.gnome.desktop.interface.cursor-size", str(size))
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        subprocess.run(["hyprctl", "setcursor", theme, str(size)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _kde_icons(theme):
+    subprocess.run(["kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", theme],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def look_extras(cfg):
+    platform = (deep_get(cfg, ["glassy"], {}) or {}).get("platform", "linux")
+    os.makedirs(os.path.dirname(KITTY_LOOK), exist_ok=True)
+    os.makedirs(os.path.dirname(FISH_LOOK), exist_ok=True)
+
+    # kitty: eigene Datei, wird NACH glassy-theme.conf eingebunden
+    write(KITTY_LOOK, KITTY_WINDOWS if platform == "windows" else "# claudes-glassy: Look-Extras (nur im Windows-Look gefuellt)\n")
+    try:
+        with open(KITTY_CONF, encoding="utf-8") as f:
+            kc = f.read()
+        if "include glassy-look.conf" not in kc:
+            with open(KITTY_CONF, "a", encoding="utf-8") as f:
+                f.write("\n# claudes-glassy: Look (Windows = Eingabeaufforderung), muss nach glassy-theme.conf stehen\ninclude glassy-look.conf\n")
+    except OSError:
+        pass
+    write(FISH_LOOK, FISH_LOOK_FILE)
+    subprocess.run(["bash", "-c", "pkill -SIGUSR1 -x kitty"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Symbole / Mauszeiger / Schrift: beim Wechsel zu Windows sichern, beim Verlassen zurueck
+    if platform == "windows" and not os.path.exists(LOOK_STATE):
+        backup = {
+            "icon": _gs("org.gnome.desktop.interface.icon-theme"),
+            "cursor": _gs("org.gnome.desktop.interface.cursor-theme"),
+            "cursor_size": _gs("org.gnome.desktop.interface.cursor-size"),
+            "font": _gs("org.gnome.desktop.interface.font-name"),
+        }
+        os.makedirs(os.path.dirname(LOOK_STATE), exist_ok=True)
+        with open(LOOK_STATE, "w", encoding="utf-8") as f:
+            json.dump(backup, f)
+        for icons in ("Win11-dark", "Win11", "We10X-black-dark", "Fluent-dark"):
+            if _icon_theme_exists(icons):
+                _gs("org.gnome.desktop.interface.icon-theme", icons)
+                _kde_icons(icons)
+                break
+        for cur in ("Win10OS-cursors", "Win11-cursors"):
+            if _icon_theme_exists(cur):
+                _set_cursor(cur, 24)
+                break
+        _ensure_windows_fonts()
+        if _font_installed("Segoe UI Variable"):
+            _gs("org.gnome.desktop.interface.font-name", "Segoe UI Variable Text 10")
+        elif _font_installed("Selawik"):
+            _gs("org.gnome.desktop.interface.font-name", "Selawik 10")
+    elif platform == "windows":
+        _ensure_windows_fonts()
+        if _font_installed("Selawik") and not _font_installed("Segoe UI Variable") \
+                and "selawik" not in (_gs("org.gnome.desktop.interface.font-name") or "").lower():
+            _gs("org.gnome.desktop.interface.font-name", "Selawik 10")
+    elif os.path.exists(LOOK_STATE):
+        try:
+            with open(LOOK_STATE, encoding="utf-8") as f:
+                b = json.load(f)
+        except (OSError, ValueError):
+            b = {}
+        if b.get("icon"):
+            _gs("org.gnome.desktop.interface.icon-theme", b["icon"])
+            _kde_icons(b["icon"])
+        if b.get("cursor"):
+            _set_cursor(b["cursor"], b.get("cursor_size") or 24)
+        if b.get("font"):
+            _gs("org.gnome.desktop.interface.font-name", b["font"])
+        os.remove(LOOK_STATE)
+
+
 def sync(reload_hypr=True):
     cfg = load_config()
     name = current()
@@ -716,6 +924,10 @@ def sync(reload_hypr=True):
         c = m3_from_palette(t)
         border = (c["primary"], c["secondary"], c["tertiary"], c["surface_container_high"])
     hypr_values(cfg, border)
+    try:
+        look_extras(cfg)
+    except Exception as e:  # Look-Extras duerfen den Rest nie aufhalten
+        print(f"Look-Extras: {e}", file=sys.stderr)
     if reload_hypr and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
         subprocess.run(["hyprctl", "reload"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return 0

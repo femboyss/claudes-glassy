@@ -30,6 +30,10 @@ Singleton {
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
+    // claudes-glassy (Windows-Look): Widgets-Brett links, Zwischenablage (Win+V / Win+.)
+    property bool widgetsOpen: false
+    property bool clipboardOpen: false
+    property string clipboardTab: "clipboard"   // clipboard | emoji | symbols
 
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {

@@ -70,7 +70,9 @@ try("workspace prev/next", function()
 end)
 
 try("scratchpad", function()
-    bind(M .. " + S",        hl.dsp.workspace.toggle_special("special"), { description = "Workspace: Scratchpad zeigen" })
+    if PLATFORM ~= "windows" then
+        bind(M .. " + S",        hl.dsp.workspace.toggle_special("special"), { description = "Workspace: Scratchpad zeigen" })
+    end
     bind(M .. " + CTRL + S", hl.dsp.window.move({ workspace = "special:special", follow = false }), { description = "Fenster: In den Scratchpad" })
 end)
 
@@ -84,8 +86,10 @@ try("monitor by key", function()
     end
 end)
 try("monitor next/prev", function()
-    bind(M .. " + period",         hl.dsp.focus({ monitor = "+1" }), { description = "Monitor: Naechster (SUPER+.)" })
-    bind(M .. " + comma",          hl.dsp.focus({ monitor = "-1" }), { description = "Monitor: Vorheriger (SUPER+,)" })
+    if PLATFORM ~= "windows" then
+        bind(M .. " + period",         hl.dsp.focus({ monitor = "+1" }), { description = "Monitor: Naechster (SUPER+.)" })
+        bind(M .. " + comma",          hl.dsp.focus({ monitor = "-1" }), { description = "Monitor: Vorheriger (SUPER+,)" })
+    end
     bind(M .. " + SHIFT + period", hl.dsp.window.move({ monitor = "+1", follow = true }), { description = "Fenster: Auf naechsten Monitor" })
     bind(M .. " + SHIFT + comma",  hl.dsp.window.move({ monitor = "-1", follow = true }), { description = "Fenster: Auf vorherigen Monitor" })
 end)
@@ -115,27 +119,43 @@ try("shell", function()
     end
     bind(M .. " + Space", search, { description = "Shell: Suche (Apps, Rechner, Befehle, Web)" })
     bind(M .. " + R", search)
-    -- Workspace-Nummern einblenden, solange Super gehalten wird
-    bind("SUPER_L", global("workspaceNumber"), { ignore_mods = true, transparent = true })
-    bind("SUPER_R", global("workspaceNumber"), { ignore_mods = true, transparent = true })
-    bind("SUPER_L", global("workspaceNumber"), { ignore_mods = true, transparent = true, release = true })
-    bind("SUPER_R", global("workspaceNumber"), { ignore_mods = true, transparent = true, release = true })
+    -- Workspace-Nummern einblenden, solange Super gehalten wird (nicht im Windows-Look)
+    if PLATFORM ~= "windows" then
+        bind("SUPER_L", global("workspaceNumber"), { ignore_mods = true, transparent = true })
+        bind("SUPER_R", global("workspaceNumber"), { ignore_mods = true, transparent = true })
+        bind("SUPER_L", global("workspaceNumber"), { ignore_mods = true, transparent = true, release = true })
+        bind("SUPER_R", global("workspaceNumber"), { ignore_mods = true, transparent = true, release = true })
+    end
 
     bind(M .. " + Tab", global("overviewWorkspacesToggle"), { description = "Shell: Uebersicht aller Fenster (wie Windows Task View)" })
     bind(M .. " + O",   global("overviewWorkspacesToggle"))
-    bind(M .. " + A",   global("sidebarRightToggle"), { description = "Shell: Schnelleinstellungen + Mitteilungen (rechts)" })
-    bind(M .. " + N",   global("sidebarRightToggle"), { description = "Shell: Mitteilungen (rechts)" })
+    if PLATFORM ~= "windows" then
+        bind(M .. " + A",   global("sidebarRightToggle"), { description = "Shell: Schnelleinstellungen + Mitteilungen (rechts)" })
+        bind(M .. " + N",   global("sidebarRightToggle"), { description = "Shell: Mitteilungen (rechts)" })
+    end
     bind(M .. " + K",   global("sidebarLeftToggle"), { description = "Shell: KI-Seitenleiste (links)" })
     bind(M .. " + ALT + K", global("sidebarLeftToggleDetach"), { description = "Shell: KI-Seitenleiste als eigenes Fenster" })
-    bind(M .. " + V",   global("overviewClipboardToggle"), { description = "Shell: Zwischenablage" })
-    bind(M .. " + SHIFT + E", global("overviewEmojiToggle"), { description = "Shell: Emojis" })
+    if PLATFORM == "windows" then
+        -- Wie Windows 11: eigenes Fenster fuer Zwischenablage / Emoji, Widgets, Schnelleinstellungen
+        bind(M .. " + V",      global("clipboardToggle"), { description = "Shell: Zwischenablage-Verlauf (Win+V)" })
+        bind(M .. " + period", global("emojiToggle"),     { description = "Shell: Emoji (Win+.)" })
+        bind(M .. " + SHIFT + E", global("emojiToggle"))
+        bind(M .. " + W",      global("widgetsToggle"),   { description = "Shell: Widgets (Win+W)" })
+        bind(M .. " + A",      global("sidebarLeftToggle"),  { description = "Shell: Schnelleinstellungen (Win+A)" })
+        bind(M .. " + N",      global("sidebarRightToggle"), { description = "Shell: Mitteilungen + Kalender (Win+N)" })
+        bind(M .. " + S",      search, { description = "Shell: Suche (Win+S)" })
+        bind(M .. " + Q",      search)
+    else
+        bind(M .. " + V",   global("overviewClipboardToggle"), { description = "Shell: Zwischenablage" })
+        bind(M .. " + SHIFT + E", global("overviewEmojiToggle"), { description = "Shell: Emojis" })
+    end
     bind(M .. " + H",   global("cheatsheetToggle"), { description = "Shell: Spickzettel (alle Tastenkuerzel)" })
     bind(M .. " + Slash", global("cheatsheetToggle"))
-    bind(M .. " + M",   global("mediaControlsToggle"), { description = "Shell: Mediensteuerung" })
+    if PLATFORM ~= "windows" then bind(M .. " + M", global("mediaControlsToggle"), { description = "Shell: Mediensteuerung" }) end
     bind(M .. " + G",   global("overlayToggle"), { description = "Shell: Widget-Overlay (wie Xbox Game Bar)" })
     bind(M .. " + CTRL + K", global("oskToggle"), { description = "Shell: Bildschirmtastatur" })
     bind(M .. " + SHIFT + B", global("barToggle"), { description = "Shell: Leiste ein/aus" })
-    bind(M .. " + W",   global("wallpaperSelectorToggle"), { description = "Shell: Wallpaper aussuchen" })
+    if PLATFORM ~= "windows" then bind(M .. " + W", global("wallpaperSelectorToggle"), { description = "Shell: Wallpaper aussuchen" }) end
     bind(M .. " + SHIFT + W", global("wallpaperSelectorRandom"), { description = "Shell: Zufaelliges Wallpaper" })
     bind("CTRL + " .. M .. " + T", global("wallpaperSelectorToggle"))
     bind("CTRL + " .. M .. " + SHIFT + D", global("toggleLightDark"), { description = "Shell: Hell/Dunkel (nur Material You)" })
@@ -154,8 +174,8 @@ try("session", function()
     bind(M .. " + Escape", global("sessionToggle"))
     bind(M .. " + L", sh("loginctl lock-session"), { description = "Sitzung: Sperren" })
     bind(M .. " + SHIFT + L", sh("systemctl suspend || loginctl suspend"), { locked = true, description = "Sitzung: Standby" })
-    bind(M .. " + SHIFT + M", sh("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"),
-        { description = "Sitzung: Hyprland beenden" })
+    if PLATFORM ~= "windows" then bind(M .. " + SHIFT + M", sh("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"),
+        { description = "Sitzung: Hyprland beenden" }) end
     bind("CTRL + SHIFT + Escape", sh(hyprScripts .. "/launch_first_available.sh 'missioncenter' 'gnome-system-monitor' 'plasma-systemmonitor --page-name Processes' 'kitty -1 btop'"),
         { description = "Sitzung: Task-Manager" })
 end)
@@ -175,13 +195,23 @@ end)
 -- Fenster
 -------------------------------------------------
 try("window", function()
-    bind(M .. " + Q", hl.dsp.window.close(), { description = "Fenster: Schliessen" })
+    if PLATFORM == "windows" then
+        bind(M .. " + D", function() glassy_show_desktop() end, { description = "Fenster: Desktop anzeigen (Win+D)" })
+        bind(M .. " + M", function() glassy_minimize_all() end, { description = "Fenster: Alle minimieren (Win+M)" })
+        bind(M .. " + SHIFT + M", function() glassy_restore_all() end, { description = "Fenster: Alle wiederherstellen (Win+Shift+M)" })
+        bind(M .. " + CTRL + D", hl.dsp.focus({ workspace = "emptynm" }), { description = "Workspace: Neuer Desktop (Win+Strg+D)" })
+        bind(M .. " + CTRL + F4", hl.dsp.window.close())
+        bind(M .. " + Print", sh("mkdir -p \"$(xdg-user-dir PICTURES)/Screenshots\" && grim \"$(xdg-user-dir PICTURES)/Screenshots/Screenshot_$(date '+%Y-%m-%d_%H.%M.%S').png\""),
+            { description = "Werkzeug: Screenshot speichern (Win+Druck)" })
+    else
+        bind(M .. " + Q", hl.dsp.window.close(), { description = "Fenster: Schliessen" })
+    end
     bind(M .. " + SHIFT + ALT + Q", sh("hyprctl kill"), { description = "Fenster: Abschiessen (haengt)" })
     bind(M .. " + T", hl.dsp.window.float({ action = "toggle" }), { description = "Fenster: Schwebend an/aus" })
     bind(M .. " + ALT + Space", hl.dsp.window.float({ action = "toggle" }))
     bind(M .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { description = "Fenster: Vollbild" })
     bind(M .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }), { description = "Fenster: Maximieren" })
-    bind(M .. " + D", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+    if PLATFORM ~= "windows" then bind(M .. " + D", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })) end
     bind(M .. " + C", hl.dsp.window.center(), { description = "Fenster: Zentrieren" })
     bind(M .. " + SHIFT + P", hl.dsp.window.pin({ action = "toggle" }), { description = "Fenster: Anheften (auf allen Workspaces)" })
     bind(M .. " + P", hl.dsp.window.pseudo(), { description = "Fenster: Pseudo-Kachel" })
@@ -197,6 +227,8 @@ try("focus/move", function()
         bind(M .. " + down",  function() glassy_win_key("down") end,  { description = "Fenster: Wiederherstellen / Minimieren (Win+Runter)" })
         bind(M .. " + left",  function() glassy_win_key("left") end,  { description = "Fenster: Links andocken (Win+Links)" })
         bind(M .. " + right", function() glassy_win_key("right") end, { description = "Fenster: Rechts andocken (Win+Rechts)" })
+        bind(M .. " + SHIFT + left",  hl.dsp.window.move({ monitor = "-1", follow = true }), { description = "Fenster: Auf anderen Monitor (Win+Shift+Pfeil)" })
+        bind(M .. " + SHIFT + right", hl.dsp.window.move({ monitor = "+1", follow = true }))
         return
     end
     for _, dir in ipairs({ "left", "right", "up", "down" }) do

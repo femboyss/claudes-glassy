@@ -77,7 +77,8 @@ Scope {
     }
 
     IpcHandler {
-        target: "search"
+        // claudes-glassy: war "search" -> kollidierte mit dem Startmenue (Super oeffnete die Aktivitaetsansicht)
+        target: "taskView"
 
         function toggle() {
             GlobalStates.overviewOpen = !GlobalStates.overviewOpen;

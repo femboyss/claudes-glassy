@@ -40,6 +40,9 @@ GLASSY_PLATFORM_SUBS = {}
 
 -- Win+Pfeile (aus keybinds.lua); ausserhalb von Windows tun sie hier nichts
 function glassy_win_key(dir) end
+function glassy_show_desktop() end
+function glassy_minimize_all() end
+function glassy_restore_all() end
 
 if PLATFORM ~= "windows" and PLATFORM ~= "mac" then
     -- hyprbars wird hier nicht geladen -> Hyprland entlaedt es selbst
@@ -210,13 +213,74 @@ function glassy_win_key(dir)
         end
         return
     end
+    -- Beim Wegziehen eines angedockten Fensters: alte Groesse zurueck, Position bleibt (wie Windows)
+    if dir == "unsnap" then
+        local s = snapped[win.address]
+        if s then
+            snapped[win.address] = nil
+            hl.dispatch(hl.dsp.window.resize({ x = s.w, y = s.h }))
+        end
+        return
+    end
     if maximized then hl.dispatch(hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })) end
     if not snapped[win.address] then
         snapped[win.address] = { x = win.at.x, y = win.at.y, w = win.size.x, h = win.size.y }
     end
     local x, y, w, h = area(m)
-    local half = math.floor(w / 2)
-    if dir == "left" then place(x, y, half, h) else place(x + w - half, y, half, h) end
+    local hw, hh = math.floor(w / 2), math.floor(h / 2)
+    if dir == "left" then place(x, y, hw, h)
+    elseif dir == "right" then place(x + w - hw, y, hw, h)
+    elseif dir == "topleft" then place(x, y, hw, hh)
+    elseif dir == "topright" then place(x + w - hw, y, hw, hh)
+    elseif dir == "bottomleft" then place(x, y + h - hh, hw, hh)
+    elseif dir == "bottomright" then place(x + w - hw, y + h - hh, hw, hh)
+    end
+end
+
+-------------------------------------------------
+-- Win+D (Desktop anzeigen), Win+M (alle minimieren), Win+Shift+M (alle zurueck)
+-------------------------------------------------
+GLASSY_DESKTOP_HIDDEN = GLASSY_DESKTOP_HIDDEN or {}
+
+local function current_windows()
+    local ws = hl.get_active_workspace()
+    local out = {}
+    if not ws then return out end
+    for _, w in ipairs(hl.get_windows()) do
+        if w.workspace and w.workspace.id == ws.id then table.insert(out, w) end
+    end
+    return out, ws
+end
+
+function glassy_minimize_all()
+    local wins, ws = current_windows()
+    if #wins == 0 then return end
+    GLASSY_DESKTOP_HIDDEN = { workspace = ws.id, list = {} }
+    for _, w in ipairs(wins) do
+        table.insert(GLASSY_DESKTOP_HIDDEN.list, w.address)
+        hl.dispatch(hl.dsp.window.move({ workspace = "special:minimized", follow = false, window = w }))
+    end
+end
+
+function glassy_restore_all()
+    local h = GLASSY_DESKTOP_HIDDEN
+    if not h or not h.list then return end
+    for _, addr in ipairs(h.list) do
+        local w = hl.get_window("address:" .. addr)
+        if w then hl.dispatch(hl.dsp.window.move({ workspace = h.workspace, follow = false, window = w })) end
+    end
+    GLASSY_DESKTOP_HIDDEN = {}
+end
+
+function glassy_show_desktop()
+    if #current_windows() > 0 then glassy_minimize_all() else glassy_restore_all() end
+end
+
+-------------------------------------------------
+-- Fenster an den Rand ziehen = andocken (Hilfsprogramm snap.py, nur im Windows-Look)
+-------------------------------------------------
+if PLATFORM == "windows" then
+    hl.dispatch(hl.dsp.exec_cmd("python3 " .. HOME .. "/.config/hypr/glassy/snap.py"))
 end
 
 if #errors > 0 then glassy_notify("platform: " .. table.concat(errors, " | ")) end

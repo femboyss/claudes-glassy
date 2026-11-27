@@ -15,6 +15,9 @@ import qs.modules.waffle.screenSnip
 import qs.modules.waffle.startMenu
 import qs.modules.waffle.sessionScreen
 import qs.modules.waffle.taskView
+import qs.modules.waffle.widgets
+import qs.modules.waffle.clipboard
+import qs.modules.waffle.snap
 
 // Fallbacks
 import qs.modules.ii.cheatsheet
@@ -37,6 +40,9 @@ Scope {
     PanelLoader { component: WaffleStartMenu {} }
     PanelLoader { component: WaffleSessionScreen {} }
     PanelLoader { component: WaffleTaskView {} }
+    PanelLoader { component: WaffleWidgets {} }     // claudes-glassy
+    PanelLoader { component: WaffleClipboard {} }   // claudes-glassy
+    PanelLoader { component: WaffleSnapPreview {} } // claudes-glassy
 
     PanelLoader { component: Cheatsheet {} }
     PanelLoader { component: OnScreenKeyboard {} }

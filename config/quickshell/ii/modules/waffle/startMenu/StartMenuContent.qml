@@ -85,7 +85,7 @@ WBarAttachedPanelContent {
             SearchBar {
                 id: searchBar
                 Layout.fillWidth: true
-                implicitWidth: 832 // TODO: Make sizes naturally inferred
+                implicitWidth: 660 // claudes-glassy: Windows-11-Groesse (vorher 832)
                 horizontalPadding: 32
                 // verticalPadding: root.searching ? 32 : 16 // TODO: make this not nuke the panel
                 Synchronizer on searching {
@@ -101,7 +101,7 @@ WBarAttachedPanelContent {
                 }
             }
             Item {
-                implicitHeight: root.searching ? 800 : 800 // TODO: Make sizes naturally inferred
+                implicitHeight: 660 // claudes-glassy: Windows-11-Groesse (vorher 800)
                 Layout.fillWidth: true
                 Loader {
                     id: pageContentLoader
@@ -121,6 +121,6 @@ WBarAttachedPanelContent {
 
     Component {
         id: startPageComp
-        StartPageContent {}
+        StartPageClassic {}   // claudes-glassy: Windows-11-Startmenue
     }
 }
