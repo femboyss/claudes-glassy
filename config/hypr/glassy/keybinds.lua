@@ -11,7 +11,7 @@ local errors = {}
 
 -- Look (SUPER+I -> Glassy -> Look, or: glassy --platform linux|windows|mac)
 --   linux:   tap Super = start menu/search (default)
---   windows: tap Super does nothing, Ctrl+Esc = start menu, Ctrl+Super = overview
+--   windows: tap Super = start menu (like Windows), Ctrl+Esc too, Ctrl+Super = overview
 --   mac:     tap Super does nothing, Super+Space = search (Spotlight), Ctrl+Up = overview,
 --            Super+Shift+3 / +4 = screenshots
 local GEN = GLASSY_GEN or {}
@@ -97,7 +97,9 @@ try("shell", function()
     local search = sh(qsIpc .. " search toggle || pkill fuzzel || fuzzel")
     local overview = global("overviewWorkspacesToggle")
     if PLATFORM == "windows" then
-        -- Super alleine macht nichts; Strg+Esc = Start (wie bei Windows), Strg+Super = Uebersicht
+        -- Super antippen = Start (wie bei Windows), Strg+Esc auch, Strg+Super = Uebersicht
+        bind(M .. " + SUPER_L", search, { release = true, description = "Shell: Startmenue / Suche (Super antippen)" })
+        bind(M .. " + SUPER_R", search, { release = true })
         bind("CTRL + Escape", search, { description = "Shell: Startmenue / Suche (Strg+Esc)" })
         bind("CTRL + " .. M .. " + SUPER_L", overview, { release = true, description = "Shell: Uebersicht (Strg+Super)" })
         bind("CTRL + " .. M .. " + SUPER_R", overview, { release = true })
