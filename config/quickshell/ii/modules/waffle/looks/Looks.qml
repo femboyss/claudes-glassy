@@ -148,7 +148,11 @@ Singleton {
     font: QtObject {
         id: font
         property QtObject family: QtObject {
-            property string ui: "Noto Sans"
+            // claudes-glassy: Segoe UI (falls vorhanden), sonst Selawik (Microsofts freie Segoe-Alternative)
+            readonly property var installed: Qt.fontFamilies()
+            property string ui: installed.includes("Segoe UI Variable Text") ? "Segoe UI Variable Text"
+                              : installed.includes("Segoe UI") ? "Segoe UI"
+                              : installed.includes("Selawik") ? "Selawik" : "Noto Sans"
         }
         property QtObject weight: QtObject { // Noto is not Segoe, so we might use slightly different weights
             property int thin: Font.Normal

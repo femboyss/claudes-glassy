@@ -31,7 +31,8 @@ BarButton {
                 id: internetHoverArea
                 iconItem: FluentIcon {
                     anchors.verticalCenter: parent.verticalCenter
-                    icon: "wifi-1"
+                    // claudes-glassy: bei LAN kein grauer WLAN-Faecher dahinter (wie Windows)
+                    icon: Network.ethernet ? "empty" : "wifi-1"
                     color: Looks.colors.inactiveIcon
 
                     FluentIcon {
