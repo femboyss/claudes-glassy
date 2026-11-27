@@ -30,8 +30,14 @@ Item {
         root.close();
     }
     function pasteEntry(entry) {
-        Cliphist.copy(entry);
-        Quickshell.execDetached(["bash", "-c", "sleep 0.3; wtype -M ctrl -k v -m ctrl"]);
+        if (Cliphist.entryIsImage(entry)) {
+            Cliphist.copy(entry);
+            Quickshell.execDetached(["bash", "-c", "sleep 0.3; wtype -M ctrl -k v -m ctrl"]);
+        } else {
+            // Text ohne Discords "OBJ"-Platzhalter (U+FFFC) einfuegen
+            Quickshell.execDetached(["bash", "-c",
+                `printf '%s' '${StringUtils.shellSingleQuoteEscape(entry)}' | cliphist decode | sed 's/\xEF\xBF\xBC//g' | wl-copy; sleep 0.3; wtype -M ctrl -k v -m ctrl`]);
+        }
         root.close();
     }
 
@@ -151,7 +157,8 @@ Item {
                                 id: txt
                                 visible: !item.isImage
                                 anchors { left: parent.left; right: delBtn.left; top: parent.top; margins: 12 }
-                                text: StringUtils.cleanCliphistEntry ? StringUtils.cleanCliphistEntry(item.modelData) : item.modelData.replace(/^\d+\t/, "")
+                                // Discord kopiert Emojis mit einem Platzhalter (U+FFFC = "OBJ"-Kaestchen) -> ausblenden
+                                text: (StringUtils.cleanCliphistEntry ? StringUtils.cleanCliphistEntry(item.modelData) : item.modelData.replace(/^\d+\t/, "")).replace(/\uFFFC/g, "")
                                 wrapMode: Text.Wrap
                                 maximumLineCount: 4
                                 elide: Text.ElideRight
