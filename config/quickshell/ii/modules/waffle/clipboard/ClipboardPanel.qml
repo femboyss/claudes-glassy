@@ -22,8 +22,11 @@ Item {
     function close() { closeAnim.start(); }
 
     // Etwas in die zuletzt aktive App einfuegen (wie bei Windows: auswaehlen = einfuegen)
+    // Nicht mit wtype tippen: Electron/Chromium-Apps (Discord, Claude ...) machen daraus
+    // Emoji + "OBJ"-Kaestchen (U+FFFC). Stattdessen kopieren und Strg+V druecken.
     function pasteText(text) {
-        Quickshell.execDetached(["bash", "-c", `sleep 0.25; wtype -- '${StringUtils.shellSingleQuoteEscape(text)}'`]);
+        Quickshell.execDetached(["bash", "-c",
+            `printf '%s' '${StringUtils.shellSingleQuoteEscape(text)}' | wl-copy; sleep 0.3; wtype -M ctrl -k v -m ctrl`]);
         root.close();
     }
     function pasteEntry(entry) {
