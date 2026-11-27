@@ -58,8 +58,8 @@ Item {
         width: root.width
         height: root.height
         contentItem: Item {
-            implicitWidth: pane.width
-            implicitHeight: pane.height
+            implicitWidth: root.implicitWidth
+            implicitHeight: root.implicitHeight
 
             ColumnLayout {
                 anchors { fill: parent; margins: 12 }

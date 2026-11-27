@@ -37,8 +37,8 @@ Item {
         width: root.implicitWidth - 24
         height: root.height - root.barHeight - 24
         contentItem: Item {
-            implicitWidth: pane.width
-            implicitHeight: pane.height
+            implicitWidth: root.implicitWidth - 24
+            implicitHeight: root.height - root.barHeight - 24
 
             Flickable {
                 anchors.fill: parent
