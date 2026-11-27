@@ -73,6 +73,7 @@ glassy("look")
 glassy("animations")
 glassy("performance")
 glassy("rules")
+glassy("platform")   -- Look: Linux / Windows / Mac (Titelleisten, Fensterverhalten)
 glassy("autostart")
 
 -- Deine Ergaenzungen

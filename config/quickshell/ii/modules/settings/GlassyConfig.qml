@@ -29,7 +29,10 @@ ContentPage {
                                            : p === "mac" ? String.fromCodePoint(0x2318)
                                            : String.fromCodePoint(0xE8E5);
         Config.options.cheatsheet.useMacSymbol = p === "mac";
-        Config.options.panelFamily = p === "windows" ? "waffle" : "ii";
+        Config.options.panelFamily = p === "windows" ? "waffle" : p === "mac" ? "mac" : "ii";
+        // Fensterknoepfe von GTK-Apps (Firefox, Nautilus ...) passend zum Look
+        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.wm.preferences", "button-layout",
+            p === "windows" ? ":minimize,maximize,close" : p === "mac" ? "close,minimize,maximize:" : "appmenu:close"]);
         syncTimer.restart();
     }
 
@@ -190,7 +193,7 @@ ContentPage {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Appearance.colors.colSubtext
-            text: Translation.tr("Decides the whole desktop: panel, shortcuts and key symbols. Windows: Windows taskbar and start menu. Linux: the glassy bar (end-4). Mac: Mac dock (coming soon). Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.")
+            text: Translation.tr("Decides the whole desktop: panel, window buttons, shortcuts and key symbols. Windows: Windows taskbar and start menu. Linux: the glassy bar (end-4). Mac: menu bar at the top and a dock. Linux: tap Super for the start menu. Windows: Ctrl+Esc for the start menu, Ctrl+Super for the overview, Super alone does nothing. Mac: Super is Cmd, Cmd+Space for search, Ctrl+Up for the overview, Cmd+Shift+3 / 4 for screenshots.")
         }
 
         ConfigSelectionArray {

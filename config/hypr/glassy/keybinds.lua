@@ -189,6 +189,14 @@ try("window", function()
 end)
 
 try("focus/move", function()
+    if PLATFORM == "windows" then
+        -- Wie Windows: Win+Pfeile docken an / maximieren / minimieren (glassy/platform.lua)
+        bind(M .. " + up",    function() glassy_win_key("up") end,    { description = "Fenster: Maximieren (Win+Hoch)" })
+        bind(M .. " + down",  function() glassy_win_key("down") end,  { description = "Fenster: Wiederherstellen / Minimieren (Win+Runter)" })
+        bind(M .. " + left",  function() glassy_win_key("left") end,  { description = "Fenster: Links andocken (Win+Links)" })
+        bind(M .. " + right", function() glassy_win_key("right") end, { description = "Fenster: Rechts andocken (Win+Rechts)" })
+        return
+    end
     for _, dir in ipairs({ "left", "right", "up", "down" }) do
         bind(M .. " + " .. dir, hl.dsp.focus({ direction = dir }), dir == "left" and { description = "Fenster: Fokus mit SUPER+Pfeilen" } or nil)
         bind(M .. " + SHIFT + " .. dir, hl.dsp.window.move({ direction = dir }), dir == "left" and { description = "Fenster: Verschieben mit SUPER+SHIFT+Pfeilen" } or nil)

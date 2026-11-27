@@ -34,7 +34,7 @@ ShellRoot {
 
 
     // Panel families
-    property list<string> families: ["ii", "waffle"]
+    property list<string> families: ["ii", "waffle", "mac"]
     function cyclePanelFamily() {
         const currentIndex = families.indexOf(Config.options.panelFamily)
         const nextIndex = (currentIndex + 1) % families.length
@@ -55,6 +55,12 @@ ShellRoot {
     PanelFamilyLoader {
         identifier: "waffle"
         component: WaffleFamily {}
+    }
+
+    // claudes-glassy: Look Mac (Menueleiste + Dock)
+    PanelFamilyLoader {
+        identifier: "mac"
+        component: MacFamily {}
     }
 
 
